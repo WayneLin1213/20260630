@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>纱线信息管理系统</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Noto Sans SC',sans-serif}
+body{background:#f5f1eb;color:#2c2c2c;font-size:14px}
+.container{max-width:98%;margin:0 auto;padding:20px 30px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid #d4a17a}
+.header h1{font-size:18px;font-weight:500;color:#2c2c2c}
+.header h1 .logo{margin-right:8px}
+.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.btn{padding:8px 16px;border:1px solid #d4a17a;background:transparent;color:#d4a17a;border-radius:4px;cursor:pointer;font-size:13px;transition:all .2s}
+.btn:hover{background:#d4a17a;color:#fff}
+.btn-primary{background:#d4a17a;color:#fff}
+.btn-primary:hover{background:#c08a5f}
+.btn-danger{border-color:#e74c3c;color:#e74c3c}
+.btn-danger:hover{background:#e74c3c;color:#fff}
+.btn-success{border-color:#27ae60;color:#27ae60}
+.btn-success:hover{background:#27ae60;color:#fff}
+.btn-outline{border-color:#d4a17a;color:#d4a17a}
+.btn-outline:hover{background:#d4a17a;color:#fff}
+.btn-edit{border-color:#3498db;color:#3498db;padding:4px 10px;font-size:12px}
+.btn-edit:hover{background:#3498db;color:#fff}
+.btn-delete{border-color:#e74c3c;color:#e74c3c;padding:4px 10px;font-size:12px}
+.btn-delete:hover{background:#e74c3c;color:#fff}
+.btn-view{border-color:#27ae60;color:#27ae60;padding:4px 10px;font-size:12px}
+.btn-view:hover{background:#27ae60;color:#fff}
+.btn-purple{border-color:#9b59b6;color:#9b59b6}
+.btn-purple:hover{background:#9b59b6;color:#fff}
+.filter-bar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:11px;color:#888;font-weight:500}
+.filter-group input,.filter-group select{padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;background:#fff;min-width:100px}
+.filter-group input:focus,.filter-group select:focus{border-color:#d4a17a;outline:none}
+.table-container{overflow-x:auto;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);max-height:calc(100vh - 320px);overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{position:sticky;top:0;z-index:10}
+th{background:#f8f5f0;color:#666;font-weight:500;text-align:left;padding:10px 8px;border-bottom:2px solid #e8e0d5;white-space:nowrap;font-size:11px}
+td{padding:8px;border-bottom:1px solid #f0ebe4;color:#444}
+tr:hover{background:#faf7f3}
+tr:nth-child(even){background:#fdfcf9}
+tr:nth-child(even):hover{background:#faf7f3}
+.drag-handle{cursor:grab;color:#ccc;user-select:none;font-size:16px}
+.drag-handle:hover{color:#d4a17a}
+.sortable-ghost{opacity:.4;background:#f0e6d8!important}
+.category-tags{display:flex;flex-wrap:wrap;gap:3px}
+.tag{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;white-space:nowrap}
+.tag.suggested{background:#e8f5e9;color:#2e7d32}
+.tag.verified{background:#e3f2fd;color:#1565c0}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}
+.badge.promote{background:#e8f5e9;color:#2e7d32}
+.badge.mass-prod{background:#e3f2fd;color:#1565c0}
+.badge.testing{background:#fff3e0;color:#e65100}
+.badge.stopped{background:#ffebee;color:#c62828}
+.pagination{display:flex;justify-content:center;gap:4px;margin-top:12px;margin-bottom:8px;flex-wrap:wrap;position:sticky;bottom:0;background:#f5f1eb;padding:8px 0;z-index:5}
+.pagination .page-btn{padding:5px 10px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px}
+.pagination .page-btn:hover{border-color:#d4a17a}
+.pagination .page-btn.active{background:#d4a17a;color:#fff;border-color:#d4a17a}
+.info-row{display:flex;gap:8px;margin-bottom:6px}
+.info-label{color:#999;min-width:80px;font-size:12px}
+.info-value{color:#333;font-size:12px;flex:1}
+.checkbox-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.checkbox-tags label{display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;padding:4px 8px;background:#f5f5f5;border-radius:4px}
+.checkbox-tags label:hover{background:#e8e0d5}
+.checkbox-tags input[type=checkbox]{accent-color:#d4a17a}
+.add-cat-input{width:70px;padding:2px 4px;border:1px solid #ddd;border-radius:3px;font-size:12px}
+.add-cat-btn{font-size:11px;color:#d4a17a;cursor:pointer;background:#fff3e0;padding:4px 8px;border-radius:4px}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:1000;justify-content:center;align-items:flex-start;padding-top:30px}
+.modal.active{display:flex}
+.modal-content{background:#fff;border-radius:8px;padding:24px;max-width:600px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e8e0d5}
+.modal-header h3{font-size:16px;font-weight:500;color:#2c2c2c}
+.close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:#999}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;color:#888;margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:13px}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#d4a17a;outline:none}
+.form-group textarea{resize:vertical;min-height:60px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.toast-container{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:10px 20px;border-radius:6px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:toast-in .3s ease;pointer-events:auto;max-width:360px;text-align:center}
+.toast.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+.toast.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+.toast.info{background:#e8e0d5;color:#2c2c2c;border:1px solid #d4a17a}
+@keyframes toast-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.empty-state{text-align:center;padding:40px 20px;color:#999}
+.empty-state p{margin-bottom:16px;font-size:14px}
+.stats-bar{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.stat-item{background:#fff;padding:10px 16px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.06);font-size:12px;color:#666}
+.stat-item strong{color:#d4a17a;font-size:16px;margin-right:4px}
+.user-table{width:100%;border-collapse:collapse}
+.user-table th{background:#f8f5f0;padding:10px 12px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e0d5}
+.user-table td{padding:10px 12px;border-bottom:1px solid #f0ebe4;font-size:13px}
+.user-table tr:hover{background:#faf7f3}
+.role-badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:500}
+.role-admin{background:#f3e5f5;color:#7b1fa2}
+.role-viewer{background:#e3f2fd;color:#1565c0}
+.login-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#f5f1eb 0%,#e8dfd5 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:#fff;border-radius:12px;padding:40px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.12);text-align:center}
+.login-box h2{font-size:20px;color:#2c2c2c;margin-bottom:6px;font-weight:500}
+.login-box .subtitle{font-size:13px;color:#999;margin-bottom:24px}
+.login-box input{width:100%;padding:10px 14px;border:1px solid #e0d8cf;border-radius:6px;font-size:14px;margin-bottom:12px;outline:none;transition:border .2s}
+.login-box input:focus{border-color:#d4a17a}
+.login-box button{width:100%;padding:11px;background:#d4a17a;color:#fff;border:none;border-radius:6px;font-size:15px;cursor:pointer;transition:background .2s}
+.login-box button:hover{background:#c4916a}
+.login-error{color:#e74c3c;font-size:12px;margin-bottom:8px;display:none}
+.user-info{font-size:12px;color:#888;margin-right:8px}
+@media print{body *{display:none!important}}
+@media(max-width:768px){.container{padding:12px}.header{flex-direction:column;gap:10px;align-items:flex-start}.filter-bar{flex-direction:column}.filter-group input,.filter-group select{min-width:100%}}
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="loginScreen">
+  <div class="login-box">
+    <h2>🧶 纱线信息管理系统</h2>
+    <p class="subtitle">请登录以继续</p>
+    <div class="login-error" id="loginError">账号或密码错误</div>
+    <input type="text" id="loginUser" placeholder="请输入账号" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="请输入密码" autocomplete="current-password">
+    <button onclick="doLogin()">登 录</button>
+  </div>
+</div>
+
+<div id="mainApp" style="display:none">
+<div class="toast-container" id="toastContainer"></div>
+<div class="container">
+  <div class="header">
+    <h1><span class="logo">🧶</span>纱线信息管理</h1>
+    <div class="header-right">
+      <span class="user-info" id="userInfo"></span>
+      <button class="btn btn-outline" id="btnChangePwd" style="display:none" onclick="openChangePwd()">🔑 修改密码</button>
+      <button class="btn btn-outline" id="btnExportXlsx" onclick="exportData('xlsx')">&#x1F4E5; 导出Excel</button>
+      <button class="btn btn-outline" id="btnExportCsv" onclick="exportData('csv')">&#x1F4E5; 导出CSV</button>
+      <button class="btn btn-success" id="btnImport" onclick="document.getElementById('importFile').click()">&#x1F4E4; 导入表格</button>
+      <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImport(event)">
+      <button class="btn btn-primary" id="btnAddYarn" onclick="openModal()">+ 新增纱线</button>
+      <button class="btn btn-danger" id="btnBatchDelete" style="display:none" onclick="batchDelete()">🗑 批量删除</button>
+      <button class="btn btn-purple" id="btnUserMgmt" style="display:none" onclick="openUserMgmt()"> 用户管理</button>
+      <button class="btn" id="btnLogout" style="display:none;border-color:#e74c3c;color:#e74c3c" onclick="doLogout()">退出</button>
+    </div>
+  </div>
+  <div class="filter-bar" id="filterBar">
+    <div class="filter-group"><label>搜索</label><input type="text" id="fSearch" placeholder="供应商/名称..." oninput="applyFilters()"></div>
+    <div class="filter-group"><label>类别</label><select id="fCategory" onchange="applyFilters()"></select></div>
+    <div class="filter-group"><label>状态</label><select id="fStatus" onchange="applyFilters()"><option value="">全部状态</option><option value="可推广">可推广</option><option value="可量产">可量产</option><option value="验证中">验证中</option><option value="停用">停用</option></select></div>
+    <div class="filter-group"><label>搜索规格</label><input type="text" id="fSpecs" placeholder="如：150D" oninput="applyFilters()"></div>
+    <div class="filter-group"><label>搜索材料成分</label><input type="text" id="fMaterial" placeholder="如：涤纶" oninput="applyFilters()"></div>
+    <div class="filter-group"><label>搜索纱线特点</label><input type="text" id="fFeatures" placeholder="如：吸湿" oninput="applyFilters()"></div>
+    <div class="filter-group" style="align-self:flex-end"><button class="btn" onclick="clearFilters()">重置</button></div>
+  </div>
+  <div class="stats-bar" id="statsBar"></div>
+  <div class="table-container"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<div class="modal" id="yarnModal">
+  <div class="modal-content">
+    <div class="modal-header"><h3 id="modalTitle">新增纱线</h3><button class="close-btn" onclick="closeModal()">&times;</button></div>
+    <form id="yarnForm">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>供应商名称</label><input type="text" id="f_supplier" required></div>
+        <div class="form-group"><label>纱线名称</label><input type="text" id="f_name" required></div>
+      </div>
+      <div class="form-group"><label>规格</label>
+        <div style="display:flex;gap:8px">
+          <select id="f_specs_morph" style="flex:0 0 120px"><option value="">-- 选择形态 --</option><option value="POY">POY</option><option value="FDY">FDY</option><option value="DTY">DTY</option><option value="ATY">ATY</option><option value="SCY">SCY</option></select>
+          <input type="text" id="f_specs_detail" placeholder="如 75D/36F" style="flex:1">
+        </div>
+      </div>
+      <div class="form-group"><label>建议分类（可多选）</label><div class="checkbox-tags" id="f_suggested_cats"></div></div>
+      <div class="form-group"><label>织造品类（可多选）</label><div class="checkbox-tags" id="f_verified_cats"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>起订量</label><input type="text" id="f_moq"></div>
+        <div class="form-group"><label>状态</label><select id="f_status"><option value="可推广">可推广</option><option value="可量产">可量产</option><option value="验证中">验证中</option><option value="停用">停用</option></select></div>
+      </div>
+      <div class="form-group"><label>价格区间</label><input type="text" id="f_price_range" placeholder="如：20-25 元/kg"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>温度限制</label><input type="text" id="f_temp_limit" placeholder="如：200℃"></div>
+        <div class="form-group"><label>颜色限制</label><input type="text" id="f_color_limit" placeholder="如：只能做本白"></div>
+      </div>
+      <div class="form-group"><label>可否定制</label><select id="f_customizable"><option value="">-- 选择 --</option><option value="是">是</option><option value="否">否</option></select></div>
+      <div class="form-group"><label>材料成分</label><input type="text" id="f_material_composition" placeholder="如：100%涤纶"></div>
+      <div class="form-group"><label>生产周期</label><input type="text" id="f_production_cycle" placeholder="如：30天"></div>
+      <div class="form-group"><label>规避事项</label><input type="text" id="f_weaving_notes" placeholder="如：注意控制张力"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>吊牌</label><input type="text" id="f_hangtag" placeholder="如：H2026001"></div>
+      </div>
+      <div class="form-group"><label>供应商地址</label><input type="text" id="f_supplier_address"></div>
+      <div class="form-group"><label>供应商联系方式</label><input type="text" id="f_supplier_contact"></div>
+      <div class="form-group"><label>纱线介绍（用 | 分隔卖点）</label><textarea id="f_introduction" placeholder="如：吸湿排汗|速干透气|亲肤舒适"></textarea></div>
+      <div class="form-group"><label>附件文件路径（逗号分隔）</label><input type="text" id="f_attachments" placeholder="如：/uploads/xxx.pdf"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="closeModal()">取消</button>
+        <button type="submit" class="btn btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="detailModal">
+  <div class="modal-content">
+    <div class="modal-header"><h3>纱线详情</h3><button class="close-btn" onclick="document.getElementById('detailModal').classList.remove('active')">&times;</button></div>
+    <div id="detailContent"></div>
+    <div class="modal-actions"><button class="btn" onclick="document.getElementById('detailModal').classList.remove('active')">关闭</button></div>
+  </div>
+</div>
+
+<div class="modal" id="importModal">
+  <div class="modal-content" style="max-width:800px">
+    <div class="modal-header"><h3>&#x1F4E4; 导入预览</h3><button class="close-btn" onclick="document.getElementById('importModal').classList.remove('active')">&times;</button></div>
+    <div id="importInfo" style="margin-bottom:12px;font-size:13px;color:#666"></div>
+    <div style="overflow-x:auto;max-height:400px;overflow-y:auto">
+      <table id="importPreviewTable"><thead id="importPreviewHead"></thead><tbody id="importPreviewBody"></tbody></table>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('importModal').classList.remove('active')">取消</button>
+      <button class="btn btn-primary" id="importConfirmBtn" onclick="confirmImport()">确认导入</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="userMgmtModal">
+  <div class="modal-content" style="max-width:650px">
+    <div class="modal-header"><h3>👥 用户管理</h3><button class="close-btn" onclick="document.getElementById('userMgmtModal').classList.remove('active')">&times;</button></div>
+    <div style="margin-bottom:12px"><button class="btn btn-primary" onclick="openAddUser()">+ 新增用户</button></div>
+    <div style="overflow-x:auto;max-height:400px">
+      <table class="user-table">
+        <thead><tr><th>账号</th><th>角色</th><th>操作</th></tr></thead>
+        <tbody id="userMgmtBody"></tbody>
+      </table>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="document.getElementById('userMgmtModal').classList.remove('active')">关闭</button></div>
+  </div>
+</div>
+
+<div class="modal" id="userEditModal">
+  <div class="modal-content" style="max-width:400px">
+    <div class="modal-header"><h3 id="userEditTitle">新增用户</h3><button class="close-btn" onclick="document.getElementById('userEditModal').classList.remove('active')">&times;</button></div>
+    <div class="form-group"><label>账号名称</label><input type="text" id="editUsername" placeholder="如：yarn07"></div>
+    <div class="form-group"><label>新密码</label><input type="password" id="editPassword" placeholder="留空则不修改（新增时必填）"></div>
+    <div class="form-group"><label>角色</label><select id="editRole"><option value="admin">管理员</option><option value="viewer">查看人员</option></select></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('userEditModal').classList.remove('active')">取消</button>
+      <button class="btn btn-primary" onclick="saveUser()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="changePwdModal">
+  <div class="modal-content" style="max-width:380px">
+    <div class="modal-header"><h3>🔑 修改密码</h3><button class="close-btn" onclick="document.getElementById('changePwdModal').classList.remove('active')">&times;</button></div>
+    <div class="form-group"><label>当前密码</label><input type="password" id="curPwd" placeholder="请输入当前密码"></div>
+    <div class="form-group"><label>新密码</label><input type="password" id="newPwd" placeholder="请输入新密码"></div>
+    <div class="form-group"><label>确认新密码</label><input type="password" id="confirmPwd" placeholder="请再次输入新密码"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('changePwdModal').classList.remove('active')">取消</button>
+      <button class="btn btn-primary" onclick="doChangePwd()">确认修改</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+var SUPABASE_URL = 'https://vxxkxaxvwknfafehcruj.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_fGFPVWlgQLy2grFS50xQgw_gfr1M_t_';
+var HEADERS = {'apikey': SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation'};
+
+async function sha256(msg){var buf=new TextEncoder().encode(msg);var hash=await crypto.subtle.digest('SHA-256',buf);return Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');}
+
+var appUsers=[];
+var currentUser=null;
+
+async function loadAppUsers(){
+  try{
+    var res=await fetch(SUPABASE_URL+'/rest/v1/yarns?supplier=eq.__APP_USER__&select=id,name,introduction,features',{headers:{apikey:SUPABASE_KEY}});
+    if(res.ok){var rows=await res.json();appUsers=rows.map(function(r){return{id:r.id,u:r.name,p:r.introduction,r:r.features};});}
+  }catch(e){console.error('loadAppUsers error:',e);}
+}
+
+async function doLogin(){
+  var u=document.getElementById('loginUser').value.trim();
+  var p=document.getElementById('loginPass').value;
+  if(!u||!p){document.getElementById('loginError').textContent='请输入账号和密码';document.getElementById('loginError').style.display='block';return;}
+  if(appUsers.length===0)await loadAppUsers();
+  var h=await sha256(p);
+  var found=null;
+  for(var i=0;i<appUsers.length;i++){if(appUsers[i].u===u&&appUsers[i].p===h){found=appUsers[i];break;}}
+  if(!found){document.getElementById('loginError').textContent='账号或密码错误';document.getElementById('loginError').style.display='block';return;}
+  currentUser=found;
+  sessionStorage.setItem('yarn_user',JSON.stringify({u:found.u,r:found.r,id:found.id}));
+  enterApp();
+}
+
+function enterApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('mainApp').style.display='';
+  var roleLabel=currentUser.r==='admin'?'管理员':'查看者';
+  document.getElementById('userInfo').textContent=currentUser.u+' ('+roleLabel+')';
+  document.getElementById('btnLogout').style.display='';
+  document.getElementById('btnChangePwd').style.display='';
+  if(currentUser.r==='viewer'){
+    document.getElementById('btnAddYarn').style.display='none';
+    document.getElementById('btnExportXlsx').style.display='none';
+    document.getElementById('btnExportCsv').style.display='none';
+    document.getElementById('btnImport').style.display='none';
+  }
+  if(currentUser.r==='admin'){document.getElementById('btnUserMgmt').style.display='';}
+  initApp();
+}
+
+function doLogout(){sessionStorage.removeItem('yarn_user');currentUser=null;location.reload();}
+
+async function initAuth(){
+  await loadAppUsers();
+  try{
+    var s=sessionStorage.getItem('yarn_user');
+    if(s){var d=JSON.parse(s);for(var i=0;i<appUsers.length;i++){if(appUsers[i].u===d.u){currentUser=appUsers[i];enterApp();return;}}}
+  }catch(e){console.error('initAuth error:',e);}
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('loginPass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+  document.getElementById('loginUser').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('loginPass').focus();});
+}
+
+var editingUserId=null;
+function openUserMgmt(){renderUserList();document.getElementById('userMgmtModal').classList.add('active');}
+
+async function renderUserList(){
+  await loadAppUsers();
+  var tbody=document.getElementById('userMgmtBody');
+  var html='';
+  for(var i=0;i<appUsers.length;i++){
+    var u=appUsers[i];
+    var roleText=u.r==='admin'?'管理员':'查看人员';
+    var roleClass=u.r==='admin'?'role-admin':'role-viewer';
+    html+='<tr><td>'+u.u+'</td><td><span class="role-badge '+roleClass+'">'+roleText+'</span></td>';
+    html+='<td><button class="btn btn-edit" onclick="openEditUser(\''+u.id+'\')">编辑</button> ';
+    html+='<button class="btn btn-delete" onclick="deleteUser(\''+u.id+'\',\''+u.u+'\')">删除</button></td></tr>';
+  }
+  tbody.innerHTML=html;
+}
+
+function openAddUser(){
+  editingUserId=null;
+  document.getElementById('userEditTitle').textContent='新增用户';
+  document.getElementById('editUsername').value='';
+  document.getElementById('editUsername').disabled=false;
+  document.getElementById('editPassword').value='';
+  document.getElementById('editPassword').placeholder='请输入密码';
+  document.getElementById('editRole').value='viewer';
+  document.getElementById('userEditModal').classList.add('active');
+}
+
+function openEditUser(id){
+  var user=null;
+  for(var i=0;i<appUsers.length;i++){if(appUsers[i].id===id){user=appUsers[i];break;}}
+  if(!user)return;
+  editingUserId=id;
+  document.getElementById('userEditTitle').textContent='编辑用户';
+  document.getElementById('editUsername').value=user.u;
+  document.getElementById('editUsername').disabled=false;
+  document.getElementById('editPassword').value='';
+  document.getElementById('editPassword').placeholder='留空则不修改密码';
+  document.getElementById('editRole').value=user.r;
+  document.getElementById('userEditModal').classList.add('active');
+}
+
+async function saveUser(){
+  var username=document.getElementById('editUsername').value.trim();
+  var password=document.getElementById('editPassword').value;
+  var role=document.getElementById('editRole').value;
+  if(!username){toast('请输入账号名称','error');return;}
+  if(editingUserId){
+    var pwdHash=password?await sha256(password):'';
+    var rpcRes=await fetch(SUPABASE_URL+'/rest/v1/rpc/update_app_user',{method:'POST',headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_id:editingUserId,p_features:role,p_name:username,p_password:pwdHash})});
+    if(rpcRes.ok){toast('用户已更新','success');renderUserList();document.getElementById('userEditModal').classList.remove('active');}
+    else{var err=await rpcRes.json().catch(function(){return{};});toast('保存失败：'+(err.message||err.hint||rpcRes.status),'error');}
+  }else{
+    if(!password){toast('请输入密码','error');return;}
+    var h=await sha256(password);
+    var newId='app_user_'+username;
+    var rpcRes=await fetch(SUPABASE_URL+'/rest/v1/rpc/create_app_user',{method:'POST',headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_id:newId,p_name:username,p_password:h,p_features:role})});
+    if(rpcRes.ok){toast('用户已创建','success');renderUserList();document.getElementById('userEditModal').classList.remove('active');}
+    else{var err=await rpcRes.json().catch(function(){return{};});toast('创建失败：'+(err.message||rpcRes.status),'error');}
+  }
+}
+
+async function deleteUser(id,username){
+  if(!confirm('确定要删除用户「'+username+'」吗？'))return;
+  var rpcRes=await fetch(SUPABASE_URL+'/rest/v1/rpc/delete_app_user',{method:'POST',headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_id:id})});
+  if(rpcRes.ok){toast('用户已删除','success');renderUserList();}
+  else{var err=await rpcRes.json().catch(function(){return{};});toast('删除失败：'+(err.message||rpcRes.status),'error');}
+}
+
+function openChangePwd(){
+  document.getElementById('curPwd').value='';
+  document.getElementById('newPwd').value='';
+  document.getElementById('confirmPwd').value='';
+  document.getElementById('changePwdModal').classList.add('active');
+}
+
+async function doChangePwd(){
+  var cur=document.getElementById('curPwd').value;
+  var newP=document.getElementById('newPwd').value;
+  var confirmP=document.getElementById('confirmPwd').value;
+  if(!cur||!newP){toast('请填写当前密码和新密码','error');return;}
+  if(newP!==confirmP){toast('两次输入的新密码不一致','error');return;}
+  if(newP.length<4){toast('新密码至少4个字符','error');return;}
+  var curHash=await sha256(cur);
+  if(curHash!==currentUser.p){toast('当前密码错误','error');return;}
+  var newHash=await sha256(newP);
+  var curRole=currentUser.r||'viewer';
+  var rpcRes=await fetch(SUPABASE_URL+'/rest/v1/rpc/update_app_user',{method:'POST',headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_id:currentUser.id,p_features:curRole,p_password:newHash})});
+  if(rpcRes.ok){toast('密码修改成功','success');currentUser.p=newHash;document.getElementById('changePwdModal').classList.remove('active');}
+  else{var err=await rpcRes.json().catch(function(){return{};});toast('修改失败：'+(err.message||err.hint||rpcRes.status),'error');}
+}
+
+var allYarns=[];
+var filteredYarns=[];
+var currentPage=1;
+var pageSize=20;
+var editingId=null;
+var sortState={column:'created_at',direction:'desc'};
+var CATEGORIES=JSON.parse(localStorage.getItem('yarn_categories')||'null')||['环保','高强','功能','常规','花式纱'];
+var WEAVE_CATEGORIES=JSON.parse(localStorage.getItem('yarn_weave_categories')||'null')||['梭织','圆机','经编','飞织','速织'];
+function saveCategories(){localStorage.setItem('yarn_categories',JSON.stringify(CATEGORIES));}
+function saveWeaveCategories(){localStorage.setItem('yarn_weave_categories',JSON.stringify(WEAVE_CATEGORIES));}
+function getAllCats(){return[].concat(CATEGORIES);}
+function getWeaveCats(){
+  var weaveFromData=[];
+  allYarns.forEach(function(y){if(y.verified_categories&&Array.isArray(y.verified_categories)){y.verified_categories.forEach(function(c){if(c&&weaveFromData.indexOf(c)===-1)weaveFromData.push(c);});}});
+  return[].concat(WEAVE_CATEGORIES,weaveFromData).filter(function(v,i,a){return a.indexOf(v)===i;});
+}
+function toast(message,type){
+  type=type||'info';
+  var c=document.getElementById('toastContainer');
+  var t=document.createElement('div');
+  t.className='toast '+type;
+  t.textContent=message;
+  c.appendChild(t);
+  setTimeout(function(){t.style.opacity='0';t.style.transform='translateY(-10px)';setTimeout(function(){t.remove();},300);},3000);
+}
+
+var FIELD_MAP={supplier:'供应商名称',name:'纱线名称',specs:'规格',introduction:'纱线介绍',features:'纱线特点',verified_categories:'织造品类',suggested_categories:'类型',applicable_products:'适用产品',temp_limit:'温度限制',color_limit:'颜色限制',moq:'起订量',attachments:'附件',status:'状态',material_composition:'材料成分'};
+var DEFAULT_COLUMNS=['_select','drag','_index','suggested_categories','name','specs','supplier','moq','status','actions'];
+
+function getVisibleColumns(){
+  try{var s=localStorage.getItem('yarn_columns_v6');if(s){var p=JSON.parse(s);if(Array.isArray(p))return p;}}catch(e){}
+  localStorage.removeItem('yarn_columns');
+  localStorage.removeItem('yarn_columns_v5');
+  return DEFAULT_COLUMNS.slice();
+}
+var visibleColumns=getVisibleColumns();
+
+function handleImport(event){
+  var file=event.target.files[0];
+  if(!file)return;
+  var ext=file.name.split('.').pop().toLowerCase();
+  if(['xlsx','xls','csv'].indexOf(ext)===-1){toast('仅支持 xlsx/xls/csv 文件','error');event.target.value='';return;}
+  toast('正在解析文件...','info');
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=new Uint8Array(e.target.result);
+      var wb=XLSX.read(data,{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(rows.length===0){toast('文件为空','error');event.target.value='';return;}
+      var mappedRows=mapImportRows(rows);
+      if(mappedRows.length===0){toast('未能识别任何纱线数据','error');event.target.value='';return;}
+      showImportPreview(mappedRows);
+    }catch(err){console.error(err);toast('文件解析失败：'+err.message,'error');}
+    event.target.value='';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function mapImportRows(rows){
+  var nameKeys=['纱线名称','名称','name','品名','纱线名'];
+  var supplierKeys=['供应商名称','供应商','supplier','厂家'];
+  var specKeys=['规格','spec','specs','型号'];
+  var catKeys=['类别','分类','category','categories','类型'];
+  var moqKeys=['起订量','moq','最小起订量','最小订量'];
+  var priceKeys=['价格区间','价格','price','单价'];
+  var limitKeys=['使用限制','限制','limit','使用条件'];
+  var customKeys=['可否定制','定制','customizable'];
+  var materialKeys=['材料成分','成分','material','材质'];
+  var cycleKeys=['生产周期','周期','cycle','交期'];
+  var notesKeys=['规避事项','规避','notes','注意事项'];
+  var hangtagKeys=['吊牌','hangtag','挂牌'];
+  var introKeys=['纱线介绍','介绍','introduction','描述','description','说明'];
+  var addrKeys=['供应商地址','地址','address','supplier_address'];
+  var contactKeys=['供应商联系方式','联系方式','contact','supplier_contact','电话'];
+  var statusKeys=['状态','status'];
+  function findKey(row,keys){for(var k=0;k<keys.length;k++){for(var rk in row){if(rk.trim().toLowerCase()===keys[k].toLowerCase())return row[rk];}}return '';}
+  var results=[];
+  for(var i=0;i<rows.length;i++){
+    var row=rows[i];
+    var name=findKey(row,nameKeys);
+    if(!name||String(name).trim()==='')continue;
+    var supplier=findKey(row,supplierKeys);
+    var specs=findKey(row,specKeys);
+    var catStr=findKey(row,catKeys);
+    var moq=findKey(row,moqKeys);
+
+    var price=findKey(row,priceKeys);
+    var limitStr=findKey(row,limitKeys);
+    var customizable=findKey(row,customKeys);
+    var material=findKey(row,materialKeys);
+    var cycle=findKey(row,cycleKeys);
+    var notes=findKey(row,notesKeys);
+    var hangtag=findKey(row,hangtagKeys);
+    var intro=findKey(row,introKeys);
+    var addr=findKey(row,addrKeys);
+    var contact=findKey(row,contactKeys);
+    var status=findKey(row,statusKeys)||'可推广';
+    var temp_limit='',color_limit='';
+    if(limitStr){var ls=String(limitStr);var tm=ls.match(/温度[:：]?\s*([^,;，；\s]+)/i);var cm=ls.match(/染?色[:：]?\s*(.+)/i);if(tm)temp_limit=tm[1];if(cm)color_limit=cm[1];if(!tm&&!cm)temp_limit=ls;}
+    var suggested_categories=[];
+    if(catStr){var cats=String(catStr).split(/[,，/、]/).map(function(s){return s.trim();}).filter(Boolean);suggested_categories=cats;cats.forEach(function(c){if(CATEGORIES.indexOf(c)===-1)CATEGORIES.push(c);});saveCategories();}
+    var features=[];
+    if(intro){features=String(intro).split('|').map(function(s){return s.trim();}).filter(Boolean);}
+    var extra={};
+    if(price)extra.price_range=price;
+    if(customizable)extra.customizable=customizable;
+    if(material)extra.material_composition=material;
+    if(cycle)extra.production_cycle=cycle;
+    if(notes)extra.weaving_notes=notes;
+    if(hangtag)extra.hangtag=hangtag;
+    if(addr)extra.supplier_address=addr;
+    if(contact)extra.supplier_contact=contact;
+    results.push({supplier:String(supplier).trim(),name:String(name).trim(),specs:String(specs).trim()||null,suggested_categories:suggested_categories.length?suggested_categories:null,verified_categories:null,moq:String(moq).trim()||null,applicable_products:null,temp_limit:temp_limit||null,color_limit:color_limit||null,introduction:intro?String(intro).trim():null,features:features.length?features:null,status:String(status).trim()||'可推广',extra_info:Object.keys(extra).length?extra:null});
+  }
+  return results;
+}
+
+var pendingImportRows=[];
+function showImportPreview(mappedRows){
+  pendingImportRows=mappedRows;
+  var previewCols=['supplier','name','specs','suggested_categories','moq','temp_limit','color_limit','status'];
+  var colNames=['供应商','纱线名称','规格','建议分类','起订量','温度限制','颜色限制','状态'];
+  var thead=document.getElementById('importPreviewHead');
+  thead.innerHTML='<tr>'+colNames.map(function(n){return'<th>'+n+'</th>';}).join('')+'</tr>';
+  var tbody=document.getElementById('importPreviewBody');
+  var preview=mappedRows.slice(0,10);
+  tbody.innerHTML=preview.map(function(r){return'<tr>'+previewCols.map(function(c){var v=r[c]||'';if(Array.isArray(v))v=v.map(function(x){return'<span class="tag suggested">'+x+'</span>';}).join(' ');return'<td>'+v+'</td>';}).join('')+'</tr>';}).join('');
+  document.getElementById('importInfo').innerHTML='共识别 <strong>'+mappedRows.length+'</strong> 条纱线记录'+(mappedRows.length>10?'（预览前10条）':'')+'，请确认后导入。';
+  document.getElementById('importModal').classList.add('active');
+}
+
+var importCounter=0;
+function confirmImport(){
+  var btn=document.getElementById('importConfirmBtn');
+  btn.textContent='导入中...';btn.disabled=true;
+  var ok=0,fail=0,lastError='';
+  function importNext(idx){
+    if(idx>=pendingImportRows.length){btn.textContent='确认导入';btn.disabled=false;document.getElementById('importModal').classList.remove('active');pendingImportRows=[];if(fail>0)toast('导入完成：成功 '+ok+' 条，失败 '+fail+' 条'+(lastError?'。最后错误：'+lastError.substring(0,80):''),'info');else toast('成功导入 '+ok+' 条纱线记录','success');loadYarns();return;}
+    var row=pendingImportRows[idx];
+    var payload={};for(var k in row)payload[k]=row[k];
+    importCounter++;
+    payload.id='y_'+Date.now()+'_'+importCounter.toString(36)+'_'+Math.random().toString(36).substr(2,4);
+    if(payload.extra_info&&typeof payload.extra_info==='object')payload.extra_info=JSON.stringify(payload.extra_info);
+    if(payload.features&&typeof payload.features==='object')payload.features=JSON.stringify(payload.features);
+    if(payload.suggested_categories&&typeof payload.suggested_categories==='object')payload.suggested_categories=JSON.stringify(payload.suggested_categories);
+    if(payload.verified_categories&&typeof payload.verified_categories==='object')payload.verified_categories=JSON.stringify(payload.verified_categories);
+    fetch(SUPABASE_URL+'/rest/v1/yarns',{method:'POST',headers:Object.assign({},HEADERS,{Prefer:'return=minimal'}),body:JSON.stringify(payload)})
+    .then(function(res){if(!res.ok){return res.text().then(function(errText){lastError=payload.name+': '+errText;fail++;console.error('Import failed for '+payload.name,errText);});}else ok++;})
+    .catch(function(e){fail++;lastError=payload.name+': '+e.message;console.error('Import error for '+payload.name,e);})
+    .then(function(){importNext(idx+1);});
+  }
+  importNext(0);
+}
+
+function loadYarns(){selectedIds.clear();
+  fetch(SUPABASE_URL+'/rest/v1/yarns?is_deleted=eq.false&supplier=neq.__APP_USER__&order=created_at.desc',{headers:{apikey:SUPABASE_KEY}})
+  .then(function(res){return res.json();})
+  .then(function(data){
+    allYarns=data;
+    allYarns.forEach(function(y){
+      try{if(typeof y.suggested_categories==='string')y.suggested_categories=JSON.parse(y.suggested_categories);}catch(e){y.suggested_categories=[];}
+      try{if(typeof y.verified_categories==='string')y.verified_categories=JSON.parse(y.verified_categories);}catch(e){y.verified_categories=[];}
+      try{if(typeof y.features==='string')y.features=JSON.parse(y.features);}catch(e){y.features=[];}
+      try{if(typeof y.applicable_products==='string')y.applicable_products=JSON.parse(y.applicable_products);}catch(e){y.applicable_products=[];}
+      try{if(typeof y.attachments==='string')y.attachments=JSON.parse(y.attachments);}catch(e){y.attachments=[];}
+      try{if(typeof y.extra_info==='string')y.extra_info=JSON.parse(y.extra_info);}catch(e){y.extra_info={};}
+    });
+    applyFilters();
+  }).catch(function(e){console.error(e);toast('加载失败','error');});
+}
+
+function applyFilters(){
+  var search=document.getElementById('fSearch').value.trim().toLowerCase();
+  var category=document.getElementById('fCategory').value;
+  var status=document.getElementById('fStatus').value;
+  var specsFilter=document.getElementById('fSpecs').value.trim().toLowerCase();
+  var materialFilter=document.getElementById('fMaterial').value.trim().toLowerCase();
+  var featuresFilter=document.getElementById('fFeatures').value.trim().toLowerCase();
+  filteredYarns=allYarns.filter(function(y){
+    if(search){var sup=(y.supplier||'').toLowerCase();var nm=(y.name||'').toLowerCase();if(sup.indexOf(search)===-1&&nm.indexOf(search)===-1)return false;}
+    if(category){var allCats=(y.suggested_categories||[]).concat(y.verified_categories||[]);if(allCats.indexOf(category)===-1)return false;}
+    if(status&&y.status!==status)return false;
+    if(specsFilter){var sp=(y.specs||'').toLowerCase();if(sp.indexOf(specsFilter)===-1)return false;}
+    if(materialFilter){var mat=((y.extra_info&&y.extra_info.material_composition)||'').toLowerCase();if(mat.indexOf(materialFilter)===-1)return false;}
+    if(featuresFilter){var featStr=(y.features||[]).join(',').toLowerCase();if(featStr.indexOf(featuresFilter)===-1)return false;}
+    return true;
+  });
+  currentPage=1;
+  renderTable();
+  renderStats();
+  renderCategoryFilter();
+}
+
+function renderCategoryFilter(){
+  var sel=document.getElementById('fCategory');
+  var cur=sel.value;
+  var allCats=[].concat(getAllCats(),getWeaveCats());
+  var unique=[];allCats.forEach(function(c){if(unique.indexOf(c)===-1)unique.push(c);});
+  var html='<option value="">全部类别</option>';
+  unique.forEach(function(c){html+='<option value="'+c+'"'+(c===cur?' selected':'')+'>'+c+'</option>';});
+  sel.innerHTML=html;
+}
+
+function renderStats(){
+  document.getElementById('statsBar').innerHTML='<div class="stat-item"><strong>'+allYarns.length+'</strong>总纱线</div><div class="stat-item"><strong>'+filteredYarns.length+'</strong>筛选结果</div>';
+}
+
+function renderTable(){
+  var thead=document.getElementById('tableHead');
+  var tbody=document.getElementById('tableBody');
+  thead.innerHTML='<tr>'+visibleColumns.map(function(col){
+    if(col==='_select')return'<th style="width:30px"><input type="checkbox" id="chkSelectAll" onchange="toggleSelectAll(this)"></th>';
+    if(col==='drag')return'<th style="width:30px"></th>';
+    if(col==='actions')return'<th>操作</th>';
+    if(col==='_index')return'<th style="width:36px">#</th>';
+    return'<th onclick="toggleSort(\''+col+'\')" style="cursor:pointer">'+(FIELD_MAP[col]||col)+'</th>';
+  }).join('')+'</tr>';
+  var start=(currentPage-1)*pageSize;
+  var pageData=filteredYarns.slice(start,start+pageSize);
+  if(pageData.length===0){tbody.innerHTML='<tr><td colspan="'+visibleColumns.length+'" class="empty-state"><p>暂无数据</p></td></tr>';}
+  else{
+    tbody.innerHTML=pageData.map(function(y,idx){
+      return'<tr data-id="'+y.id+'">'+visibleColumns.map(function(col){
+        if(col==='_select')return'<td><input type="checkbox" class="row-select-chk" data-id="'+y.id+'" onchange="updateSelectState()"></td>';
+        if(col==='drag')return'<td class="drag-handle">⋮⋮</td>';
+        if(col==='_index')return'<td>'+(start+idx+1)+'</td>';
+        if(col==='actions'){
+          var btns='<button class="btn btn-view" onclick="viewYarn(\''+y.id+'\')">查看</button>';
+          if(currentUser&&currentUser.r==='admin'){btns+=' <button class="btn btn-edit" onclick="openModal(\''+y.id+'\')">编辑</button>';btns+=' <button class="btn btn-delete" onclick="deleteYarn(\''+y.id+'\')">删除</button>';}
+          return'<td style="white-space:nowrap">'+btns+'</td>';
+        }
+        if(col==='suggested_categories'||col==='verified_categories'||col==='features'){
+          var cats=y[col]||[];
+          var tagClass=col==='features'?'verified':(col==='suggested_categories'?'suggested':'verified');
+          return'<td><div class="category-tags">'+cats.map(function(c){return'<span class="tag '+tagClass+'">'+c+'</span>';}).join('')+'</div></td>';
+        }
+        if(col==='status'){
+          var cls='promote';
+          if(y.status==='可量产')cls='mass-prod';
+          else if(y.status==='验证中')cls='testing';
+          else if(y.status==='停用')cls='stopped';
+          return'<td><span class="badge '+cls+'">'+(y.status||'')+'</span></td>';
+        }
+        if(col==='material_composition'){return'<td>'+((y.extra_info&&y.extra_info[col])||'')+'</td>';}
+        return'<td>'+(y[col]||'')+'</td>';
+      }).join('')+'</tr>';
+    }).join('');
+  }
+  renderPagination();
+  initDragSort();
+}
+
+function renderPagination(){
+  var totalPages=Math.max(1,Math.ceil(filteredYarns.length/pageSize));
+  var el=document.getElementById('pagination');
+  var html='';
+  if(totalPages>1){
+    html+='<button class="page-btn" onclick="goPage('+(currentPage-1)+')"'+(currentPage<=1?' disabled':'')+'>上一页</button>';
+    for(var i=1;i<=totalPages;i++){if(totalPages>7&&i>2&&i<totalPages-1&&Math.abs(i-currentPage)>1){if(i===3||i===totalPages-2)html+='<span>...</span>';continue;}html+='<button class="page-btn'+(i===currentPage?' active':'')+'" onclick="goPage('+i+')">'+i+'</button>';}
+    html+='<button class="page-btn" onclick="goPage('+(currentPage+1)+')"'+(currentPage>=totalPages?' disabled':'')+'>下一页</button>';
+  }
+  el.innerHTML=html;
+}
+function goPage(p){var tp=Math.ceil(filteredYarns.length/pageSize);if(p<1||p>tp)return;currentPage=p;renderTable();}
+function toggleSort(col){if(sortState.column===col)sortState.direction=sortState.direction==='asc'?'desc':'asc';else{sortState.column=col;sortState.direction='asc';}filteredYarns.sort(function(a,b){var va=a[col]||'',vb=b[col]||'';var r=String(va).localeCompare(String(vb));return sortState.direction==='asc'?-r:r;});currentPage=1;renderTable();}
+
+function initDragSort(){
+  var tbody=document.getElementById('tableBody');
+  if(tbody._sortable)tbody._sortable.destroy();
+  tbody._sortable=new Sortable(tbody,{handle:'.drag-handle',animation:150,ghostClass:'sortable-ghost',onEnd:function(evt){
+    var visibleIds=filteredYarns.map(function(y){return y.id;});
+    var oldIdx=evt.oldIndex,newIdx=evt.newIndex;
+    if(oldIdx===undefined||newIdx===undefined||oldIdx===newIdx)return;
+    var movedId=visibleIds[oldIdx];
+    visibleIds.splice(oldIdx,1);visibleIds.splice(newIdx,0,movedId);
+    var newOrder={};visibleIds.forEach(function(id,i){newOrder[id]=i+1;});
+    filteredYarns.forEach(function(y){y._sort=newOrder[y.id]||999;});
+    filteredYarns.sort(function(a,b){return(a._sort||999)-(b._sort||999);});
+    currentPage=1;renderTable();
+    toast('排序已更新（仅当前视图）','info');
+  }});
+}
+
+function clearFilters(){document.getElementById('fSearch').value='';document.getElementById('fCategory').value='';document.getElementById('fStatus').value='';document.getElementById('fSpecs').value='';document.getElementById('fMaterial').value='';document.getElementById('fFeatures').value='';applyFilters();}
+
+function renderCatCheckboxes(containerId,selected,useWeave){
+  selected=selected||[];
+  var allCats=useWeave?getWeaveCats():getAllCats();
+  var container=document.getElementById(containerId);
+  var html='';
+  allCats.forEach(function(c){var checked=selected.indexOf(c)!==-1?' checked':'';html+='<label><input type="checkbox" value="'+c+'"'+checked+'>'+c+'</label>';});
+  html+='<label style="background:#fff3e0"><input type="text" class="add-cat-input" data-container="'+containerId+'" data-useweave="'+(useWeave?'1':'0')+'" placeholder="新增" onkeydown="handleCatInput(event,this)"><span class="add-cat-btn" onclick="handleCatAdd(this)">+</span></label>';
+  container.innerHTML=html;
+}
+function handleCatInput(event,inp){if(event.key==='Enter'){event.preventDefault();doAddCategory(inp);}}
+function handleCatAdd(span){var inp=span.previousElementSibling;doAddCategory(inp);}
+function doAddCategory(inp){
+  var val=inp.value.trim();if(!val)return;
+  var containerId=inp.getAttribute('data-container');
+  var useWeave=inp.getAttribute('data-useweave')==='1';
+  if(useWeave){if(WEAVE_CATEGORIES.indexOf(val)===-1){WEAVE_CATEGORIES.push(val);saveWeaveCategories();}}
+  else{if(CATEGORIES.indexOf(val)===-1){CATEGORIES.push(val);saveCategories();}}
+  renderCatCheckboxes('f_suggested_cats',getCheckedValues('f_suggested_cats'),false);
+  renderCatCheckboxes('f_verified_cats',getCheckedValues('f_verified_cats'),true);
+  renderCategoryFilter();
+  toast('已添加类别：'+val,'success');
+}
+function getCheckedValues(containerId){return Array.from(document.querySelectorAll('#'+containerId+' input[type=checkbox]:checked')).map(function(cb){return cb.value;});}
+
+function openModal(id){
+  editingId=id||null;
+  document.getElementById('modalTitle').textContent=id?'编辑纱线':'新增纱线';
+  document.getElementById('yarnForm').reset();
+  if(id){
+    var yarn=null;for(var i=0;i<allYarns.length;i++){if(allYarns[i].id===id){yarn=allYarns[i];break;}}
+    if(!yarn){toast('未找到该纱线','error');return;}
+    document.getElementById('f_supplier').value=yarn.supplier||'';
+    document.getElementById('f_name').value=yarn.name||'';
+    var specsVal=yarn.specs||'';
+    var morphMatch=specsVal.match(/^(POY|FDY|DTY|ATY|SCY)\s*/i);
+    if(morphMatch){document.getElementById('f_specs_morph').value=morphMatch[1].toUpperCase();document.getElementById('f_specs_detail').value=specsVal.substring(morphMatch[0].length).trim();}
+    else{document.getElementById('f_specs_morph').value='';document.getElementById('f_specs_detail').value=specsVal;}
+    document.getElementById('f_moq').value=yarn.moq||'';
+    document.getElementById('f_status').value=yarn.status||'可推广';
+    document.getElementById('f_price_range').value=(yarn.extra_info&&yarn.extra_info.price_range)||'';
+    document.getElementById('f_temp_limit').value=yarn.temp_limit||'';
+    document.getElementById('f_color_limit').value=yarn.color_limit||'';
+    document.getElementById('f_customizable').value=(yarn.extra_info&&yarn.extra_info.customizable)||'';
+    document.getElementById('f_material_composition').value=(yarn.extra_info&&yarn.extra_info.material_composition)||'';
+    document.getElementById('f_production_cycle').value=(yarn.extra_info&&yarn.extra_info.production_cycle)||'';
+    document.getElementById('f_weaving_notes').value=(yarn.extra_info&&yarn.extra_info.weaving_notes)||'';
+    document.getElementById('f_hangtag').value=(yarn.extra_info&&yarn.extra_info.hangtag)||'';
+    document.getElementById('f_supplier_address').value=(yarn.extra_info&&yarn.extra_info.supplier_address)||'';
+    document.getElementById('f_supplier_contact').value=(yarn.extra_info&&yarn.extra_info.supplier_contact)||'';
+    document.getElementById('f_introduction').value=yarn.introduction||'';
+    document.getElementById('f_attachments').value=(yarn.attachments||[]).join(',');
+    renderCatCheckboxes('f_suggested_cats',yarn.suggested_categories||[],false);
+    renderCatCheckboxes('f_verified_cats',yarn.verified_categories||[],true);
+  }else{renderCatCheckboxes('f_suggested_cats',[],false);renderCatCheckboxes('f_verified_cats',[],true);}
+  document.getElementById('yarnModal').classList.add('active');
+}
+function closeModal(){document.getElementById('yarnModal').classList.remove('active');editingId=null;}
+
+document.getElementById('yarnForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  var data={
+    supplier:document.getElementById('f_supplier').value.trim(),
+    name:document.getElementById('f_name').value.trim(),
+    specs:(function(){var m=document.getElementById('f_specs_morph').value,d=document.getElementById('f_specs_detail').value.trim();if(!m&&!d)return null;if(m&&d)return m+' '+d;if(m)return m;return d;})(),
+    suggested_categories:getCheckedValues('f_suggested_cats'),
+    verified_categories:getCheckedValues('f_verified_cats'),
+    moq:document.getElementById('f_moq').value.trim()||null,
+    status:document.getElementById('f_status').value||'可推广',
+    temp_limit:document.getElementById('f_temp_limit').value.trim()||null,
+    color_limit:document.getElementById('f_color_limit').value.trim()||null,
+    introduction:document.getElementById('f_introduction').value.trim()||null,
+    features:document.getElementById('f_introduction').value.trim()?document.getElementById('f_introduction').value.split('|').map(function(s){return s.trim();}).filter(Boolean):null,
+    attachments:document.getElementById('f_attachments').value.trim()?document.getElementById('f_attachments').value.split(',').map(function(s){return s.trim();}).filter(Boolean):null,
+    extra_info:{}
+  };
+  ['price_range','customizable','material_composition','production_cycle','weaving_notes','hangtag','supplier_address','supplier_contact'].forEach(function(f){var v=document.getElementById('f_'+f).value.trim();if(v)data.extra_info[f]=v;});
+  if(Object.keys(data.extra_info).length===0)delete data.extra_info;
+  try{
+    if(editingId){
+      var payload={};for(var k in data)payload[k]=data[k];
+      if(payload.extra_info)payload.extra_info=JSON.stringify(payload.extra_info);
+      if(payload.features)payload.features=JSON.stringify(payload.features);
+      if(payload.suggested_categories)payload.suggested_categories=JSON.stringify(payload.suggested_categories);
+      if(payload.verified_categories)payload.verified_categories=JSON.stringify(payload.verified_categories);
+      fetch(SUPABASE_URL+'/rest/v1/yarns?id=eq.'+editingId,{method:'PATCH',headers:HEADERS,body:JSON.stringify(payload)})
+      .then(function(res){if(res.ok){toast('修改成功！','success');closeModal();loadYarns();}else toast('操作失败','error');})
+      .catch(function(err){console.error(err);toast('网络错误','error');});
+    }else{
+      var payload2={};for(var k2 in data)payload2[k2]=data[k2];
+      payload2.id='y_'+Date.now()+'_'+Math.random().toString(36).substr(2,4);
+      if(payload2.extra_info)payload2.extra_info=JSON.stringify(payload2.extra_info);
+      if(payload2.features)payload2.features=JSON.stringify(payload2.features);
+      if(payload2.suggested_categories)payload2.suggested_categories=JSON.stringify(payload2.suggested_categories);
+      if(payload2.verified_categories)payload2.verified_categories=JSON.stringify(payload2.verified_categories);
+      fetch(SUPABASE_URL+'/rest/v1/yarns',{method:'POST',headers:Object.assign({},HEADERS,{Prefer:'return=minimal'}),body:JSON.stringify(payload2)})
+      .then(function(res){if(res.ok){toast('新增成功！','success');closeModal();loadYarns();}else toast('操作失败','error');})
+      .catch(function(err){console.error(err);toast('网络错误','error');});
+    }
+  }catch(err){console.error(err);toast('网络错误','error');}
+});
+
+function deleteYarn(id){
+  if(!confirm('确定要删除这条纱线吗？'))return;
+  fetch(SUPABASE_URL+'/rest/v1/yarns?id=eq.'+id,{method:'PATCH',headers:Object.assign({},HEADERS,{Prefer:'return=minimal'}),body:JSON.stringify({is_deleted:true})})
+  .then(function(res){if(res.ok){toast('已删除','success');loadYarns();}else toast('删除失败','error');})
+  .catch(function(e){toast('网络错误','error');});
+}
+
+
+
+// === 批量选择 ===
+var selectedIds=new Set();
+function toggleSelectAll(el){
+  var chks=document.querySelectorAll('.row-select-chk');
+  chks.forEach(function(c){c.checked=el.checked;if(el.checked)selectedIds.add(c.dataset.id);else selectedIds.delete(c.dataset.id);});
+  updateBatchBtn();
+}
+function toggleSelectState(){
+  selectedIds.clear();
+  document.querySelectorAll('.row-select-chk:checked').forEach(function(c){selectedIds.add(c.dataset.id);});
+  var allChk=document.getElementById('chkSelectAll');
+  var chks=document.querySelectorAll('.row-select-chk');
+  if(allChk)allChk.checked=chks.length>0&&selectedIds.size===chks.length;
+  updateBatchBtn();
+}
+function updateBatchBtn(){
+  var btn=document.getElementById('btnBatchDelete');
+  if(btn){btn.style.display=(currentUser&&currentUser.r==='admin'&&selectedIds.size>0)?'inline-block':'none';btn.textContent='🗑 批量删除('+selectedIds.size+')';}
+}
+function batchDelete(){
+  if(selectedIds.size===0){toast('请先勾选要删除的纱线','info');return;}
+  if(!confirm('确定要删除选中的 '+selectedIds.size+' 条纱线吗？此操作不可撤销。'))return;
+  var ids=Array.from(selectedIds);
+  var promises=ids.map(function(id){
+    return fetch(SUPABASE_URL+'/rest/v1/yarns?id=eq.'+id,{method:'PATCH',headers:Object.assign({},HEADERS,{Prefer:'return=minimal'}),body:JSON.stringify({is_deleted:true})});
+  });
+  toast('正在删除 '+ids.length+' 条...','info');
+  Promise.all(promises).then(function(results){
+    var ok=results.every(function(r){return r.ok;});
+    if(ok){toast('已删除 '+ids.length+' 条','success');selectedIds.clear();loadYarns();}
+    else toast('部分删除失败','error');
+  }).catch(function(e){toast('网络错误','error');});
+}
+
+function viewYarn(id){
+  var yarn=null;for(var i=0;i<allYarns.length;i++){if(allYarns[i].id===id){yarn=allYarns[i];break;}}
+  if(!yarn){toast('未找到','error');return;}
+  var groups=[
+    {title:'供应商信息',rows:[['供应商名称',yarn.supplier]]},
+    {title:'纱线基础信息',rows:[['纱线名称',yarn.name],['规格',yarn.specs],['纱线介绍',yarn.introduction],['核心卖点',yarn.features?yarn.features.join(' | '):'']]},
+    {title:'分类',rows:[['织造品类',(yarn.verified_categories||[]).join(', ')],['建议分类',(yarn.suggested_categories||[]).join(', ')]]},
+    {title:'应用 & 限制',rows:[['适用产品',yarn.applicable_products],['温度限制',yarn.temp_limit],['颜色限制',yarn.color_limit],['起订量',yarn.moq]]},
+    {title:'供应商 & 系统',rows:[['供应商地址',yarn.extra_info?yarn.extra_info.supplier_address:''],['供应商联系方式',yarn.extra_info?yarn.extra_info.supplier_contact:''],['价格区间',yarn.extra_info?yarn.extra_info.price_range:''],['可否定制',yarn.extra_info?yarn.extra_info.customizable:''],['材料成分',yarn.extra_info?yarn.extra_info.material_composition:''],['生产周期',yarn.extra_info?yarn.extra_info.production_cycle:''],['规避事项',yarn.extra_info?yarn.extra_info.weaving_notes:''],['吊牌',yarn.extra_info?yarn.extra_info.hangtag:''],['状态',yarn.status||'可推广']]}
+  ];
+  var html=groups.map(function(g){
+    return'<div style="margin-bottom:16px"><div style="background:#f8f5f0;padding:6px 10px;font-weight:500;font-size:13px;color:#888;border-left:3px solid #d4a17a;margin-bottom:8px">'+g.title+'</div>'+g.rows.filter(function(r){return r[1];}).map(function(r){return'<div class="info-row"><div class="info-label">'+r[0]+'</div><div class="info-value">'+r[1]+'</div></div>';}).join('')+'</div>';
+  }).join('');
+  document.getElementById('detailContent').innerHTML=html;
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function exportData(format){
+  if(typeof XLSX==='undefined'){toast('导出库未加载，请刷新页面重试','error');return;}
+  try{
+    var data=filteredYarns.map(function(y,idx){
+      var row={};
+      row['序号']=idx+1;
+      row['类型']=(y.suggested_categories||[]).join(',');
+      row['纱线名称']=y.name||'';
+      row['规格']=y.specs||'';
+      row['材料成分']=(y.extra_info&&y.extra_info.material_composition)||'';
+      row['温度限制']=y.temp_limit||'';
+      row['颜色限制']=y.color_limit||'';
+      row['纱线特点']=(y.features||[]).join(',');
+      row['纱线介绍']=y.introduction||'';
+      row['价格区间']=(y.extra_info&&y.extra_info.price_range)||'';
+      row['起订量']=y.moq||'';
+      row['生产周期']=(y.extra_info&&y.extra_info.production_cycle)||'';
+      row['织造品类']=(y.verified_categories||[]).join(',');
+      row['适用产品']=(y.applicable_products||[]).join(',');
+      row['可否定制']=(y.extra_info&&y.extra_info.customizable)||'';
+      row['规避事项']=(y.extra_info&&y.extra_info.weaving_notes)||'';
+      row['吊牌']=(y.extra_info&&y.extra_info.hangtag)||'';
+      row['附件']=(y.attachments||[]).join(',');
+      row['状态']=y.status||'';
+      row['供应商名称']=y.supplier||'';
+      row['供应商地址']=(y.extra_info&&y.extra_info.supplier_address)||'';
+      row['供应商联系方式']=(y.extra_info&&y.extra_info.supplier_contact)||'';
+      return row;
+    });
+    var ws=XLSX.utils.json_to_sheet(data);
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'纱线数据');
+    if(format==='csv')XLSX.writeFile(wb,'纱线数据.csv',{bookType:'csv'});
+    else XLSX.writeFile(wb,'纱线数据.xlsx');
+    toast('导出成功','success');
+  }catch(e){toast('导出失败：'+e.message,'error');}
+}
+
+function initApp(){
+  try{renderCategoryFilter();loadYarns();}catch(e){console.error('initApp error:',e);toast('数据加载出错: '+e.message,'error');}
+}
+
+initAuth();
+</script>
+</body>
+</html>
