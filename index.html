@@ -1,0 +1,3328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- VERSION: 20260706_1914 - add DingTalk notification + mobile responsive -->
+    <title>材料研发项目看板</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f5;color:#333;min-height:100vh;}
+        /* Login */
+        .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);}
+        .login-box{background:#fff;border-radius:16px;padding:48px 40px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,.15);}
+        .login-box h2{text-align:center;color:#1a1a2e;margin-bottom:8px;font-size:22px;}
+        .login-box .subtitle{text-align:center;color:#888;font-size:13px;margin-bottom:32px;}
+        .form-group{margin-bottom:20px;}
+        .form-group label{display:block;font-size:13px;color:#666;margin-bottom:6px;font-weight:500;}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;transition:border .2s;}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#667eea;}
+        .login-btn{width:100%;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600;transition:transform .2s;}
+        .login-btn:hover{transform:translateY(-1px);}
+        .login-err{color:#e74c3c;font-size:13px;text-align:center;margin-top:12px;display:none;}
+        /* Main Layout */
+        .app{display:none;}
+        .app.active{display:block;}
+        .topbar{background:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e8e8e8;position:sticky;top:0;z-index:100;}
+        .topbar .logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;color:#1a1a2e;}
+        .topbar .logo span{color:#667eea;}
+        .topbar nav{display:flex;gap:4px;}
+        .topbar nav a{padding:8px 16px;border-radius:6px;font-size:14px;color:#666;cursor:pointer;text-decoration:none;transition:all .2s;}
+        .topbar nav a:hover,.topbar nav a.active{background:#f0f0ff;color:#667eea;}
+        .topbar .user-area{display:flex;align-items:center;gap:12px;}
+        .topbar .user-area .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;}
+        .topbar .user-area .uname{font-size:14px;color:#333;}
+        .topbar .user-area .urole{font-size:11px;color:#999;background:#f0f0f0;padding:2px 8px;border-radius:10px;}
+        .logout-btn{padding:6px 14px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;color:#666;transition:all .2s;}
+        .logout-btn:hover{border-color:#e74c3c;color:#e74c3c;}
+        .pwd-btn{padding:6px 14px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;color:#667eea;transition:all .2s;}
+        .pwd-btn:hover{border-color:#667eea;background:#f0f0ff;}
+        .main{max-width:1440px;margin:0 auto;padding:24px;}
+        /* Stats Cards */
+        .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+        .stat-card{background:#fff;border-radius:12px;padding:20px 24px;border:1px solid #e8e8e8;transition:box-shadow .2s;}
+        .stat-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.06);}
+        .stat-card .sc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+        .stat-card .sc-label{font-size:14px;color:#888;font-weight:500;}
+        .stat-card .sc-icon{font-size:20px;}
+        .stat-card .sc-count{font-size:32px;font-weight:700;color:#1a1a2e;}
+        .stat-card .sc-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px;}
+        .stat-card .sc-item{font-size:12px;color:#888;display:flex;align-items:center;gap:4px;}
+        .stat-card .sc-item .dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+        .stat-card.s-level{border-left:3px solid #f59e0b;}
+        .stat-card.a-level{border-left:3px solid #3b82f6;}
+        .stat-card.b-level{border-left:3px solid #8b5cf6;}
+        .stat-card.c-level{border-left:3px solid #9ca3af;}
+        /* Anomaly Board */
+        .anomaly-board{margin-bottom:24px;}
+        .anomaly-board h3{font-size:16px;font-weight:600;color:#1a1a2e;display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+        .anomaly-board h3::before{content:'';width:3px;height:16px;background:#e74c3c;border-radius:2px;}
+        .anomaly-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;}
+        .anomaly-card{background:#fff;border-radius:10px;padding:14px 18px;border:1px solid #e8e8e8;display:flex;gap:12px;align-items:flex-start;}
+        .anomaly-card.critical{border-left:3px solid #e74c3c;background:#fff5f5;}
+        .anomaly-card.warning{border-left:3px solid #f59e0b;background:#fffbf0;}
+        .anomaly-card.info{border-left:3px solid #3b82f6;background:#f0f7ff;}
+        .anomaly-card .ac-icon{font-size:22px;flex-shrink:0;}
+        .anomaly-card .ac-body{flex:1;}
+        .anomaly-card .ac-title{font-size:13px;font-weight:600;color:#1a1a2e;margin-bottom:4px;}
+        .anomaly-card .ac-desc{font-size:12px;color:#888;line-height:1.5;}
+        .anomaly-card .ac-type{font-size:11px;color:#fff;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:6px;}
+        .anomaly-card.critical .ac-type{background:#e74c3c;}
+        .anomaly-card.warning .ac-type{background:#f59e0b;}
+        .anomaly-card.info .ac-type{background:#3b82f6;}
+        /* Section */
+        .section{background:#fff;border-radius:12px;padding:24px;margin-bottom:24px;border:1px solid #e8e8e8;}
+        .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+        .section-header h3{font-size:16px;font-weight:600;color:#1a1a2e;display:flex;align-items:center;gap:8px;}
+        .section-header h3::before{content:'';width:3px;height:16px;background:#667eea;border-radius:2px;}
+        /* Filters */
+        .filters{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+        .filters input,.filters select{padding:7px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;}
+        .filters input{width:200px;}
+        /* Buttons */
+        .btn{padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+        .btn-primary{background:#667eea;color:#fff;}
+        .btn-primary:hover{background:#5a6fd6;transform:translateY(-1px);}
+        .btn-sm{padding:5px 12px;font-size:12px;}
+        .btn-outline{background:#fff;border:1px solid #ddd;color:#555;}
+        .btn-outline:hover{border-color:#667eea;color:#667eea;}
+        .btn-danger{background:#fee;color:#e74c3c;border:1px solid #fdd;}
+        .btn-danger:hover{background:#fdd;}
+        .btn-success{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;}
+        .btn-success:hover{background:#c8e6c9;}
+        .btn-warning{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2;}
+        .btn-warning:hover{background:#ffe0b2;}
+        /* Table */
+        .data-table{width:100%;border-collapse:collapse;}
+        .data-table th{background:#f8f9fa;padding:10px 12px;text-align:left;font-size:12px;color:#888;font-weight:600;text-transform:uppercase;border-bottom:2px solid #e8e8e8;white-space:nowrap;}
+        .data-table td{padding:12px;font-size:13px;border-bottom:1px solid #f0f0f0;vertical-align:middle;}
+        .data-table tr:hover td{background:#fafbff;}
+        .data-table .project-name{font-weight:600;color:#1a1a2e;display:flex;align-items:center;gap:8px;}
+        .data-table .project-name .icon{width:28px;height:28px;border-radius:6px;background:#f0f0ff;display:flex;align-items:center;justify-content:center;font-size:14px;}
+        /* Badges */
+        .badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;display:inline-block;}
+        .badge-s{background:#fff8e1;color:#f59e0b;border:1px solid #ffe082;}
+        .badge-a{background:#e3f2fd;color:#3b82f6;border:1px solid #90caf9;}
+        .badge-b{background:#f3e8ff;color:#8b5cf6;border:1px solid #d1b8f7;}
+        .badge-c{background:#f5f5f5;color:#9ca3af;border:1px solid #e0e0e0;}
+        .badge-status{padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;}
+        .badge-active{background:#e8f5e9;color:#2e7d32;}
+        .badge-pending{background:#fff8e1;color:#f57f17;}
+        .badge-done{background:#e3f2fd;color:#1565c0;}
+        .badge-overdue{background:#fce4ec;color:#c62828;}
+        /* Progress Bar */
+        .progress-bar{width:120px;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px;}
+        .progress-bar .fill{height:100%;border-radius:4px;transition:width .3s;}
+        .progress-bar .fill.green{background:linear-gradient(90deg,#4caf50,#66bb6a);}
+        .progress-bar .fill.blue{background:linear-gradient(90deg,#42a5f5,#64b5f6);}
+        .progress-bar .fill.orange{background:linear-gradient(90deg,#ffa726,#ffb74d);}
+        .progress-bar .fill.red{background:linear-gradient(90deg,#ef5350,#e57373);}
+        .progress-text{font-size:12px;color:#666;font-weight:500;}
+        /* Modal */
+        .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:#fff;border-radius:12px;width:700px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+        .modal-header{padding:20px 24px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;}
+        .modal-header h3{font-size:16px;font-weight:600;}
+        .modal-close{width:28px;height:28px;border-radius:50%;border:none;background:#f5f5f5;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+        .modal-close:hover{background:#eee;}
+        .modal-body{padding:24px;}
+        .modal-footer{padding:16px 24px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:10px;}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+        .form-row.full{grid-template-columns:1fr;}
+        /* Tabs */
+        .tabs{display:flex;border-bottom:1px solid #e8e8e8;margin-bottom:20px;}
+        .tab{padding:10px 20px;font-size:14px;color:#888;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+        .tab:hover{color:#667eea;}
+        .tab.active{color:#667eea;border-bottom-color:#667eea;font-weight:600;}
+        .tab-content{display:none;}
+        .tab-content.active{display:block;}
+        /* Stage/Milestone timeline */
+        .timeline{position:relative;padding-left:24px;}
+        .timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:#e8e8e8;}
+        .timeline-item{position:relative;margin-bottom:20px;padding:16px;background:#f8f9fa;border-radius:8px;border:1px solid #e8e8e8;}
+        .timeline-item::before{content:'';position:absolute;left:-20px;top:20px;width:12px;height:12px;border-radius:50%;background:#667eea;border:2px solid #fff;}
+        .timeline-item .tl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+        .timeline-item .tl-title{font-weight:600;font-size:14px;color:#1a1a2e;}
+        .timeline-item .tl-date{font-size:12px;color:#888;}
+        .timeline-item .tl-body{font-size:13px;color:#555;line-height:1.6;}
+        .timeline-item .tl-body .field{margin-bottom:4px;}
+        .timeline-item .tl-body .field-label{color:#888;font-size:12px;display:inline-block;width:80px;}
+        .milestone-sub{margin-left:20px;margin-top:8px;padding-left:16px;border-left:2px solid #e8e8e8;}
+        .milestone-sub .ms-item{padding:8px 12px;background:#fff;border-radius:6px;margin-bottom:6px;font-size:12px;border:1px solid #f0f0f0;}
+        .milestone-sub .ms-item .ms-title{font-weight:600;color:#333;}
+        .ms-item.completed{border-color:#c8e6c9;background:#f1f8e9;}
+        /* Charts area */
+        .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+        .chart-box{background:#fff;border-radius:12px;padding:20px;border:1px solid #e8e8e8;}
+        .chart-box h4{font-size:14px;font-weight:600;margin-bottom:16px;color:#1a1a2e;display:flex;align-items:center;justify-content:space-between;}
+        .chart-box h4 .total-done{font-size:12px;color:#4caf50;font-weight:500;}
+        .bar-chart .bar-row{display:flex;align-items:center;margin-bottom:12px;}
+        .bar-chart .bar-label{width:120px;font-size:13px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .bar-chart .bar-track{flex:1;height:20px;background:#f0f0f0;border-radius:4px;overflow:hidden;position:relative;}
+        .bar-chart .bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;color:#fff;font-weight:600;transition:width .5s;}
+        .bar-chart .bar-value{width:80px;text-align:right;font-size:12px;font-weight:600;color:#333;margin-left:8px;}
+        /* Setup wizard */
+        .setup-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:2000;display:flex;align-items:center;justify-content:center;}
+        .setup-box{background:#fff;border-radius:16px;padding:32px;width:560px;max-height:80vh;overflow-y:auto;}
+        .setup-box h3{font-size:18px;margin-bottom:12px;color:#1a1a2e;}
+        .setup-box p{font-size:13px;color:#666;margin-bottom:16px;line-height:1.6;}
+        .setup-box .sql-block{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;font-family:'Fira Code',monospace;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre;margin-bottom:16px;max-height:300px;overflow-y:auto;}
+        .setup-box .steps{margin-bottom:20px;}
+        .setup-box .steps li{font-size:13px;color:#555;margin-bottom:8px;line-height:1.5;}
+        /* Action buttons in table */
+        .action-btns{display:flex;gap:6px;}
+        .action-btns button{width:28px;height:28px;border-radius:6px;border:1px solid #e8e8e8;background:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+        .action-btns button:hover{border-color:#667eea;color:#667eea;}
+        .action-btns button.del:hover{border-color:#e74c3c;color:#e74c3c;}
+        /* Responsive */
+        @media(max-width:768px){.stats-row{grid-template-columns:1fr 1fr;}.charts-row{grid-template-columns:1fr;}.form-row{grid-template-columns:1fr;}.modal{width:95%;}}
+        /* Empty state */
+        .empty-state{text-align:center;padding:48px;color:#bbb;}
+        .empty-state .icon{font-size:48px;margin-bottom:12px;}
+        .empty-state p{font-size:14px;}
+        /* Notification */
+        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;font-size:13px;z-index:3000;animation:slideIn .3s ease;box-shadow:0 4px 12px rgba(0,0,0,.15);}
+        .toast.success{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;}
+        .toast.error{background:#fce4ec;color:#c62828;border:1px solid #f8bbd0;}
+        .toast.info{background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;}
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+        .hidden{display:none!important;}
+        /* Stage name editable */
+        .stage-name-input{font-weight:600;font-size:14px;color:#1a1a2e;border:1px solid transparent;background:transparent;padding:2px 6px;border-radius:4px;width:200px;}
+        .stage-name-input:hover{border-color:#ddd;}
+        .stage-name-input:focus{border-color:#667eea;background:#fff;outline:none;}
+        /* File attachments */
+        .attachment-list{margin-top:6px;}
+        .attachment-item{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#f0f0ff;border-radius:4px;font-size:11px;color:#667eea;margin:2px 4px 2px 0;cursor:pointer;border:1px solid #d0d0ff;}
+        .attachment-item:hover{background:#e0e0ff;}
+        .attachment-item img{width:20px;height:20px;object-fit:cover;border-radius:3px;}
+        .attachment-item .remove-att{color:#e74c3c;cursor:pointer;margin-left:4px;font-size:13px;}
+        .upload-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#f8f9fa;border:1px dashed #ccc;border-radius:4px;font-size:11px;color:#888;cursor:pointer;margin-top:4px;}
+        .upload-btn:hover{border-color:#667eea;color:#667eea;}
+        /* Milestone complete toggle */
+        .ms-complete-btn{cursor:pointer;font-size:16px;flex-shrink:0;margin-right:6px;user-select:none;}
+        /* Weekly report modal */
+        .week-picker{display:flex;gap:12px;align-items:center;margin-bottom:16px;}
+        .week-picker input{padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;}
+        .readonly-hint{font-size:11px;color:#e65100;margin-top:4px;display:none;}
+        /* Yarn specs */
+        .yarn-spec-item{display:flex;gap:8px;align-items:center;margin-bottom:6px;}
+        .yarn-spec-item select{width:110px;font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:4px;background:#fff;}
+        .yarn-spec-item input{flex:1;font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:4px;}
+        .yarn-spec-item button{background:none;border:none;color:#e74c3c;cursor:pointer;font-size:16px;}
+        .locked-indicator{font-size:11px;color:#e65100;margin-left:6px;}
+        /* ===== Notification System ===== */
+        .notif-btn{position:relative;padding:6px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:16px;color:#666;transition:all .2s;}
+        .notif-btn:hover{border-color:#667eea;color:#667eea;background:#f0f0ff;}
+        .notif-badge{position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+        .notif-badge:empty{display:none;}
+        .notif-config-section{margin-bottom:20px;padding:16px;background:#f8f9fa;border-radius:8px;border:1px solid #e8e8e8;}
+        .notif-config-section h4{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+        .notif-config-row{display:flex;gap:12px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+        .notif-config-row label{font-size:13px;color:#666;min-width:80px;}
+        .notif-config-row input,.notif-config-row select{padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;flex:1;min-width:200px;}
+        .notif-config-row input:focus,.notif-config-row select:focus{outline:none;border-color:#667eea;}
+        .notif-status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:500;}
+        .notif-status.connected{background:#e8f5e9;color:#2e7d32;}
+        .notif-status.disconnected{background:#fee;color:#e74c3c;}
+        .notif-test-result{margin-top:8px;padding:8px 12px;border-radius:6px;font-size:12px;display:none;}
+        .notif-test-result.success{background:#e8f5e9;color:#2e7d32;display:block;}
+        .notif-test-result.error{background:#fee;color:#e74c3c;display:block;}
+        .notif-log{max-height:200px;overflow-y:auto;margin-top:12px;border:1px solid #e8e8e8;border-radius:6px;background:#fff;}
+        .notif-log-item{padding:6px 10px;font-size:12px;border-bottom:1px solid #f0f0f0;display:flex;gap:6px;align-items:flex-start;}
+        .notif-log-item:last-child{border-bottom:none;}
+        .notif-log-time{color:#999;font-size:11px;min-width:120px;flex-shrink:0;}
+        .notif-log-type{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;flex-shrink:0;}
+        .notif-log-type.success{background:#e8f5e9;color:#2e7d32;}
+        .notif-log-type.error{background:#fee;color:#e74c3c;}
+        .notif-log-type.overdue{background:#fce4ec;color:#c62828;}
+        .notif-log-type.upcoming{background:#fff8e1;color:#f57f17;}
+        .notif-log-type.info{background:#e3f2fd;color:#1565c0;}
+        /* Mobile Nav */
+        @media(max-width:768px){
+            .stats-row{grid-template-columns:1fr 1fr;}
+            .charts-row{grid-template-columns:1fr;}
+            .form-row{grid-template-columns:1fr;}
+            .modal{width:95%;}
+            .mobile-nav{display:flex !important;}
+        }
+        .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8e8e8;z-index:200;padding:6px 0 env(safe-area-inset-bottom,6px);box-shadow:0 -2px 10px rgba(0,0,0,.05);}
+        .mobile-nav-inner{display:flex;justify-content:space-around;align-items:center;max-width:500px;margin:0 auto;}
+        .mobile-nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px;border-radius:8px;cursor:pointer;color:#888;font-size:10px;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+        .mobile-nav-item.active{color:#667eea;}
+        .mobile-nav-item .nav-icon{font-size:20px;}
+        .mobile-nav-item .nav-label{font-weight:500;}
+
+    </style>
+</head>
+<body>
+
+<!-- Login Page -->
+<div class="login-wrap" id="loginPage">
+    <div class="login-box">
+        <h2> 材料研发项目看板</h2>
+        <p class="subtitle">请登录您的账号</p>
+        <div class="form-group">
+            <label>邮箱</label>
+            <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+            <label>密码</label>
+            <input type="password" id="loginPassword" placeholder="请输入密码" autocomplete="current-password">
+        </div>
+        <button class="login-btn" onclick="doLogin()">登 录</button>
+        <p class="login-err" id="loginErr"></p>
+    </div>
+</div>
+
+<!-- Main App -->
+<div class="app" id="mainApp">
+    <div class="topbar">
+        <div class="logo">🔬 <span>材料研发</span>项目看板</div>
+        <nav>
+            <a class="active" onclick="switchPage('overview')">项目总览</a>
+            <a onclick="switchPage('projects')">项目列表</a>
+            <a onclick="switchPage('yarns')" id="navYarns">纱线信息</a>
+            <a onclick="switchPage('users')" id="navUsers">用户管理</a>
+        </nav>
+        <div class="user-area">
+            <div class="avatar" id="userAvatar">T</div>
+            <div>
+                <div class="uname" id="userName">-</div>
+                <div class="urole" id="userRole">-</div>
+            </div>
+            <button class="notif-btn" onclick="openNotifSettings()" title="通知设置">🔔<span class="notif-badge" id="notifBadge"></span></button>
+            <button class="pwd-btn" onclick="openChangePwd()">修改密码</button>
+            <button class="logout-btn" onclick="doLogout()">退出</button>
+        </div>
+    </div>
+    <!-- Mobile Bottom Nav -->
+    <div class="mobile-nav" id="mobileNav">
+        <div class="mobile-nav-inner">
+            <div class="mobile-nav-item active" onclick="switchPage('overview');updateMobileNav(this)"><span class="nav-icon">🏠</span><span class="nav-label">总览</span></div>
+            <div class="mobile-nav-item" onclick="switchPage('projects');updateMobileNav(this)"><span class="nav-icon">📋</span><span class="nav-label">项目</span></div>
+            <div class="mobile-nav-item" onclick="switchPage('yarns');updateMobileNav(this)"><span class="nav-icon">🧶</span><span class="nav-label">纱线</span></div>
+            <div class="mobile-nav-item" onclick="openNotifSettings();updateMobileNav(this)"><span class="nav-icon">🔔</span><span class="nav-label">通知</span></div>
+            <div class="mobile-nav-item" onclick="switchPage('users');updateMobileNav(this)" id="mobileNavUsers"><span class="nav-icon">👤</span><span class="nav-label">用户</span></div>
+        </div>
+    </div>
+
+    <div class="main">
+        <!-- Overview Page -->
+        <div id="page-overview">
+            <div class="stats-row" id="statsRow"></div>
+            <!-- Anomaly Board (need6) -->
+            <div class="anomaly-board" id="anomalyBoard"></div>
+            <div class="charts-row">
+                <div class="chart-box">
+                    <h4>📊 项目进度对比排行</h4>
+                    <div class="bar-chart" id="progressChart"></div>
+                </div>
+                <div class="chart-box">
+                    <h4 id="typeChartTitle">📋 项目类型分布</h4>
+                    <div class="bar-chart" id="typeChart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects Page -->
+        <div id="page-projects" class="hidden">
+            <div class="section">
+                <div class="section-header">
+                    <h3>项目列表</h3>
+                    <div class="filters">
+                        <input type="text" id="searchInput" placeholder="🔍 搜索项目名称/编码..." oninput="renderProjectList()">
+                        <select id="filterLevel" onchange="renderProjectList()">
+                            <option value="">全部等级</option>
+                            <option value="S">S级</option>
+                            <option value="A">A级</option>
+                            <option value="B">B级</option>
+                            <option value="C">C级</option>
+                        </select>
+                        <select id="filterType" onchange="renderProjectList()">
+                            <option value="">全部类型</option>
+                            <option value="品牌需求">品牌需求</option>
+                            <option value="自主研发">自主研发</option>
+                            <option value="里程碑">里程碑</option>
+                            <option value="立项">立项</option>
+                            <option value="研发计划">研发计划</option>
+                        </select>
+                        <select id="filterStatus" onchange="renderProjectList()">
+                            <option value="">全部状态</option>
+                            <option value="未开始">未开始</option>
+                            <option value="进行中">进行中</option>
+                            <option value="已完成">已完成</option>
+                            <option value="已逾期">已逾期</option>
+                        </select>
+                        <button class="btn btn-outline" onclick="exportAllData()">📥 导出表格</button>
+                        <button class="btn btn-warning" onclick="openWeeklyReportModal()">📋 导出周报</button>
+                        <button class="btn btn-primary" id="btnNewProject" onclick="openProjectModal()">＋ 新建项目</button>
+                    </div>
+                </div>
+                <div id="projectTableWrap"></div>
+            </div>
+        </div>
+
+        <!-- Yarns Page -->
+        <div id="page-yarns" class="hidden">
+            <div class="section">
+                <div class="section-header">
+                    <h3>纱线信息 <span style="font-size:10px;color:#ccc;font-weight:normal;">v0706-2302</span></h3>
+                    <div class="filters">
+                        <input type="text" id="yarnSearchInput" placeholder="🔍 搜索纱线名称/供应商..." oninput="renderYarnList()">
+                        <select id="yarnFilterCategory" onchange="renderYarnList()">
+                            <option value="">全部品类</option>
+                            <option value="经编">经编</option>
+                            <option value="飞织">飞织</option>
+                            <option value="梭织">梭织</option>
+                            <option value="圆机">圆机</option>
+                            <option value="速织">速织</option>
+                        </select>
+                        <select id="yarnFilterForm" onchange="renderYarnList()">
+                            <option value="">全部形态</option>
+                            <option value="POY">POY</option>
+                            <option value="FDY">FDY</option>
+                            <option value="DTY">DTY</option>
+                            <option value="ATY">ATY</option>
+                            <option value="SCY">SCY</option>
+                        </select>
+                        <select id="yarnFilterVerified" onchange="renderYarnList()">
+                            <option value="">全部验证</option>
+                            <option value="经编">经编</option>
+                            <option value="飞织">飞织</option>
+                            <option value="梭织">梭织</option>
+                            <option value="圆机">圆机</option>
+                            <option value="速织">速织</option>
+                        </select>
+                        <button class="btn btn-outline" onclick="importYarnData()">📥 导入</button>
+                        <button class="btn btn-outline" onclick="exportYarnData()">📥 导出表格</button>
+                        <button class="btn btn-danger" id="btnBatchDeleteYarn" style="display:none;" onclick="batchDeleteYarns()">🗑️ 批量删除</button>
+                        <button class="btn btn-primary" id="btnNewYarn" onclick="openYarnModal()">＋ 新增纱线</button>
+                    </div>
+                </div>
+                <div id="yarnTableWrap"></div>
+            </div>
+        </div>
+
+        <!-- Users Page -->
+        <div id="page-users" class="hidden">
+            <div class="section">
+                <div class="section-header">
+                    <h3>用户管理</h3>
+                    <button class="btn btn-primary" onclick="openUserModal()">＋ 新增用户</button>
+                </div>
+                <div id="userTableWrap"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="projectModal">
+    <div class="modal" style="width:750px;">
+        <div class="modal-header">
+            <h3 id="projectModalTitle">新建项目</h3>
+            <button class="modal-close" onclick="closeModal('projectModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab(this,'tab-basic')">基本信息</div>
+                <div class="tab" onclick="switchTab(this,'tab-stages')">阶段计划</div>
+                <div class="tab" onclick="switchTab(this,'tab-detail')">详细数据</div>
+            </div>
+            <div class="tab-content active" id="tab-basic">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>项目编码</label>
+                        <input type="text" id="pProjectNo" placeholder="请输入项目编码">
+                    </div>
+                    <div class="form-group">
+                        <label>项目名称</label>
+                        <input type="text" id="pName" placeholder="项目名称">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>项目类型</label>
+                        <div id="pTypeGroup" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">
+                            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" name="pType" value="品牌需求"> 品牌需求</label>
+                            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" name="pType" value="自主研发"> 自主研发</label>
+                            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" name="pType" value="里程碑"> 里程碑</label>
+                            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" name="pType" value="立项"> 立项</label>
+                            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" name="pType" value="研发计划"> 研发计划</label>
+                        </div>
+                        <div id="pBrandNameWrap" style="display:none;margin-top:6px;">
+                            <input type="text" id="pBrandName" placeholder="请输入品牌名称" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>项目等级</label>
+                        <select id="pLevel">
+                            <option value="S">S级 - 战略核心</option>
+                            <option value="A">A级 - 重要项目</option>
+                            <option value="B">B级 - 常规项目</option>
+                            <option value="C">C级 - 辅助项目</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>项目负责人</label>
+                        <select id="pOwner"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>项目跟进人</label>
+                        <select id="pFollower"><option value="">-- 选择跟进人 --</option></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>项目状态（自动计算）</label>
+                        <input type="text" id="pStatus" readonly style="background:#f5f5f5;color:#888;">
+                    </div>
+
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>项目开始</label>
+                        <input type="date" id="pPeriodStart">
+                    </div>
+                    <div class="form-group">
+                        <label>交期/截止</label>
+                        <input type="date" id="pDeadline">
+                        <div class="readonly-hint" id="deadlineHint">⚠ 执行人不可修改交期，请联系管理者修改</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>项目进度 (自动计算)</label>
+                        <input type="number" id="pProgress" min="0" max="100" value="0" readonly style="background:#f5f5f5;color:#888;">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:4px;">
+                        <span style="font-size:11px;color:#999;">进度根据阶段计划中的节点完成情况自动计算</span>
+                    </div>
+                </div>
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label>目标</label>
+                        <textarea id="pObjective" rows="2" placeholder="目标：最终输出结果"></textarea>
+                    </div>
+                </div>
+
+            </div>
+            <div class="tab-content" id="tab-stages">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <span style="font-size:13px;color:#888;">管理项目的阶段性计划与节点</span>
+                    <button class="btn btn-sm btn-primary" onclick="addStage()">＋ 添加阶段</button>
+                </div>
+                <div id="stagesList"></div>
+            </div>
+            <div class="tab-content" id="tab-detail">
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label>项目结案书</label>
+                        <textarea id="pClosure" rows="3" placeholder="项目结案说明"></textarea>
+                    </div>
+                </div>
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label>产品数据报告</label>
+                        <textarea id="pDataReport" rows="3" placeholder="产品数据报告摘要"></textarea>
+                    </div>
+                </div>
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label>附件</label>
+                        <div id="projectAttachments" class="attachment-list"></div>
+                        <label class="upload-btn" for="projectFileInput">📎 上传附件/图片</label>
+                        <input type="file" id="projectFileInput" multiple style="display:none;" onchange="handleProjectFileUpload(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('projectModal')">取消</button>
+            <button class="btn btn-primary" onclick="saveProject()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- User Modal -->
+<div class="modal-overlay" id="userModal">
+    <div class="modal" style="width:500px;">
+        <div class="modal-header">
+            <h3 id="userModalTitle">新增用户</h3>
+            <button class="modal-close" onclick="closeModal('userModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>姓名</label>
+                    <input type="text" id="uName" placeholder="姓名">
+                </div>
+                <div class="form-group">
+                    <label>角色</label>
+                    <select id="uRole">
+                        <option value="manager">管理者</option>
+                        <option value="executor">执行人</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>邮箱</label>
+                    <input type="email" id="uEmail" placeholder="email@rd.com">
+                </div>
+                <div class="form-group">
+                    <label>电话</label>
+                    <input type="text" id="uPhone" placeholder="手机号">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>部门</label>
+                    <input type="text" id="uDept" placeholder="所属部门">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="uPassword" placeholder="登录密码">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('userModal')">取消</button>
+            <button class="btn btn-primary" onclick="saveUser()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="changePwdModal">
+    <div class="modal" style="width:420px;">
+        <div class="modal-header">
+            <h3>🔑 修改密码</h3>
+            <button class="modal-close" onclick="closeModal('changePwdModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>当前密码</label>
+                <input type="password" id="pwdOld" placeholder="请输入当前密码">
+            </div>
+            <div class="form-group">
+                <label>新密码</label>
+                <input type="password" id="pwdNew" placeholder="请输入新密码（至少6位）">
+            </div>
+            <div class="form-group">
+                <label>确认新密码</label>
+                <input type="password" id="pwdConfirm" placeholder="请再次输入新密码">
+            </div>
+            <div id="pwdErr" style="color:#e74c3c;font-size:13px;margin-top:8px;display:none;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('changePwdModal')">取消</button>
+            <button class="btn btn-primary" onclick="submitChangePwd()">确认修改</button>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Report Modal (need8) -->
+<div class="modal-overlay" id="weeklyReportModal">
+    <div class="modal" style="width:500px;">
+        <div class="modal-header">
+            <h3>📋 导出周报</h3>
+            <button class="modal-close" onclick="closeModal('weeklyReportModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:13px;color:#666;margin-bottom:16px;">选择一周的日期范围，导出本周完成项和下周计划项。</p>
+            <div class="week-picker">
+                <div class="form-group" style="flex:1;margin-bottom:0;">
+                    <label>本周开始</label>
+                    <input type="date" id="weekStart">
+                </div>
+                <div class="form-group" style="flex:1;margin-bottom:0;">
+                    <label>本周结束</label>
+                    <input type="date" id="weekEnd">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('weeklyReportModal')">取消</button>
+            <button class="btn btn-primary" onclick="exportWeeklyReport()">导出CSV</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Yarn Modal -->
+<div class="modal-overlay" id="yarnModal">
+    <div class="modal" style="width:700px;">
+        <div class="modal-header">
+            <h3 id="yarnModalTitle">新增纱线</h3>
+            <button class="modal-close" onclick="closeModal('yarnModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>纱线名称 *</label>
+                    <input type="text" id="yName" placeholder="纱线名称">
+                </div>
+                <div class="form-group">
+                    <label>供应商</label>
+                    <input type="text" id="ySupplier" placeholder="供应商">
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>规格信息</label>
+                    <div id="ySpecsList"></div>
+                    <button class="btn btn-sm btn-outline" onclick="addYarnSpec()" style="margin-top:6px;">＋ 添加规格</button>
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>纱线介绍</label>
+                    <textarea id="yIntroduction" rows="2" placeholder="纱线介绍"></textarea>
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>纱线特点</label>
+                    <textarea id="yFeatures" rows="2" placeholder="纱线特点"></textarea>
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>已验证品类</label>
+                    <div id="yVerifiedCategories" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="经编"> 经编</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="飞织"> 飞织</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="梭织"> 梭织</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="圆机"> 圆机</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="速织"> 速织</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>建议品类</label>
+                    <div id="ySuggestedCategories" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="经编"> 经编</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="飞织"> 飞织</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="梭织"> 梭织</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="圆机"> 圆机</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="速织"> 速织</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>适用产品</label>
+                    <div id="yApplicableProducts" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="鞋材"> 鞋材</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="服装"> 服装</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>温度限制</label>
+                    <input type="text" id="yTempLimit" placeholder="温度限制">
+                </div>
+                <div class="form-group">
+                    <label>颜色限制</label>
+                    <input type="text" id="yColorLimit" placeholder="颜色限制">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>起订量</label>
+                    <input type="text" id="yMoq" placeholder="起订量">
+                </div>
+                <div class="form-group">
+                    <label>状态</label>
+                    <select id="yStatus" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+                        <option value="未验证">未验证</option>
+                        <option value="验证中">验证中</option>
+                        <option value="可推广">可推广</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>检测数据</label>
+                    <div style="background:#f8f9fa;border:1px solid #e8e8e8;border-radius:8px;padding:14px;">
+                        <div style="margin-bottom:10px;">
+                            <table style="width:100%;border-collapse:collapse;font-size:13px;" id="testDataTable">
+                                <thead>
+                                    <tr style="background:#f0f0f0;">
+                                        <th style="padding:8px 6px;text-align:left;border-bottom:2px solid #ddd;min-width:120px;">检测单号</th>
+                                        <th style="padding:8px 6px;text-align:left;border-bottom:2px solid #ddd;min-width:100px;">规格</th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">断裂强度<br><span style="font-size:10px;color:#999;font-weight:400;">(cN/dtex)</span></th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">断裂伸长率<br><span style="font-size:10px;color:#999;font-weight:400;">(%)</span></th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">沸水收缩率<br><span style="font-size:10px;color:#999;font-weight:400;">(%)</span></th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">干热收缩率<br><span style="font-size:10px;color:#999;font-weight:400;">(%)</span></th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:12%;">黄变</th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:12%;">酚黄</th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="testDataBody"></tbody>
+                            </table>
+                            <button onclick="addTestDataRow()" style="margin-top:8px;font-size:12px;color:#667eea;background:none;border:1px dashed #667eea;border-radius:6px;padding:4px 12px;cursor:pointer;">＋ 添加规格行</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>附件上传</label>
+                    <input type="file" id="yFileUpload" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleYarnFileUpload(event)" style="padding:6px 0;">
+                    <div id="yarnAttachments" style="margin-top:8px;font-size:12px;color:#999;">暂无附件</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('yarnModal')">取消</button>
+            <button class="btn btn-primary" onclick="saveYarn()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Settings Modal -->
+<div class="modal-overlay" id="notifSettingsModal">
+    <div class="modal" style="width:550px;">
+        <div class="modal-header">
+            <h3>🔔 通知设置</h3>
+            <button class="modal-close" onclick="closeModal('notifSettingsModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="notif-config-section">
+                <h4>📱 钉钉机器人通知</h4>
+                <div class="notif-config-row">
+                    <label>Webhook</label>
+                    <input type="text" id="ddWebhook" placeholder="https://oapi.dingtalk.com/robot/send?access_token=...">
+                </div>
+                <div class="notif-config-row">
+                    <label>签名密钥</label>
+                    <input type="text" id="ddSecret" placeholder="SEC...（加签模式）留空则不使用签名">
+                </div>
+                <div class="notif-config-row">
+                    <label>安全模式</label>
+                    <select id="ddSecMode">
+                        <option value="sign">加签（推荐）</option>
+                        <option value="keyword">自定义关键词</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                    <button class="btn btn-outline btn-sm" onclick="testDingTalkNotif()">🧪 测试发送</button>
+                    <button class="btn btn-success btn-sm" onclick="saveNotifSettings()">💾 保存设置</button>
+                    <span class="notif-status disconnected" id="ddStatus">● 未连接</span>
+                </div>
+                <div class="notif-test-result" id="ddTestResult"></div>
+            </div>
+            <div class="notif-config-section">
+                <h4>⏰ 提醒规则</h4>
+                <div class="notif-config-row">
+                    <label>提前提醒</label>
+                    <select id="advanceDays">
+                        <option value="1">到期前 1 天</option>
+                        <option value="2">到期前 2 天</option>
+                        <option value="3" selected>到期前 3 天</option>
+                        <option value="5">到期前 5 天</option>
+                        <option value="7">到期前 7 天</option>
+                    </select>
+                </div>
+                <div class="notif-config-row">
+                    <label>浏览器通知</label>
+                    <select id="browserNotif">
+                        <option value="on">开启</option>
+                        <option value="off">关闭</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="requestBrowserNotif()">授权</button>
+                </div>
+                <div style="margin-top:8px;">
+                    <button class="btn btn-warning btn-sm" onclick="sendManualNotif()">📢 立即发送一次提醒</button>
+                    <button class="btn btn-outline btn-sm" onclick="checkAndShowNotifs()">🔍 检查异常</button>
+                </div>
+            </div>
+            <div class="notif-config-section">
+                <h4>📝 最近通知记录</h4>
+                <div class="notif-log" id="notifLog">
+                    <div class="notif-log-item" style="color:#999;text-align:center;">暂无通知记录</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('notifSettingsModal')">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- Setup Wizard -->
+<div class="setup-overlay" id="setupWizard" style="display:none;">
+    <div class="setup-box">
+        <h3>🔧 数据库升级脚本 (v3.2)</h3>
+        <p>本次升级需要执行以下SQL脚本以新增字段。请按以下步骤操作：</p>
+        <ol class="steps">
+            <li>打开 <a href="https://supabase.com/dashboard/project/vxxkxaxvwknfafehcruj/sql" target="_blank" style="color:#667eea;">Supabase SQL Editor</a></li>
+            <li>复制下方SQL代码</li>
+            <li>粘贴到 SQL Editor 中，点击 Run 执行</li>
+            <li>执行成功后关闭此窗口</li>
+        </ol>
+        <div class="sql-block" id="setupSql"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="copySql()">📋 复制SQL</button>
+            <button class="btn btn-primary" onclick="skipSetup()">我已执行，进入看板</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============ CONFIG ============
+const SB_URL = 'https://vxxkxaxvwknfafehcruj.supabase.co';
+const SB_KEY = 'sb_publishable_fGFPVWlgQLy2grFS50xQgw_gfr1M_t_';
+
+// ============ STATE ============
+let currentUser = null;
+let allProjects = [];
+let allUsers = [];
+let allStages = [];
+let editingProjectId = null;
+let tempStages = [];
+let milestonesMap = {};
+let tempProjectAttachments = [];
+
+// ============ UTILS ============
+function $(id){return document.getElementById(id);}
+function toast(msg,type='info'){
+    const t=document.createElement('div');
+    t.className='toast '+type;t.textContent=msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),3000);
+}
+
+// ============ SUPABASE API (need1: fix JSON parsing) ============
+async function sbGet(table, params='') {
+    try {
+        const url = `${SB_URL}/rest/v1/${table}?select=*${params}`;
+        const res = await fetch(url, {headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+        if(!res.ok) { console.warn('[sbGet] HTTP', res.status, 'for', table); return []; }
+        const text = await res.text();
+        if(!text) return [];
+        return JSON.parse(text);
+    } catch(e) { console.error('[sbGet] error for', table, e); return []; }
+}
+function genId(prefix) {
+    const ts = Date.now();
+    const rand = Math.random().toString(36).substr(2,6);
+    return (prefix||'x') + '_' + ts + '_' + rand;
+}
+async function sbInsert(table, data) {
+    try {
+        // Auto-generate id if not provided (DB lacks default id)
+        if(!data.id) {
+            const prefixMap = {projects:'p',yarns:'y',stages:'st',milestones:'ms',users:'u'};
+            data.id = genId(prefixMap[table] || table);
+        }
+        const res = await fetch(`${SB_URL}/rest/v1/${table}`, {
+            method:'POST', headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+            body: JSON.stringify(data)
+        });
+        if(!res.ok) {
+            const errText = await res.text();
+            console.warn('[sbInsert] HTTP', res.status, 'for', table, errText);
+            throw new Error(JSON.parse(errText).message || ('HTTP '+res.status));
+        }
+        const text = await res.text();
+        if(!text) return [];
+        return JSON.parse(text);
+    } catch(e) { console.error('[sbInsert] error for', table, e); throw e; }
+}
+async function sbUpdate(table, id, data) {
+    try {
+        const res = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
+            method:'PATCH', headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+            body: JSON.stringify(data)
+        });
+        if(!res.ok) {
+            const errText = await res.text();
+            console.warn('[sbUpdate] HTTP', res.status, 'for', table, errText);
+            throw new Error(JSON.parse(errText).message || ('HTTP '+res.status));
+        }
+        const text = await res.text();
+        if(!text) return [];
+        return JSON.parse(text);
+    } catch(e) { console.error('[sbUpdate] error for', table, e); throw e; }
+}
+async function sbDelete(table, id) {
+    await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
+        method:'DELETE', headers:{'apikey':SB_KEY}
+    });
+}
+
+// ============ AUTH ============
+async function doLogin() {
+    const email = $('loginEmail').value.trim();
+    const pwd = $('loginPassword').value;
+    if(!email || !pwd){$('loginErr').textContent='请填写邮箱和密码';$('loginErr').style.display='block';return;}
+    $('loginErr').style.display='none';
+
+    try {
+        const users = await sbGet('users','&is_deleted=eq.false');
+        const user = users.find(u => u.email === email);
+        if(!user){$('loginErr').textContent='账号不存在';$('loginErr').style.display='block';return;}
+
+        let pwdMatch = false;
+        const inputHash = await sha256(pwd);
+        if(user.password_hash === inputHash) pwdMatch = true;
+        else if(user.password_hash === pwd) pwdMatch = true;
+        if(!pwdMatch) {
+            const commonPwds = ['Admin@123','Exec@123','123456','admin','password'];
+            for(const cp of commonPwds) {
+                if(user.password_hash === cp) { pwdMatch = (pwd === cp); break; }
+                const cpHash = await sha256(cp);
+                if(user.password_hash === cpHash) { pwdMatch = (pwd === cp); break; }
+            }
+        }
+
+        if(!pwdMatch){
+            $('loginErr').textContent='密码错误';$('loginErr').style.display='block';return;
+        }
+
+        currentUser = user;
+        localStorage.setItem('rd_board_user', JSON.stringify(user));
+        showApp();
+    } catch(e) {
+        $('loginErr').textContent='网络错误，请检查连接';$('loginErr').style.display='block';
+    }
+}
+
+function doLogout() {
+    currentUser = null;
+    localStorage.removeItem('rd_board_user');
+    $('mainApp').classList.remove('active');
+    $('loginPage').style.display='flex';
+}
+
+function showApp() {
+    $('loginPage').style.display='none';
+    $('mainApp').classList.add('active');
+    $('userAvatar').textContent = currentUser.name ? currentUser.name[0] : 'U';
+    $('userName').textContent = currentUser.name || currentUser.email;
+    $('userRole').textContent = currentUser.role === 'manager' ? '管理者' : '执行人';
+    if(currentUser.role !== 'manager') {
+        $('navUsers').style.display='none';
+        const mobileUsers = $('mobileNavUsers');
+        if (mobileUsers) mobileUsers.style.display='none';
+    }
+    // Executor can see yarns but can't edit
+    if(currentUser.role !== 'manager') {
+        $('btnNewYarn') && ($('btnNewYarn').style.display='none');
+    }
+    loadData();
+}
+
+// ============ DATA LOADING ============
+async function loadData() {
+    try {
+        const [projects, users, stages, milestones] = await Promise.all([
+            sbGet('projects','&is_deleted=eq.false'),
+            sbGet('users','&is_deleted=eq.false'),
+            sbGet('stages','&is_deleted=eq.false'),
+            sbGet('milestones','&is_deleted=eq.false')
+        ]);
+        allProjects = projects || [];
+        allUsers = users || [];
+        allStages = stages || [];
+        const allMilestones = milestones || [];
+
+        milestonesMap = {};
+        allMilestones.forEach(m => {
+            const key = m.project_id + '_' + m.stage_id;
+            if(!milestonesMap[key]) milestonesMap[key] = [];
+            milestonesMap[key].push(m);
+        });
+
+        // Auto-calculate progress and status for all projects
+        for(const p of allProjects) {
+            const calc = calcProjectProgress(p.id);
+            const calcStatus = calcProjectStatus(p.id);
+            let updateData = {};
+            if(p.progress !== calc) updateData.progress = calc;
+            if(p.status !== calcStatus) updateData.status = calcStatus;
+            if(Object.keys(updateData).length > 0) {
+                try { await sbUpdate('projects', p.id, updateData); } catch(e){}
+                Object.assign(p, updateData);
+            }
+        }
+
+        renderAll();
+        // Auto-check notifications after data loaded
+        setTimeout(() => { updateNotifBadge(); checkAndShowNotifs(); }, 1000);
+    } catch(e) {
+        console.error('Data load error:', e);
+        toast('数据加载失败，请检查网络','error');
+    }
+}
+
+// ============ PROGRESS CALCULATION (need11) ============
+function calcProjectProgress(projectId) {
+    const projStages = allStages.filter(s => s.project_id === projectId);
+    if(projStages.length === 0) return 0;
+    let totalProgress = 0;
+    for(const s of projStages) {
+        const ms = milestonesMap[projectId + '_' + s.id] || [];
+        if(ms.length === 0) {
+            // No milestones - use stage status
+            if(s.status === '已完成') totalProgress += 100;
+        } else {
+            const completed = ms.filter(m => m.is_completed === true).length;
+            totalProgress += Math.round((completed / ms.length) * 100);
+        }
+    }
+    return Math.round(totalProgress / projStages.length);
+}
+
+function calcStageAutoStatus(projectId, stageId) {
+    const ms = milestonesMap[projectId + '_' + stageId] || [];
+    if(ms.length === 0) return null;
+    const allDone = ms.every(m => m.is_completed === true);
+    return allDone ? '已完成' : '进行中';
+}
+
+
+// 需求2: Auto-calculate project status
+function calcProjectStatus(projectId) {
+    const projStages = allStages.filter(s => s.project_id === projectId);
+    const proj = allProjects.find(p => p.id === projectId);
+    const today = new Date().toISOString().split('T')[0];
+
+    // No stages at all -> 未开始
+    if(projStages.length === 0) return '未开始';
+
+    // Check if deadline is overdue
+    const isOverdue = proj && proj.deadline && proj.deadline < today;
+
+    // Check if all milestones are completed
+    let allMilestonesCompleted = true;
+    let hasAnyMilestone = false;
+    for(const s of projStages) {
+        const ms = milestonesMap[projectId + '_' + s.id] || [];
+        if(ms.length > 0) {
+            hasAnyMilestone = true;
+            if(!ms.every(m => m.is_completed === true)) {
+                allMilestonesCompleted = false;
+                break;
+            }
+        } else {
+            // Stage with no milestones - check stage status
+            if(s.status !== '已完成') {
+                allMilestonesCompleted = false;
+                break;
+            }
+        }
+    }
+
+    if(isOverdue && allMilestonesCompleted) return '已完成';
+    if(isOverdue && !allMilestonesCompleted) return '已逾期';
+    return '进行中';
+}
+
+function renderAll() {
+    renderStats();
+    renderAnomalyBoard();
+    renderProjectList();
+    renderUserList();
+    renderCharts();
+    populateOwnerSelect();
+    loadYarns();
+}
+
+// ============ STATS ============
+function renderStats() {
+    const levels = ['S','A','B','C'];
+    const levelNames = {S:'S级',A:'A级',B:'B级',C:'C级'};
+    const levelIcons = {S:'⭐',A:'',B:'📦',C:''};
+    const levelClass = {S:'s-level',A:'a-level',B:'b-level',C:'c-level'};
+
+    let html = '';
+    for(const lv of levels) {
+        const lvProjects = allProjects.filter(p => p.level === lv);
+        const counts = {
+            total: lvProjects.length,
+            pending: lvProjects.filter(p=>p.status==='未开始').length,
+            active: lvProjects.filter(p=>p.status==='进行中').length,
+            done: lvProjects.filter(p=>p.status==='已完成').length,
+            overdue: lvProjects.filter(p=>p.status==='已逾期').length,
+        };
+        html += '<div class="stat-card '+levelClass[lv]+'">';
+        html += '<div class="sc-header"><span class="sc-label">'+levelIcons[lv]+' '+levelNames[lv]+'</span>';
+        html += '<span class="sc-icon" style="font-size:24px;font-weight:700;color:'+(lv==='S'?'#f59e0b':lv==='A'?'#3b82f6':lv==='B'?'#8b5cf6':'#9ca3af')+'">'+counts.total+'</span></div>';
+        html += '<div class="sc-breakdown">';
+        html += '<span class="sc-item"><span class="dot" style="background:#bbb"></span>未开始 '+counts.pending+'</span>';
+        html += '<span class="sc-item"><span class="dot" style="background:#ffa726"></span>进行中 '+counts.active+'</span>';
+        html += '<span class="sc-item"><span class="dot" style="background:#4caf50"></span>已完成 '+counts.done+'</span>';
+        html += '<span class="sc-item"><span class="dot" style="background:#ef5350"></span>已逾期 '+counts.overdue+'</span>';
+        html += '</div></div>';
+    }
+    $('statsRow').innerHTML = html;
+}
+
+// ============ ANOMALY BOARD (need6) ============
+function renderAnomalyBoard() {
+    const anomalies = [];
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const sevenDaysAgo = new Date(today.getTime() - 7*24*60*60*1000).toISOString().split('T')[0];
+
+    for(const p of allProjects) {
+        // 1. Deadline overdue
+        if(p.deadline && p.deadline < todayStr && p.status !== '已完成') {
+            anomalies.push({
+                type: 'critical',
+                icon: '🚨',
+                typeName: '总交期异常',
+                title: p.name || '未命名项目',
+                desc: '交期 '+p.deadline+' 已过，当前状态: '+p.status
+            });
+        }
+    }
+
+    for(const s of allStages) {
+        // 2. Stage end_date overdue
+        if(s.end_date && s.end_date < todayStr && s.status !== '已完成') {
+            const proj = allProjects.find(p=>p.id===s.project_id);
+            anomalies.push({
+                type: 'warning',
+                icon: '⚠️',
+                typeName: '阶段交期异常',
+                title: (proj?proj.name:'?') + ' / ' + (s.name||'未命名阶段'),
+                desc: '阶段截止 '+s.end_date+' 已过，状态: '+s.status
+            });
+        }
+    }
+
+    // 3. Progress not updated in 7 days
+    for(const p of allProjects) {
+        if((p.progress||0) > 0 && p.status !== '已完成') {
+            const projStages = allStages.filter(s=>s.project_id===p.id);
+            let hasRecentUpdate = false;
+            for(const s of projStages) {
+                if(s.start_date && s.start_date >= sevenDaysAgo) { hasRecentUpdate = true; break; }
+                if(s.end_date && s.end_date >= sevenDaysAgo) { hasRecentUpdate = true; break; }
+                const ms = milestonesMap[p.id+'_'+s.id] || [];
+                for(const m of ms) {
+                    if(m.node_time && m.node_time >= sevenDaysAgo) { hasRecentUpdate = true; break; }
+                    if(m.created_at && m.created_at.split('T')[0] >= sevenDaysAgo) { hasRecentUpdate = true; break; }
+                }
+                if(hasRecentUpdate) break;
+            }
+            if(!hasRecentUpdate) {
+                anomalies.push({
+                    type: 'info',
+                    icon: '📋',
+                    typeName: '进度未更新',
+                    title: p.name || '未命名项目',
+                    desc: '进度 '+p.progress+'% 但最近7天无阶段/节点更新'
+                });
+            }
+        }
+    }
+
+    if(anomalies.length === 0) {
+        $('anomalyBoard').innerHTML = '';
+        return;
+    }
+
+    let html = '<h3>🚦 异常看板 <span style="font-size:12px;color:#e74c3c;font-weight:400;margin-left:8px;">'+anomalies.length+' 项异常</span></h3>';
+    html += '<div class="anomaly-cards">';
+    for(const a of anomalies) {
+        html += '<div class="anomaly-card '+a.type+'">';
+        html += '<div class="ac-icon">'+a.icon+'</div>';
+        html += '<div class="ac-body">';
+        html += '<span class="ac-type">'+a.typeName+'</span>';
+        html += '<div class="ac-title">'+a.title+'</div>';
+        html += '<div class="ac-desc">'+a.desc+'</div>';
+        html += '</div></div>';
+    }
+    html += '</div>';
+    $('anomalyBoard').innerHTML = html;
+}
+
+// ============ PROJECT LIST ============
+function getProgressColor(prog) {
+    if(prog >= 100) return 'green';
+    if(prog >= 70) return 'blue';
+    if(prog >= 30) return 'orange';
+    return 'red';
+}
+
+function renderProjectList() {
+    const search = ($('searchInput').value||'').toLowerCase();
+    const fLevel = $('filterLevel').value;
+    const fType = $('filterType').value;
+    const fStatus = $('filterStatus').value;
+
+    let filtered = allProjects.filter(p => {
+        if(search && !p.name.toLowerCase().includes(search) && !(p.project_no||'').toLowerCase().includes(search)) return false;
+        if(fLevel && p.level !== fLevel) return false;
+        if(fType && !(p.project_type||'').split(',').includes(fType)) return false;
+        if(fStatus && p.status !== fStatus) return false;
+        return true;
+    });
+
+    const levelOrder = {S:0,A:1,B:2,C:3};
+    filtered.sort((a,b) => (levelOrder[a.level]||9) - (levelOrder[b.level]||9));
+
+    if(filtered.length === 0) {
+        $('projectTableWrap').innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>暂无项目数据</p></div>';
+        return;
+    }
+
+    let html = '<table class="data-table"><thead><tr>';
+    html += '<th>项目名称</th><th>等级</th><th>类型</th><th>项目周期</th><th>负责人</th><th>跟进人</th>';
+    html += '<th>进度</th><th>状态</th><th>操作</th>';
+    html += '</tr></thead><tbody>';
+
+    for(const p of filtered) {
+        const owner = allUsers.find(u=>u.id===(p.creator_id||p.owner_id));
+        const follower = allUsers.find(u=>u.id===p.follower_id);
+        const badgeClass = {S:'badge-s',A:'badge-a',B:'badge-b',C:'badge-c'}[p.level]||'badge-c';
+        const statusClass = {'未开始':'badge-pending','进行中':'badge-active','已完成':'badge-done','已逾期':'badge-overdue'}[p.status]||'badge-pending';
+        const prog = p.progress || 0;
+        const progColor = getProgressColor(prog);
+        const periodStr = p.period_start && p.deadline ? p.period_start+' — '+p.deadline : (p.period_start || p.deadline || '-');
+        const canEdit = currentUser.role==='manager' || currentUser.id===p.creator_id;
+
+        html += '<tr>';
+        html += '<td><div class="project-name"><div class="icon">📁</div><div>'+( p.name||'未命名')+'<br><span style="font-size:11px;color:#999;font-weight:400">'+(p.project_no||'')+'</span></div></div></td>';
+        html += '<td><span class="badge '+badgeClass+'">'+p.level+'级</span></td>';
+        html += '<td style="font-size:12px;color:#666">'+(p.project_type||'-')+'</td>';
+        html += '<td style="font-size:12px;color:#666">'+periodStr+'</td>';
+        html += '<td style="font-size:13px">'+(owner?owner.name:'-')+'</td>';
+        html += '<td style="font-size:13px">'+(follower?follower.name:'-')+'</td>';
+        html += '<td><div class="progress-bar"><div class="fill '+progColor+'" style="width:'+prog+'%"></div></div><span class="progress-text">'+prog+'%</span></td>';
+        html += '<td><span class="badge-status '+statusClass+'">'+(p.status||'未开始')+'</span></td>';
+        html += '<td><div class="action-btns">';
+        html += '<button onclick="previewProject(\''+p.id+'\')" title="预览">👁️</button>';
+        if(canEdit) html += '<button onclick="editProject(\''+p.id+'\')" title="编辑">✏️</button>';
+        if(canEdit && currentUser.role==='manager') html += '<button class="del" onclick="deleteProject(\''+p.id+'\')" title="删除">🗑️</button>';
+        html += '</div></td></tr>';
+    }
+    html += '</tbody></table>';
+    $('projectTableWrap').innerHTML = html;
+}
+
+// ============ CHARTS (need7: type chart with completion) ============
+function renderCharts() {
+    // Progress chart
+    const sorted = [...allProjects].sort((a,b)=>(b.progress||0)-(a.progress||0)).slice(0,8);
+    let pHtml = '';
+    for(const p of sorted) {
+        const prog = p.progress||0;
+        const color = prog>=70?'#4caf50':prog>=30?'#42a5f5':'#ef5350';
+        pHtml += '<div class="bar-row">';
+        pHtml += '<div class="bar-label" title="'+(p.name)+'">'+(p.name||'未命名')+'</div>';
+        pHtml += '<div class="bar-track"><div class="bar-fill" style="width:'+prog+'%;background:'+color+'">'+prog+'%</div></div>';
+        pHtml += '<div class="bar-value">'+prog+'%</div></div>';
+    }
+    $('progressChart').innerHTML = pHtml || '<div class="empty-state"><p>暂无数据</p></div>';
+
+    // Type chart with completion counts (need7)
+    const types = ['品牌需求','自主研发','里程碑','立项','研发计划'];
+    const typeColors = ['#667eea','#f59e0b','#4caf50','#8b5cf6'];
+    let tHtml = '';
+    const maxCount = Math.max(...types.map(t=>allProjects.filter(p=>(p.project_type||'').split(',').includes(t)).length), 1);
+    let totalDone = allProjects.filter(p=>p.status==='已完成').length;
+    $('typeChartTitle').innerHTML = '📋 项目类型分布 <span class="total-done">总完成: '+totalDone+'个</span>';
+
+    for(let i=0;i<types.length;i++) {
+        const count = allProjects.filter(p=>p.project_type===types[i]).length;
+        const doneCount = allProjects.filter(p=>(p.project_type||'').split(',').includes(types[i])&&p.status==='已完成').length;
+        const pct = (count/maxCount*100);
+        tHtml += '<div class="bar-row">';
+        tHtml += '<div class="bar-label">'+types[i]+'</div>';
+        tHtml += '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+typeColors[i]+'">'+count+'</div></div>';
+        tHtml += '<div class="bar-value">'+count+'个(完成'+doneCount+'个)</div></div>';
+    }
+    $('typeChart').innerHTML = tHtml;
+}
+
+// ============ USER LIST ============
+function renderUserList() {
+    if(currentUser.role !== 'manager') return;
+    let html = '<table class="data-table"><thead><tr>';
+    html += '<th>姓名</th><th>角色</th><th>邮箱</th><th>部门</th><th>电话</th><th>操作</th>';
+    html += '</tr></thead><tbody>';
+    for(const u of allUsers) {
+        const roleBadge = u.role==='manager' ? '<span class="badge badge-a">管理者</span>' : '<span class="badge badge-b">执行人</span>';
+        html += '<tr>';
+        html += '<td style="font-weight:600">'+(u.name||'-')+'</td>';
+        html += '<td>'+roleBadge+'</td>';
+        html += '<td style="font-size:13px">'+(u.email||'-')+'</td>';
+        html += '<td style="font-size:13px">'+(u.department||'-')+'</td>';
+        html += '<td style="font-size:13px">'+(u.phone||'-')+'</td>';
+        html += '<td><div class="action-btns">';
+        html += '<button onclick="editUser(\''+u.id+'\')" title="编辑">✏️</button>';
+        html += '<button class="del" onclick="deleteUser(\''+u.id+'\')" title="删除">🗑️</button>';
+        html += '</div></td></tr>';
+    }
+    html += '</tbody></table>';
+    $('userTableWrap').innerHTML = html;
+}
+
+function populateOwnerSelect() {
+    let opts = '<option value="">-- 选择负责人 --</option>';
+    for(const u of allUsers) {
+        opts += '<option value="'+u.id+'">'+u.name+'</option>';
+    }
+    $('pOwner').innerHTML = opts;
+    // Follower select (need10)
+    let fOpts = '<option value="">-- 选择跟进人 --</option>';
+    for(const u of allUsers) {
+        fOpts += '<option value="'+u.id+'">'+u.name+'</option>';
+    }
+    $('pFollower').innerHTML = fOpts;
+}
+
+// ============ PAGE SWITCH ============
+function switchPage(page) {
+    document.querySelectorAll('.topbar nav a').forEach(a=>a.classList.remove('active'));
+    const navLinks = document.querySelectorAll('.topbar nav a');
+    const pageOrder = ['overview','projects','yarns','users'];
+    const idx = pageOrder.indexOf(page);
+    if (idx >= 0 && navLinks[idx]) navLinks[idx].classList.add('active');
+    ['overview','projects','yarns','users'].forEach(p=>{
+        $('page-'+p).classList.toggle('hidden', p!==page);
+    });
+    // Sync mobile nav
+    const mobileItems = document.querySelectorAll('.mobile-nav-item');
+    const mobileMap = ['overview','projects','yarns',null,'users'];
+    mobileItems.forEach((item, i) => {
+        if (mobileMap[i] === page) item.classList.add('active');
+        else if (mobileMap[i] !== null) item.classList.remove('active');
+    });
+    if(page==='overview') { renderStats(); renderAnomalyBoard(); renderCharts(); updateNotifBadge(); }
+    if(page==='yarns') { loadYarns(); }
+}
+
+// ============ TAB SWITCH ============
+function switchTab(el, tabId) {
+    el.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    const modal = el.closest('.modal');
+    modal.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    $(tabId).classList.add('active');
+}
+
+// ============ PROJECT CRUD ============
+
+// Toggle brand name field visibility based on project type
+function toggleBrandName() {
+    var checked = false;
+    document.querySelectorAll('input[name="pType"]').forEach(function(cb){if(cb.value==='品牌需求' && cb.checked) checked=true;});
+    var wrap = document.getElementById('pBrandNameWrap');
+    if(wrap) wrap.style.display = checked ? 'block' : 'none';
+}
+// Add onchange listeners for project type checkboxes
+document.addEventListener('change', function(e) {
+    if(e.target && e.target.name === 'pType') toggleBrandName();
+});
+
+function openProjectModal(id) {
+    editingProjectId = id || null;
+    $('projectModalTitle').textContent = id ? '编辑项目' : '新建项目';
+    tempProjectAttachments = [];
+
+    if(id) {
+        const p = allProjects.find(x=>x.id===id);
+        if(!p) return;
+        $('pProjectNo').value = p.project_no||'';
+        $('pName').value = p.name||'';
+        // Set checkboxes from comma-separated project_type
+        var ptArr = (p.project_type||'').split(',').filter(Boolean);
+        document.querySelectorAll('input[name="pType"]').forEach(function(cb){cb.checked = ptArr.indexOf(cb.value)>=0;});
+        // Show brand name if 品牌需求 selected
+        toggleBrandName();
+        // Set brand name from plan field
+        $('pBrandName').value = p.plan||'';
+        $('pLevel').value = p.level||'B';
+        $('pOwner').value = p.creator_id||p.owner_id||'';
+        $('pFollower').value = p.follower_id||'';
+        $('pStatus').value = calcProjectStatus(id) || p.status || '未开始';
+        $('pPeriodStart').value = p.period_start||'';
+        $('pDeadline').value = p.deadline||'';
+        $('pProgress').value = p.progress||0;
+        $('pObjective').value = p.objective||'';
+        $('pClosure').value = p.closure_report||'';
+        $('pDataReport').value = p.product_data_report||'';
+
+        // need9: deadline permission control
+        if(currentUser.role==='executor' && p.deadline) {
+            $('pDeadline').readOnly = true;
+            $('pDeadline').style.background = '#f5f5f5';
+            $('deadlineHint').style.display = 'block';
+        } else {
+            $('pDeadline').readOnly = false;
+            $('pDeadline').style.background = '';
+            $('deadlineHint').style.display = 'none';
+        }
+
+        // Load attachments (need5)
+        try {
+            tempProjectAttachments = JSON.parse(p.attachments || '[]');
+        } catch(e) { tempProjectAttachments = []; }
+        renderProjectAttachments();
+
+        // Load stages
+        tempStages = allStages.filter(s=>s.project_id===id).map(s=>({
+            ...s,
+            milestones: milestonesMap[id+'_'+s.id] ? milestonesMap[id+'_'+s.id].map(m=>({
+                name: m.name||'', time: m.node_time||'', content: m.node_content||'',
+                product_info: m.product_info||'', product_data: m.product_data||'',
+                anomaly: m.anomaly||'', solution: m.solution||'',
+                is_completed: m.is_completed||false,
+                attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
+                _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
+                id: m.id
+            })) : []
+        }));
+    } else {
+        ['pProjectNo','pName','pObjective','pClosure','pDataReport'].forEach(fid=>{$(fid).value='';});
+        document.querySelectorAll('input[name="pType"]').forEach(function(cb){cb.checked=false;});
+        toggleBrandName();$('pBrandName').value='';$('pLevel').value='B';$('pStatus').value='未开始';
+        $('pOwner').value='';$('pFollower').value='';
+        $('pPeriodStart').value='';$('pDeadline').value='';$('pProgress').value=0;
+        $('pDeadline').readOnly = false;
+        $('pDeadline').style.background = '';
+        $('deadlineHint').style.display = 'none';
+        tempStages = [];
+        tempProjectAttachments = [];
+        renderProjectAttachments();
+    }
+    renderStagesList();
+    $('projectModal').classList.add('active');
+}
+
+// ============ FILE UPLOAD HELPERS (need4/5) ============
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function handleProjectFileUpload(event) {
+    const files = event.target.files;
+    for(const f of files) {
+        const data = await fileToBase64(f);
+        tempProjectAttachments.push({name: f.name, type: f.type, data: data});
+    }
+    renderProjectAttachments();
+    event.target.value = '';
+}
+
+function renderProjectAttachments() {
+    let html = '';
+    tempProjectAttachments.forEach((att, idx) => {
+        if(att.type && att.type.startsWith('image/')) {
+            html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+' <span class="remove-att" onclick="removeProjectAttachment('+idx+')">✕</span></span>';
+        } else {
+            html += '<span class="attachment-item" onclick="downloadProjectAtt('+idx+')">📄 '+att.name+' <span class="remove-att" onclick="event.stopPropagation();removeProjectAttachment('+idx+')">✕</span></span>';
+        }
+    });
+    $('projectAttachments').innerHTML = html || '<span style="font-size:12px;color:#999;">暂无附件</span>';
+}
+
+function removeProjectAttachment(idx) {
+    tempProjectAttachments.splice(idx, 1);
+    renderProjectAttachments();
+}
+
+function downloadProjectAtt(idx) {
+    const att = tempProjectAttachments[idx];
+    if(!att) return;
+    const a = document.createElement('a');
+    a.href = att.data;
+    a.download = att.name;
+    a.click();
+}
+
+async function handleMilestoneFileUpload(event, stageIdx, mIdx) {
+    const files = event.target.files;
+    if(!tempStages[stageIdx].milestones[mIdx].attachments) tempStages[stageIdx].milestones[mIdx].attachments = [];
+    for(const f of files) {
+        const data = await fileToBase64(f);
+        tempStages[stageIdx].milestones[mIdx].attachments.push({name: f.name, type: f.type, data: data});
+    }
+    renderStagesList();
+    event.target.value = '';
+}
+
+function removeMilestoneAttachment(stageIdx, mIdx, attIdx) {
+    tempStages[stageIdx].milestones[mIdx].attachments.splice(attIdx, 1);
+    renderStagesList();
+}
+
+function downloadAttachment(name, data) {
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = name;
+    a.click();
+}
+
+function downloadMsAttachment(stageIdx, mIdx, attIdx) {
+    const att = tempStages[stageIdx].milestones[mIdx].attachments[attIdx];
+    if(!att) return;
+    const a = document.createElement('a');
+    a.href = att.data;
+    a.download = att.name;
+    a.click();
+}
+
+// ============ STAGES & MILESTONES (need3/4/12) ============
+function renderStagesList() {
+    let html = '';
+    const isManager = currentUser && currentUser.role === 'manager';
+    tempStages.forEach((s, idx) => {
+        const stageLocked = s.status === '已完成' && !previewMode;
+        const bgStyle = previewMode ? 'background:#f5f5f5;color:#666;' : '';
+        const lockAttr = previewMode;
+        html += '<div class="timeline-item">';
+        html += '<div class="tl-header">';
+        // need3: editable stage name
+        html += '<input class="stage-name-input" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="输入阶段名称（如: 方案设计）">';
+        html += '<div style="display:flex;gap:6px;">';
+        html += '<button class="btn btn-sm btn-outline" onclick="addMilestone('+idx+')">＋节点</button>';
+        html += '<button class="btn btn-sm btn-danger" onclick="removeStage('+idx+')">删除</button>';
+        html += '</div></div>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">预计完成时间</span><input type="date" value="'+(s.start_date||'')+'" onchange="tempStages['+idx+'].start_date=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">完成时间</span><input type="date" value="'+(s.end_date||'')+'" onchange="tempStages['+idx+'].end_date=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">状态</span><select onchange="tempStages['+idx+'].status=this.value;if(this.value===\'已完成\'){tempStages['+idx+'].end_date=new Date().toISOString().split(\'T\')[0];}renderStagesList();" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+((stageLocked && !isManager)?' disabled':'')+'>';
+        html += '<option '+(s.status==='未开始'?'selected':'')+'>未开始</option>';
+        html += '<option '+(s.status==='进行中'?'selected':'')+'>进行中</option>';
+        html += '<option '+(s.status==='已完成'?'selected':'')+'>已完成</option>';
+        html += '</select></div></div>';
+
+        html += '<div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:8px;">';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">备注</span><input type="text" value="'+(s.anomaly_feedback||'')+'" id="stage_anomaly_'+idx+'" onchange="tempStages['+idx+'].anomaly_feedback=this.value" placeholder="备注信息" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '</div>';
+        
+        html += renderMilestones(idx);
+        html += '</div>';
+    });
+    $('stagesList').innerHTML = html || '<div class="empty-state" style="padding:24px;"><p>暂无阶段计划，点击"添加阶段"开始</p></div>';
+}
+
+function renderMilestones(stageIdx) {
+    const stage = tempStages[stageIdx];
+    const milestones = stage.milestones || [];
+    if(milestones.length === 0) return '';
+    const isManager = currentUser && currentUser.role === 'manager';
+    const stageLocked = stage.status === '已完成' && !previewMode;
+    let html = '<div class="milestone-sub">';
+    milestones.forEach((m, mIdx) => {
+        const isCompleted = m.is_completed === true;
+        const completedClass = isCompleted ? ' completed' : '';
+        const msLocked = (isCompleted || stageLocked) && !previewMode;
+        const msCanEdit = msLocked ? isManager : !previewMode;
+        const msRo = msLocked && !isManager;
+        const msBg = msRo ? 'background:#f5f5f5;color:#666;' : '';
+        const msReadonly = msRo ? ' readonly' : '';
+        var ext = m._ext || {};
+        var nodeType = m.name || '';
+        var isYarn = (nodeType === '纱线研发');
+        var isWeave = (nodeType === '织造验证');
+        html += '<div class="ms-item'+completedClass+'">';
+        // Header: completion toggle + node type select + delete btn
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+        html += '<div style="display:flex;align-items:center;gap:4px;">';
+        if(msLocked && isManager) {
+            html += '<span class="ms-complete-btn" onclick="unlockMilestone('+stageIdx+','+mIdx+')" title="管理者: 改为进行中">🔓</span>';
+        } else if(!msLocked && !previewMode) {
+            html += '<span class="ms-complete-btn" onclick="toggleMilestoneComplete('+stageIdx+','+mIdx+')" title="'+(isCompleted?'点击取消完成':'点击标记完成')+'">'+(isCompleted?'✅':'⭕')+'</span>';
+        } else {
+            html += '<span style="font-size:16px;margin-right:6px;">'+(isCompleted?'✅':'⭕')+'</span>';
+        }
+        if(msLocked) html += '<span style="font-size:11px;color:#e65100;margin-right:4px;">🔒</span>';
+        html += '<span class="ms-title" style="display:flex;align-items:center;gap:4px;">节点类型: <select onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].name=this.value;renderStagesList();" style="font-size:12px;padding:3px 8px;border:1px solid #ddd;border-radius:4px;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option><option value="纱线研发" '+(isYarn?'selected':'')+'>纱线研发</option><option value="织造验证" '+(isWeave?'selected':'')+'>织造验证</option></select></span>';
+        html += '</div>';
+        if(msCanEdit) {
+            html += '<button class="btn btn-sm btn-danger" onclick="removeMilestone('+stageIdx+','+mIdx+')" style="font-size:10px;padding:2px 8px;">删除</button>';
+        }
+        html += '</div>';
+        // === 纱线区块 (shown when type=纱线研发) ===
+        if(isYarn) {
+            html += '<div style="background:#f0f7ff;border:1px solid #c8e0ff;border-radius:6px;padding:8px 10px;margin-bottom:6px;">';
+            html += '<div style="font-size:11px;font-weight:600;color:#1565c0;margin-bottom:6px;">🧶 纱线信息</div>';
+            // Row1: 纱线名称 | 配方
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">';
+            html += '<div><span style="color:#888;">纱线名称（严格按照系统）:</span> <input type="text" value="'+(m.product_info||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_info=this.value" placeholder="纱线名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+            html += '<div><span style="color:#888;">配方:</span> <input type="text" value="'+(m.product_data||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_data=this.value" placeholder="纱线配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+            html += '</div>';
+            // Row2: 纱线事业部 | 纱线预计完成时间 | 纱线完成时间
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-top:4px;">';
+            html += '<div><span style="color:#888;">纱线事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option>';
+            ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+(ext.department===d?'selected':'')+'>'+d+'</option>';});
+            html += '</select></div>';
+            html += '<div><span style="color:#888;">纱线预计完成时间:</span> <input type="date" value="'+(m.time||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+            html += '<div><span style="color:#888;">纱线完成时间:</span> <input type="date" value="'+(ext.complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+            html += '</div>';
+            html += '</div>';
+        }
+        // === 织造区块 (shown when type=织造验证) ===
+        if(isWeave) {
+            html += '<div style="background:#fff8f0;border:1px solid #ffd6a5;border-radius:6px;padding:8px 10px;margin-bottom:6px;">';
+            html += '<div style="font-size:11px;font-weight:600;color:#e65100;margin-bottom:6px;">🏭 织造信息</div>';
+            // Row3: 成品品名 | 配方
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">';
+            html += '<div><span style="color:#888;">成品品名:</span> <input type="text" value="'+(m.product_info||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_info=this.value" placeholder="成品品名" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+            html += '<div><span style="color:#888;">配方:</span> <input type="text" value="'+(ext.weave_formula||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_formula=this.value" placeholder="织造配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+            html += '</div>';
+            // Row4: 织造事业部 | 织造预计完成时间 | 织造完成时间
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-top:4px;">';
+            html += '<div><span style="color:#888;">织造事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option>';
+            ['飞织','经编','梭织','纬编','速织'].forEach(function(d){html += '<option value="'+d+'" '+(ext.weave_department===d?'selected':'')+'>'+d+'</option>';});
+            html += '</select></div>';
+            html += '<div><span style="color:#888;">织造预计完成时间:</span> <input type="date" value="'+(ext.weave_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+            html += '<div><span style="color:#888;">织造完成时间:</span> <input type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+            html += '</div>';
+            html += '</div>';
+        }
+        // Row5: 检测单号 | 测试结果
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        html += '<div><span style="color:#888;">检测单号:</span> <input type="text" value="'+(ext.test_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_no=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div><span style="color:#888;">测试结果:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option><option value="合格" '+(ext.test_result==='合格'?'selected':'')+'>合格</option><option value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'>不合格</option><option value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'>待检测</option></select></div>';
+        html += '</div>';
+        // Row6: 备注
+        html += '<div style="font-size:11px;margin-bottom:4px;"><span style="color:#888;">备注:</span> <input type="text" value="'+(m.anomaly||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].anomaly=this.value" placeholder="备注信息" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        // Row7: 附件
+        html += '<div style="font-size:11px;">';
+        html += '<span style="color:#888;">附件:</span> ';
+        const atts = m.attachments || [];
+        atts.forEach((att, aIdx) => {
+            if(att.type && att.type.startsWith('image/')) {
+                html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+(msRo?'':' <span class="remove-att" onclick="removeMilestoneAttachment('+stageIdx+','+mIdx+','+aIdx+')">✕</span>')+'</span>';
+            } else {
+                html += '<span class="attachment-item" onclick="downloadMsAttachment('+stageIdx+','+mIdx+','+aIdx+')">📄 '+att.name+(msRo?'':' <span class="remove-att" onclick="event.stopPropagation();removeMilestoneAttachment('+stageIdx+','+mIdx+','+aIdx+')">✕</span>')+'</span>';
+            }
+        });
+        if(!msRo) html += '<label class="upload-btn">📎 上传<input type="file" multiple style="display:none;" onchange="handleMilestoneFileUpload(event,'+stageIdx+','+mIdx+')"></label>';
+        html += '</div>';
+        html += '</div>';
+    });
+    html += '</div>';
+    return html;
+}
+
+// need12: toggle milestone completion
+function toggleMilestoneComplete(stageIdx, mIdx) {
+    const m = tempStages[stageIdx].milestones[mIdx];
+    if(!m.is_completed) {
+        // Check required fields
+        if(!m.content || !m.content.trim()) { toast('请先填写节点内容','error'); return; }
+        if(!m.product_info || !m.product_info.trim()) { toast('请先填写产品信息','error'); return; }
+        if(!m.product_data || !m.product_data.trim()) { toast('请先填写产品数据','error'); return; }
+    }
+    m.is_completed = !m.is_completed;
+    // Auto-update stage status (need12)
+    const stage = tempStages[stageIdx];
+    const allMs = stage.milestones || [];
+    if(allMs.length > 0 && allMs.every(mm => mm.is_completed === true)) {
+        stage.status = '已完成';
+    } else if(allMs.some(mm => mm.is_completed === true)) {
+        stage.status = '进行中';
+    }
+    renderStagesList();
+}
+
+
+// 需求5: Unlock milestone (manager only)
+function unlockMilestone(stageIdx, mIdx) {
+    if(!currentUser || currentUser.role !== 'manager') { toast('仅管理者可以解锁','error'); return; }
+    const m = tempStages[stageIdx].milestones[mIdx];
+    m.is_completed = false;
+    // Update stage status
+    const stage = tempStages[stageIdx];
+    const allMs = stage.milestones || [];
+    if(!allMs.every(mm => mm.is_completed === true)) {
+        stage.status = '进行中';
+    }
+    renderStagesList();
+    toast('节点已改为进行中','success');
+}
+
+// 需求5: Unlock stage (manager only)
+function unlockStage(stageIdx) {
+    if(!currentUser || currentUser.role !== 'manager') { toast('仅管理者可以解锁','error'); return; }
+    tempStages[stageIdx].status = '进行中';
+    renderStagesList();
+    toast('阶段已改为进行中','success');
+}
+
+function addStage() {
+    tempStages.push({name:'新阶段',start_date:'',end_date:'',status:'未开始',output:'',product:'',output_product_data:'',anomaly_feedback:'',solution:'',milestones:[]});
+    renderStagesList();
+}
+function removeStage(idx) {
+    tempStages.splice(idx, 1);
+    renderStagesList();
+}
+// Auto-sync milestone product_info & anomaly → stage level
+function syncMilestoneToStage(stageIdx) {
+    const stage = tempStages[stageIdx];
+    if(!stage || !stage.milestones) return;
+    const products = [], anomalies = [];
+    stage.milestones.forEach(m => {
+        if(m.product_info && m.product_info.trim()) products.push(m.name + ': ' + m.product_info.trim());
+        if(m.anomaly && m.anomaly.trim()) anomalies.push(m.name + ': ' + m.anomaly.trim());
+    });
+    stage.product = products.join('\n');
+    stage.anomaly_feedback = anomalies.join('\n');
+}
+function addMilestone(stageIdx) {
+    if(!tempStages[stageIdx].milestones) tempStages[stageIdx].milestones = [];
+    tempStages[stageIdx].milestones.push({name:'',time:'',content:'',product_info:'',product_data:'',anomaly:'',solution:'',is_completed:false,attachments:[],_ext:{department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''}});
+    renderStagesList();
+}
+function removeMilestone(stageIdx, mIdx) {
+    tempStages[stageIdx].milestones.splice(mIdx, 1);
+    renderStagesList();
+}
+
+async function saveProject() {
+    // need11: auto-calculate progress before save
+    const autoProgress = calcTempProgress();
+
+    const data = {
+        project_no: $('pProjectNo').value.trim(),
+        name: $('pName').value.trim(),
+        project_type: (function(){var arr=[];document.querySelectorAll('input[name="pType"]:checked').forEach(function(cb){arr.push(cb.value);});return arr.join(',');})(),
+        level: $('pLevel').value,
+        creator_id: $('pOwner').value,
+        follower_id: $('pFollower').value || null,
+        status: calcProjectStatus(editingProjectId) || $('pStatus').value,
+        period_start: $('pPeriodStart').value,
+        deadline: $('pDeadline').value,
+        progress: autoProgress,
+        objective: $('pObjective').value.trim(),
+        plan: $('pBrandName') ? $('pBrandName').value.trim() : '',
+        closure_report: $('pClosure').value.trim(),
+        product_data_report: $('pDataReport').value.trim(),
+        attachments: JSON.stringify(tempProjectAttachments),
+        is_deleted: false
+    };
+
+    // Validate required fields (#1)
+    if(!data.name){toast('请填写完整基本信息','error');return;}
+    if(!data.project_no){toast('请填写完整基本信息','error');return;}
+    if(!data.project_type){toast('请填写完整基本信息','error');return;}
+    if(!data.level){toast('请填写完整基本信息','error');return;}
+    if(!data.creator_id){toast('请填写完整基本信息','error');return;}
+    if(!data.deadline){toast('请填写完整基本信息','error');return;}
+    // If 品牌需求 selected, brand name is required
+    if(data.project_type.split(',').indexOf('品牌需求')>=0 && !data.plan){toast('品牌需求项目请填写品牌名称','error');return;}
+
+    try {
+        if(editingProjectId) {
+            await sbUpdate('projects', editingProjectId, data);
+            for(const s of tempStages) {
+                const stageData = {
+                    name: s.name, start_date: s.start_date, end_date: s.end_date,
+                    status: s.status, output: s.output, product: s.product,
+                    output_product_data: s.output_product_data||'',
+                    anomaly_feedback: s.anomaly_feedback||'',
+                    solution: s.solution||'',
+                    is_deleted: false
+                };
+                if(s.id) {
+                    await sbUpdate('stages', s.id, stageData);
+                } else {
+                    const newStage = await sbInsert('stages', {
+                        project_id: editingProjectId, ...stageData
+                    });
+                    if(newStage && newStage[0]) s.id = newStage[0].id;
+                }
+                if(s.id && s.milestones) {
+                    await syncMilestones(editingProjectId, s.id, s.milestones);
+                }
+            }
+            toast('项目更新成功','success');
+        } else {
+            data.creator_id = data.creator_id || currentUser.id;
+            data.create_time = new Date().toISOString().split('T')[0];
+            const result = await sbInsert('projects', data);
+            if(result && result[0]) {
+                const newId = result[0].id;
+                for(const s of tempStages) {
+                    const newStage = await sbInsert('stages', {
+                        project_id: newId, name: s.name,
+                        start_date: s.start_date, end_date: s.end_date,
+                        status: s.status, output: s.output, product: s.product,
+                        output_product_data: s.output_product_data||'',
+                        anomaly_feedback: s.anomaly_feedback||'',
+                        solution: s.solution||'',
+                        is_deleted: false
+                    });
+                    if(newStage && newStage[0] && s.milestones) {
+                        s.id = newStage[0].id;
+                        await syncMilestones(newId, s.id, s.milestones);
+                    }
+                }
+                toast('项目创建成功','success');
+            }
+        }
+        closeModal('projectModal');
+        await loadData();
+    } catch(e) {
+        console.error(e);
+        toast('保存失败: '+e.message,'error');
+    }
+}
+
+// need11: calculate progress from tempStages
+function calcTempProgress() {
+    if(tempStages.length === 0) return parseInt($('pProgress').value)||0;
+    let total = 0;
+    for(const s of tempStages) {
+        const ms = s.milestones || [];
+        if(ms.length === 0) {
+            if(s.status === '已完成') total += 100;
+        } else {
+            const done = ms.filter(m => m.is_completed === true).length;
+            total += Math.round((done / ms.length) * 100);
+        }
+    }
+    return Math.round(total / tempStages.length);
+}
+
+// need1/need4/need12: sync milestones with attachments and is_completed
+async function syncMilestones(projectId, stageId, milestones) {
+    const existing = await sbGet('milestones','&project_id=eq.'+projectId+'&stage_id=eq.'+stageId+'&is_deleted=eq.false');
+    for(const m of existing) {
+        await sbUpdate('milestones', m.id, {is_deleted: true});
+    }
+    for(const m of milestones) {
+        const msData = {
+            id: m.id || ('ms_' + Date.now() + '_' + Math.random().toString(36).substr(2,6)),
+            project_id: projectId,
+            stage_id: stageId,
+            name: m.name || '',
+            node_time: m.time || null,
+            node_content: m.content || '',
+            product_info: m.product_info || '',
+            product_data: m.product_data || '',
+            anomaly: m.anomaly || '',
+            solution: (function(){var e=m._ext||{};return JSON.stringify({department:e.department||'',ms_status:e.ms_status||'',sales_no:e.sales_no||'',test_no:e.test_no||'',test_result:e.test_result||'',complete_time:e.complete_time||'',weave_formula:e.weave_formula||'',weave_department:e.weave_department||'',weave_time:e.weave_time||'',weave_complete_time:e.weave_complete_time||''});})(),
+            is_completed: m.is_completed || false,
+            attachments: JSON.stringify(m.attachments || []),
+            is_deleted: false
+        };
+        await sbInsert('milestones', msData);
+    }
+}
+
+
+// 需求3: Preview project (readonly mode)
+let previewMode = false;
+function previewProject(id) {
+    previewMode = true;
+    editingProjectId = id;
+    const p = allProjects.find(x=>x.id===id);
+    if(!p) return;
+    $('projectModalTitle').textContent = '📋 项目预览 - ' + (p.name||'未命名');
+    tempProjectAttachments = [];
+
+    $('pProjectNo').value = p.project_no||'';
+    $('pName').value = p.name||'';
+    // Set checkboxes from comma-separated project_type
+        var ptArr = (p.project_type||'').split(',').filter(Boolean);
+        document.querySelectorAll('input[name="pType"]').forEach(function(cb){cb.checked = ptArr.indexOf(cb.value)>=0;});
+        // Show brand name if 品牌需求 selected
+        toggleBrandName();
+        // Set brand name from plan field
+        $('pBrandName').value = p.plan||'';
+    $('pLevel').value = p.level||'B';
+    $('pOwner').value = p.creator_id||p.owner_id||'';
+    $('pFollower').value = p.follower_id||'';
+    $('pStatus').value = p.status||'未开始';
+    $('pPeriodStart').value = p.period_start||'';
+    $('pDeadline').value = p.deadline||'';
+    $('pProgress').value = p.progress||0;
+    $('pObjective').value = p.objective||'';
+    $('pClosure').value = p.closure_report||'';
+    $('pDataReport').value = p.product_data_report||'';
+
+    // Load attachments
+    try { tempProjectAttachments = JSON.parse(p.attachments || '[]'); } catch(e) { tempProjectAttachments = []; }
+    renderProjectAttachments();
+
+    // Load stages
+    tempStages = allStages.filter(s=>s.project_id===id).map(s=>({
+        ...s,
+        milestones: milestonesMap[id+'_'+s.id] ? milestonesMap[id+'_'+s.id].map(m=>({
+            name: m.name||'', time: m.node_time||'', content: m.node_content||'',
+            product_info: m.product_info||'', product_data: m.product_data||'',
+            anomaly: m.anomaly||'', solution: m.solution||'',
+            is_completed: m.is_completed||false,
+            attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
+            _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
+            id: m.id
+        })) : []
+    }));
+
+    renderStagesList();
+    $('projectModal').classList.add('active');
+
+    // Set all inputs to readonly/disabled
+    setTimeout(function(){
+        const modal = $('projectModal');
+        modal.querySelectorAll('input:not([type="checkbox"]):not([type="file"]), textarea, select').forEach(el => {
+            el.readOnly = true;
+            el.disabled = el.tagName === 'SELECT';
+            el.style.background = '#f5f5f5';
+            el.style.color = '#666';
+        });
+        // Hide buttons that modify data
+        const footer = modal.querySelector('.modal-footer');
+        if(footer) {
+            const saveBtn = footer.querySelector('.btn-primary');
+            if(saveBtn) saveBtn.style.display = 'none';
+        }
+        // Disable stage/milestone add/remove buttons
+        modal.querySelectorAll('.btn-danger, .btn-primary').forEach(btn => {
+            if(btn.textContent.includes('添加') || btn.textContent.includes('节点') || btn.textContent.includes('删除') || btn.textContent.includes('上传')) {
+                btn.style.display = 'none';
+            }
+        });
+        modal.querySelectorAll('.ms-complete-btn').forEach(el => el.style.display = 'none');
+        modal.querySelectorAll('.upload-btn').forEach(el => el.style.display = 'none');
+        modal.querySelectorAll('.remove-att').forEach(el => el.style.display = 'none');
+    }, 100);
+}
+
+// Override closeModal to reset previewMode
+const _origCloseModal = closeModal;
+closeModal = function(id) {
+    if(id === 'projectModal' && previewMode) {
+        previewMode = false;
+        // Restore buttons
+        const modal = $(id);
+        modal.querySelectorAll('input, textarea, select').forEach(el => {
+            el.readOnly = false;
+            el.disabled = false;
+            el.style.background = '';
+            el.style.color = '';
+        });
+        const footer = modal.querySelector('.modal-footer');
+        if(footer) {
+            const saveBtn = footer.querySelector('.btn-primary');
+            if(saveBtn) saveBtn.style.display = '';
+        }
+        modal.querySelectorAll('.btn-danger, .btn-primary, .ms-complete-btn, .upload-btn, .remove-att').forEach(el => {
+            el.style.display = '';
+        });
+        $('projectModalTitle').textContent = editingProjectId ? '编辑项目' : '新建项目';
+    }
+    _origCloseModal(id);
+};
+
+function editProject(id) {
+    openProjectModal(id);
+}
+
+async function deleteProject(id) {
+    if(!confirm('确定删除该项目？此操作不可恢复。')) return;
+    try {
+        await sbUpdate('projects', id, {is_deleted: true});
+        toast('项目已删除','success');
+        await loadData();
+    } catch(e) {
+        toast('删除失败','error');
+    }
+}
+
+// ============ USER CRUD ============
+function openUserModal(id) {
+    if(id) {
+        const u = allUsers.find(x=>x.id===id);
+        if(!u) return;
+        $('userModalTitle').textContent = '编辑用户';
+        $('uName').value = u.name||'';
+        $('uRole').value = u.role||'executor';
+        $('uEmail').value = u.email||'';
+        $('uPhone').value = u.phone||'';
+        $('uDept').value = u.department||'';
+        $('uPassword').value = '';
+        $('uPassword').dataset.editId = id;
+    } else {
+        $('userModalTitle').textContent = '新增用户';
+        ['uName','uEmail','uPhone','uDept','uPassword'].forEach(id=>{$(id).value='';});
+        $('uRole').value='executor';
+    }
+    $('userModal').classList.add('active');
+}
+
+async function saveUser() {
+    const data = {
+        name: $('uName').value.trim(),
+        role: $('uRole').value,
+        email: $('uEmail').value.trim(),
+        phone: $('uPhone').value.trim(),
+        department: $('uDept').value.trim(),
+        is_deleted: false
+    };
+    const pwd = $('uPassword').value;
+
+    if(!data.name || !data.email){toast('请填写姓名和邮箱','error');return;}
+
+    try {
+        const editId = $('uPassword').dataset.editId;
+        if(editId) {
+            if(pwd) data.password_hash = await sha256(pwd);
+            await sbUpdate('users', editId, data);
+            toast('用户更新成功','success');
+        } else {
+            if(!pwd){toast('请设置密码','error');return;}
+            data.password_hash = await sha256(pwd);
+            data.id = (data.role==='manager'?'M':'E') + String(allUsers.filter(u=>u.role===data.role).length+1).padStart(3,'0');
+            await sbInsert('users', data);
+            toast('用户创建成功','success');
+        }
+        closeModal('userModal');
+        await loadData();
+    } catch(e) {
+        toast('保存失败','error');
+    }
+}
+
+function editUser(id) { openUserModal(id); }
+
+async function deleteUser(id) {
+    if(!confirm('确定删除该用户？')) return;
+    try {
+        await sbUpdate('users', id, {is_deleted: true});
+        toast('用户已删除','success');
+        await loadData();
+    } catch(e) {
+        toast('删除失败','error');
+    }
+}
+
+
+// ============ YARNS (需求6) ============
+let allYarns = [];
+let editingYarnId = null;
+let tempYarnSpecs = [];
+let tempYarnAttachments = [];
+
+async function loadYarns() {
+    try {
+        // Try without filter first, then filter client-side for maximum compatibility
+        let yarns = await sbGet('yarns', '');
+        if(yarns && yarns.length > 0) {
+            allYarns = yarns.filter(function(y) { return y.is_deleted !== true; });
+        } else {
+            allYarns = [];
+        }
+        console.log('[loadYarns] loaded', allYarns.length, 'yarns from', (yarns||[]).length, 'total rows');
+        renderYarnList();
+    } catch(e) {
+        console.error('Yarns load error:', e);
+        allYarns = [];
+        renderYarnList();
+    }
+}
+
+function renderYarnList() {
+    const search = ($('yarnSearchInput').value||'').toLowerCase();
+    const fCat = $('yarnFilterCategory').value;
+    const fForm = $('yarnFilterForm').value;
+    const fVerified = $('yarnFilterVerified').value;
+
+    let filtered = allYarns.filter(y => {
+        if(search) {
+            const name = (y.name||'').toLowerCase();
+            const supplier = (y.supplier||'').toLowerCase();
+            if(!name.includes(search) && !supplier.includes(search)) return false;
+        }
+        if(fCat) {
+            let suggested = [];
+            try { suggested = JSON.parse(y.suggested_categories||'[]'); } catch(e) { suggested = []; }
+            if(!suggested.includes(fCat)) return false;
+        }
+        if(fForm) {
+            let specs = [];
+            try { specs = JSON.parse(y.specs||'[]'); } catch(e) { specs = []; }
+            const hasForm = specs.some(s => {
+                if(typeof s === 'object' && s !== null) return s.type === fForm;
+                return false;
+            });
+            if(!hasForm) return false;
+        }
+        if(fVerified) {
+            let verified = [];
+            try { verified = JSON.parse(y.verified_categories||'[]'); } catch(e) { verified = []; }
+            if(!verified.includes(fVerified)) return false;
+        }
+        return true;
+    });
+
+    if(filtered.length === 0) {
+        $('yarnTableWrap').innerHTML = '<div class="empty-state"><div class="icon">🧶</div><p>暂无纱线数据</p></div>';
+        return;
+    }
+
+    const isManager = currentUser.role === 'manager';
+    let html = '<table class="data-table"><thead><tr>';
+    html += '<th><input type="checkbox" onchange="toggleYarnSelectAll()" id="yarnSelectAllCb"></th><th>纱线名称</th><th>供应商</th><th>规格</th><th>建议品类</th><th>验证品类</th><th>适用产品</th><th>起订量</th><th>温度/颜色限制</th><th>检测数据</th><th>状态</th><th>操作</th>';
+    html += '</tr></thead><tbody>';
+    for(const y of filtered) {
+        let specs = [];
+        try { specs = JSON.parse(y.specs || '[]'); } catch(e) { specs = []; }
+        const specText = specs.map(s => {
+            if(typeof s === 'object' && s !== null) {
+                return '<span style="display:block;margin-bottom:2px;">'+(s.type ? s.type + ' ' : '') + (s.value || '')+'</span>';
+            }
+            return '<span style="display:block;margin-bottom:2px;">'+(s||'')+'</span>';
+        }).filter(s => s.trim()).join('');
+        const suggested = (function(){ try{ return JSON.parse(y.suggested_categories||'[]'); }catch(e){return [];} })();
+        const verified = (function(){ try{ return JSON.parse(y.verified_categories||'[]'); }catch(e){return [];} })();
+        const applicable = (function(){ try{ return JSON.parse(y.applicable_products||'[]'); }catch(e){return [];} })();
+
+        // Build category badges
+        const catBadgeColors = {'经编':'#667eea','飞织':'#f59e0b','梭织':'#4caf50','圆机':'#9c27b0','速织':'#ff5722'};
+        let sugBadges = suggested.map(c => '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;background:'+(catBadgeColors[c]||'#999')+';margin:1px;">'+c+'</span>').join('');
+        if(!sugBadges) sugBadges = '<span style="color:#999;font-size:12px">-</span>';
+        let verBadges = verified.map(c => '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;background:'+(catBadgeColors[c]||'#999')+';margin:1px;">'+c+'</span>').join('');
+        if(!verBadges) verBadges = '<span style="color:#999;font-size:12px">-</span>';
+
+        const applicableText = applicable.length > 0 ? applicable.join(', ') : '-';
+        const limits = [y.temp_limit, y.color_limit].filter(Boolean).join(' / ') || '-';
+
+        html += '<tr>';
+        html += '<td><input type="checkbox" class="yarn-row-cb" data-id="'+y.id+'" onchange="toggleYarnSelect(\''+y.id+'\')" '+(selectedYarnIds.has(y.id)?'checked':'')+'></td>';
+        html += '<td><div class="project-name"><div class="icon">🧶</div><div>'+(y.name||'未命名')+'</div></div></td>';
+        html += '<td style="font-size:13px">'+(y.supplier||'-')+'</td>';
+        html += '<td style="font-size:12px;color:#666">'+(specText || '-')+'</td>';
+        html += '<td>'+sugBadges+'</td>';
+        html += '<td>'+verBadges+'</td>';
+        html += '<td style="font-size:12px">'+applicableText+'</td>';
+        html += '<td style="font-size:13px">'+(y.moq||'-')+'</td>';
+        html += '<td style="font-size:12px;color:#666">'+limits+'</td>';
+        // Test data column - from test_data JSON
+        let testText = '<span style="color:#ccc;font-size:12px;">-</span>';
+        try {
+            const td = JSON.parse(y.test_data || '[]');
+            if(Array.isArray(td) && td.length > 0) {
+                testText = td.map(r => {
+                    let parts = [];
+                    if(r.reportNo) parts.push('<b style="color:#667eea;">['+escHtml(r.reportNo)+']</b>');
+                    if(r.spec) parts.push('<b>'+escHtml(r.spec)+'</b>');
+                    if(r.tensile) parts.push('强度:'+r.tensile);
+                    if(r.elongation) parts.push('伸长:'+r.elongation+'%');
+                    if(r.boiling) parts.push('沸水:'+r.boiling+'%');
+                    if(r.dryHeat) parts.push('干热:'+r.dryHeat+'%');
+                    if(r.yellowing) parts.push('黄变:'+r.yellowing);
+                    if(r.phenolicYellowing) parts.push('酚黄:'+r.phenolicYellowing);
+                    return '<span style="display:block;font-size:11px;line-height:1.6;color:#555;">'+parts.join(' | ')+'</span>';
+                }).join('');
+            }
+        } catch(e) {
+            // Fallback to legacy fields
+            const testData2 = [];
+            if(y.tensile_strength) testData2.push('强度:'+y.tensile_strength);
+            if(y.elongation) testData2.push('伸长:'+y.elongation+'%');
+            if(y.boiling_shrinkage) testData2.push('沸水:'+y.boiling_shrinkage+'%');
+            if(y.dry_heat_shrinkage) testData2.push('干热:'+y.dry_heat_shrinkage+'%');
+            if(testData2.length > 0) testText = testData2.map(t => '<span style="display:block;font-size:11px;line-height:1.6;color:#555;">'+t+'</span>').join('');
+        }
+        html += '<td style="font-size:12px;padding:4px 8px;">'+testText+'</td>';
+        const statusMap = {'可推广':'#4caf50','验证中':'#ff9800','未验证':'#999'};
+        const st = y.status || '未验证';
+        html += '<td><span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:12px;color:#fff;background:'+(statusMap[st]||'#999')+';">'+st+'</span></td>';
+        html += '<td><div class="action-btns">';
+        html += '<button onclick="previewYarn(\''+y.id+'\')" title="查看详情">👁️</button>';
+        if(isManager) {
+            html += '<button onclick="editYarn(\''+y.id+'\')" title="编辑">✏️</button>';
+            html += '<button class="del" onclick="deleteYarn(\''+y.id+'\')" title="删除">🗑️</button>';
+        }
+        html += '</div></td></tr>';
+    }
+    html += '</tbody></table>';
+    $('yarnTableWrap').innerHTML = html;
+}
+
+function exportYarnData() {
+    if(allYarns.length === 0) { alert('暂无纱线数据可导出'); return; }
+    let csv = '\uFEFF纱线名称,供应商,规格,建议品类,验证品类,适用产品,起订量,温度限制,颜色限制,检测数据(规格|强度|伸长|沸水|干热),状态\n';
+    for(const y of allYarns) {
+        let specs = [];
+        try { specs = JSON.parse(y.specs || '[]'); } catch(e) { specs = []; }
+        const specText = specs.map(s => typeof s === 'object' && s !== null ? (s.type ? s.type + ' ' : '') + (s.value || '') : (s||'')).filter(s => s.trim()).join('; ');
+        const suggested = (function(){ try{ return JSON.parse(y.suggested_categories||'[]'); }catch(e){return [];} })();
+        const verified = (function(){ try{ return JSON.parse(y.verified_categories||'[]'); }catch(e){return [];} })();
+        const applicable = (function(){ try{ return JSON.parse(y.applicable_products||'[]'); }catch(e){return [];} })();
+        // Test data from JSON
+        let testCsv = '';
+        try {
+            const td = JSON.parse(y.test_data || '[]');
+            if(Array.isArray(td) && td.length > 0) {
+                testCsv = td.map(r => [r.spec||'', r.tensile||'', r.elongation||'', r.boiling||'', r.dryHeat||''].join('|')).join('; ');
+            }
+        } catch(e) {
+            testCsv = [y.tensile_strength||'', y.elongation||'', y.boiling_shrinkage||'', y.dry_heat_shrinkage||''].join('|');
+        }
+        csv += '"'+(y.name||'')+'","'+(y.supplier||'')+'","'+specText+'","'+suggested.join('/')+'","'+verified.join('/')+'","'+applicable.join('/')+'","'+(y.moq||'')+'","'+(y.temp_limit||'')+'","'+(y.color_limit||'')+'","'+testCsv+'","'+(y.status||'未验证')+'"\n';
+    }
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '纱线信息_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// === 改动1: 纱线导入功能 ===
+function importYarnData() {
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = '.csv,.xlsx';
+    inp.onchange = async function(e) {
+        var file = e.target.files[0];
+        if(!file) return;
+        var ext = file.name.split('.').pop().toLowerCase();
+        try {
+            var rows = [];
+            if(ext === 'csv') {
+                var text = await new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=rej;r.readAsText(file,'utf-8');});
+                // Remove BOM if present
+                if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+                var lines = text.split(/\r?\n/).filter(function(l){return l.trim();});
+                if(lines.length < 2) { toast('CSV文件为空','error'); return; }
+                var headers = lines[0].split(',').map(function(h){return h.trim().replace(/^"|"$/g,'');});
+                for(var i=1;i<lines.length;i++){
+                    var vals = lines[i].match(/("([^"]*(?:""[^"]*)*)"|([^,]*))/g);
+                    if(!vals) continue;
+                    vals = vals.map(function(v){return v.replace(/^"|"$/g,'').replace(/""/g,'"');});
+                    var obj = {};
+                    headers.forEach(function(h,idx){obj[h] = vals[idx] || '';});
+                    rows.push(obj);
+                }
+            } else if(ext === 'xlsx') {
+                toast('xlsx导入暂不支持，请使用csv格式','error');
+                return;
+            } else {
+                toast('不支持的文件格式','error'); return;
+            }
+            if(rows.length === 0) { toast('未解析到数据','error'); return; }
+            var count = 0;
+            for(var ri=0;ri<rows.length;ri++){
+                var r = rows[ri];
+                var data = {
+                    name: r['纱线名称'] || r['name'] || '',
+                    supplier: r['供应商'] || r['supplier'] || '',
+                    specs: r['规格'] || r['specs'] || '[]',
+                    suggested_categories: r['建议品类'] || r['suggested_categories'] || '[]',
+                    verified_categories: r['验证品类'] || r['verified_categories'] || '[]',
+                    applicable_products: r['适用产品'] || r['applicable_products'] || '[]',
+                    moq: r['起订量'] || r['moq'] || '',
+                    temp_limit: r['温度限制'] || r['temp_limit'] || '',
+                    color_limit: r['颜色限制'] || r['color_limit'] || '',
+                    tensile_strength: r['强度'] || r['tensile_strength'] || '',
+                    elongation: r['伸长'] || r['elongation'] || '',
+                    boiling_shrinkage: r['沸水'] || r['boiling_shrinkage'] || '',
+                    dry_heat_shrinkage: r['干热'] || r['dry_heat_shrinkage'] || '',
+                    test_data: r['检测数据'] || r['test_data'] || '[]',
+                    status: r['状态'] || r['status'] || '未验证',
+                    introduction: r['简介'] || r['introduction'] || '',
+                    features: r['特点'] || r['features'] || '',
+                    is_deleted: false
+                };
+                // Fix JSON fields: wrap in array brackets if not already
+                ['specs','suggested_categories','verified_categories','applicable_products','test_data'].forEach(function(k){
+                    var v = data[k];
+                    if(v && v.indexOf('[') !== 0) {
+                        // If comma-separated, wrap as array
+                        var items = v.split(/[;/]/).map(function(s){return s.trim();}).filter(Boolean);
+                        if(k === 'specs') {
+                            data[k] = JSON.stringify(items.map(function(s){return {type:'',value:s};}));
+                        } else if(k === 'test_data') {
+                            data[k] = '[]';
+                        } else {
+                            data[k] = JSON.stringify(items);
+                        }
+                    }
+                });
+                if(!data.name) continue;
+                try {
+                    await sbInsert('yarns', data);
+                    count++;
+                } catch(e) { console.warn('Import row error:', e); }
+            }
+            toast('成功导入 '+count+' 条纱线数据','success');
+            await loadYarns();
+        } catch(e) {
+            console.error('Import error:', e);
+            toast('导入失败: '+e.message,'error');
+        }
+    };
+    inp.click();
+}
+
+// === 改动2: 纱线批量删除 ===
+var selectedYarnIds = new Set();
+function toggleYarnSelect(id) {
+    if(selectedYarnIds.has(id)) selectedYarnIds.delete(id);
+    else selectedYarnIds.add(id);
+    updateBatchDeleteBtn();
+}
+function toggleYarnSelectAll() {
+    var cbs = document.querySelectorAll('.yarn-row-cb');
+    var allChecked = true;
+    cbs.forEach(function(cb){if(!cb.checked){allChecked=false;}});
+    cbs.forEach(function(cb){
+        cb.checked = !allChecked;
+        var id = cb.getAttribute('data-id');
+        if(!allChecked) selectedYarnIds.add(id);
+        else selectedYarnIds.delete(id);
+    });
+    updateBatchDeleteBtn();
+}
+function updateBatchDeleteBtn() {
+    var btn = document.getElementById('btnBatchDeleteYarn');
+    if(btn) btn.style.display = selectedYarnIds.size > 0 ? 'inline-flex' : 'none';
+}
+async function batchDeleteYarns() {
+    if(selectedYarnIds.size === 0) return;
+    if(!confirm('确定删除选中的 '+selectedYarnIds.size+' 条纱线记录？')) return;
+    try {
+        for(var id of selectedYarnIds) {
+            await sbUpdate('yarns', id, {is_deleted: true});
+        }
+        selectedYarnIds.clear();
+        updateBatchDeleteBtn();
+        toast('批量删除成功','success');
+        await loadYarns();
+    } catch(e) {
+        console.error('Batch delete error:', e);
+        toast('批量删除失败: '+e.message,'error');
+    }
+}
+
+function openYarnModal(id) {
+    editingYarnId = id || null;
+    tempYarnSpecs = [];
+    tempYarnAttachments = [];
+    $('yarnModalTitle').textContent = id ? '编辑纱线' : '新增纱线';
+
+    if(id) {
+        const y = allYarns.find(x=>x.id===id);
+        if(!y) return;
+        $('yName').value = y.name||'';
+        $('ySupplier').value = y.supplier||'';
+        $('yIntroduction').value = y.introduction||'';
+        $('yFeatures').value = y.features||'';
+        const verified = (function(){try{return JSON.parse(y.verified_categories||'[]');}catch(e){return [];}})();
+        document.querySelectorAll('#yVerifiedCategories input[type=checkbox]').forEach(cb => { cb.checked = verified.includes(cb.value); });
+        $('yTempLimit').value = y.temp_limit||'';
+        $('yColorLimit').value = y.color_limit||'';
+        $('yMoq').value = y.moq||'';
+        $('yStatus').value = y.status||'未验证';
+        // Load test data from JSON
+        try {
+            tempTestData = JSON.parse(y.test_data || '[]');
+            if(!Array.isArray(tempTestData)) tempTestData = [];
+            // Migrate old flat fields to table format
+            if(tempTestData.length === 0 && (y.tensile_strength || y.elongation || y.boiling_shrinkage || y.dry_heat_shrinkage)) {
+                tempTestData.push({
+                    reportNo: '',
+                    spec: '',
+                    tensile: y.tensile_strength || '',
+                    elongation: y.elongation || '',
+                    boiling: y.boiling_shrinkage || '',
+                    dryHeat: y.dry_heat_shrinkage || '',
+                    yellowing: '',
+                    phenolicYellowing: ''
+                });
+            }
+            // Ensure all rows have the new fields
+            tempTestData.forEach(row => {
+                if(!row.reportNo) row.reportNo = '';
+                if(!row.yellowing) row.yellowing = '';
+                if(!row.phenolicYellowing) row.phenolicYellowing = '';
+            });
+        } catch(e) { tempTestData = []; }
+        renderTestData();
+        try {
+            tempYarnSpecs = JSON.parse(y.specs || '[]');
+            // Migrate old string-only specs to {type, value} objects
+            tempYarnSpecs = tempYarnSpecs.map(s => {
+                if(typeof s === 'string') return {type: '', value: s};
+                return s;
+            });
+        } catch(e) { tempYarnSpecs = []; }
+        // Load attachments
+        try { tempYarnAttachments = JSON.parse(y.attachments || '[]'); } catch(e) { tempYarnAttachments = []; }
+        // Set checkboxes
+        const suggested = (function(){try{return JSON.parse(y.suggested_categories||'[]');}catch(e){return [];}})();
+        const applicable = (function(){try{return JSON.parse(y.applicable_products||'[]');}catch(e){return [];}})();
+        document.querySelectorAll('#ySuggestedCategories input[type=checkbox]').forEach(cb => { cb.checked = suggested.includes(cb.value); });
+        document.querySelectorAll('#yApplicableProducts input[type=checkbox]').forEach(cb => { cb.checked = applicable.includes(cb.value); });
+    } else {
+        ['yName','ySupplier','yIntroduction','yFeatures','yTempLimit','yColorLimit','yMoq'].forEach(id=>{$(id).value='';});
+        $('yStatus').value = '未验证';
+        document.querySelectorAll('#yVerifiedCategories input[type=checkbox], #ySuggestedCategories input[type=checkbox], #yApplicableProducts input[type=checkbox]').forEach(cb => { cb.checked = false; });
+        tempYarnSpecs = [];
+        tempTestData = [];
+        tempYarnAttachments = [];
+        renderTestData();
+    }
+    renderYarnSpecs();
+    renderYarnAttachments();
+    $('yarnModal').classList.add('active');
+}
+
+function previewYarn(id) {
+    openYarnModal(id);
+    setTimeout(function(){
+        const modal = $('yarnModal');
+        modal.querySelectorAll('input:not([type="checkbox"]), textarea').forEach(el => {
+            el.readOnly = true;
+            el.style.background = '#f5f5f5';
+        });
+        const stSel = modal.querySelector('#yStatus');
+        if(stSel) { stSel.disabled = true; stSel.style.background = '#f5f5f5'; }
+        modal.querySelectorAll('button').forEach(btn => {
+            if(btn.textContent.includes('添加') || btn.textContent.includes('删除规格') || btn.textContent === '保存') {
+                btn.style.display = 'none';
+            }
+        });
+        modal.querySelectorAll('.yarn-spec-item button').forEach(btn => btn.style.display = 'none');
+        modal.querySelectorAll('#yFileUpload').forEach(el => el.style.display = 'none');
+        modal.querySelectorAll('.remove-att').forEach(el => el.style.display = 'none');
+    }, 100);
+}
+
+function renderYarnSpecs() {
+    var specOptions = ['POY','FDY','DTY','ATY','SCY'];
+    let html = '';
+    tempYarnSpecs.forEach((spec, idx) => {
+        const specType = (typeof spec === 'object' && spec !== null) ? (spec.type || '') : '';
+        const specVal = (typeof spec === 'object' && spec !== null) ? (spec.value || '') : (typeof spec === 'string' ? spec : '');
+        html += '<div class="yarn-spec-item">';
+        html += '<select data-idx="'+idx+'" onchange="tempYarnSpecs['+idx+'].type=this.value">';
+        html += '<option value="">-- 选择形态 --</option>';
+        specOptions.forEach(function(opt) {
+            html += '<option value="'+opt+'"'+(specType===opt?' selected':'')+'>'+opt+'</option>';
+        });
+        html += '</select>';
+        html += '<input type="text" value="'+specVal+'" onchange="tempYarnSpecs['+idx+'].value=this.value" placeholder="如 75D/36F">';
+        html += '<button onclick="removeYarnSpec('+idx+')" title="删除">✕</button>';
+        html += '</div>';
+    });
+    $('ySpecsList').innerHTML = html;
+}
+
+function addYarnSpec() {
+    tempYarnSpecs.push({type:'', value:''});
+    renderYarnSpecs();
+}
+
+function removeYarnSpec(idx) {
+    tempYarnSpecs.splice(idx, 1);
+    renderYarnSpecs();
+}
+
+// Test data table functions
+let tempTestData = [];
+
+function addTestDataRow() {
+    tempTestData.push({reportNo: '', spec: '', tensile: '', elongation: '', boiling: '', dryHeat: '', yellowing: '', phenolicYellowing: ''});
+    renderTestData();
+}
+
+function removeTestDataRow(idx) {
+    tempTestData.splice(idx, 1);
+    renderTestData();
+}
+
+function renderTestData() {
+    const tbody = $('testDataBody');
+    if(!tbody) return;
+    let html = '';
+    tempTestData.forEach((row, idx) => {
+        html += '<tr style="border-bottom:1px solid #eee;">';
+        html += '<td style="padding:6px;"><input type="text" value="'+escHtml(row.reportNo)+'" placeholder="检测单号" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;" oninput="tempTestData['+idx+'].reportNo=this.value"></td>';
+        html += '<td style="padding:6px;"><input type="text" value="'+escHtml(row.spec)+'" placeholder="如 150D/48F" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;" oninput="tempTestData['+idx+'].spec=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.tensile)+'" placeholder="5.6" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].tensile=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.elongation)+'" placeholder="21.8" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].elongation=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.boiling)+'" placeholder="2.0" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].boiling=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.dryHeat)+'" placeholder="5.4" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].dryHeat=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.yellowing)+'" placeholder="4.5" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].yellowing=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.phenolicYellowing)+'" placeholder="4.5" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].phenolicYellowing=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><button onclick="removeTestDataRow('+idx+')" title="删除此行" style="font-size:14px;color:#e74c3c;background:none;border:none;cursor:pointer;padding:2px 4px;">✕</button></td>';
+        html += '</tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+function escHtml(s) {
+    if(!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Legacy field accessors (for backward compatibility)
+function getYarnTestField(field) {
+    // Read from the last non-empty row in tempTestData
+    if(tempTestData.length === 0) return '';
+    const map = {yTensileStrength:'tensile', yElongation:'elongation', yBoilingShrinkage:'boiling', yDryHeatShrinkage:'dryHeat', yYellowing:'yellowing', yPhenolicYellowing:'phenolicYellowing', yReportNo:'reportNo'};
+    const key = map[field];
+    if(!key) return '';
+    for(let i = tempTestData.length-1; i >= 0; i--) {
+        if(tempTestData[i][key] && tempTestData[i][key].trim()) return tempTestData[i][key].trim();
+    }
+    return '';
+}
+
+function setYarnTestField(field, val) {
+    const map = {yTensileStrength:'tensile', yElongation:'elongation', yBoilingShrinkage:'boiling', yDryHeatShrinkage:'dryHeat', yYellowing:'yellowing', yPhenolicYellowing:'phenolicYellowing', yReportNo:'reportNo'};
+    const key = map[field];
+    if(!key) return;
+    // Fill the first row, or create one
+    if(tempTestData.length === 0) { tempTestData.push({reportNo:'', spec:'', tensile:'', elongation:'', boiling:'', dryHeat:'', yellowing:'', phenolicYellowing:''}); }
+    tempTestData[0][key] = val;
+    renderTestData();
+}
+
+async function handleYarnFileUpload(event) {
+    const files = event.target.files;
+    for(const f of files) {
+        const data = await fileToBase64(f);
+        tempYarnAttachments.push({name: f.name, type: f.type, data: data});
+    }
+    renderYarnAttachments();
+    event.target.value = '';
+}
+
+function renderYarnAttachments() {
+    let html = '';
+    tempYarnAttachments.forEach((att, idx) => {
+        if(att.type && att.type.startsWith('image/')) {
+            html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+' <span class="remove-att" onclick="removeYarnAttachment('+idx+')">✕</span></span>';
+        } else {
+            html += '<span class="attachment-item" onclick="downloadYarnAtt('+idx+')">📄 '+att.name+' <span class="remove-att" onclick="event.stopPropagation();removeYarnAttachment('+idx+')">✕</span></span>';
+        }
+    });
+    $('yarnAttachments').innerHTML = html || '<span style="font-size:12px;color:#999;">暂无附件</span>';
+}
+
+function removeYarnAttachment(idx) {
+    tempYarnAttachments.splice(idx, 1);
+    renderYarnAttachments();
+}
+
+function downloadYarnAtt(idx) {
+    const att = tempYarnAttachments[idx];
+    if(!att) return;
+    const a = document.createElement('a');
+    a.href = att.data;
+    a.download = att.name;
+    a.click();
+}
+
+async function saveYarn() {
+    const name = $('yName').value.trim();
+    if(!name) { toast('请填写纱线名称','error'); return; }
+
+    const suggested = [];
+    document.querySelectorAll('#ySuggestedCategories input[type=checkbox]:checked').forEach(cb => suggested.push(cb.value));
+    const applicable = [];
+    document.querySelectorAll('#yApplicableProducts input[type=checkbox]:checked').forEach(cb => applicable.push(cb.value));
+    const verified = [];
+    document.querySelectorAll('#yVerifiedCategories input[type=checkbox]:checked').forEach(cb => verified.push(cb.value));
+
+    const data = {
+        name: name,
+        supplier: $('ySupplier').value.trim(),
+        specs: JSON.stringify(tempYarnSpecs.filter(s => {
+            if(typeof s === 'object' && s !== null) return s.value.trim();
+            return s && s.trim();
+        })),
+        introduction: $('yIntroduction').value.trim(),
+        features: $('yFeatures').value.trim(),
+        verified_categories: JSON.stringify(verified),
+        suggested_categories: JSON.stringify(suggested),
+        applicable_products: JSON.stringify(applicable),
+        temp_limit: $('yTempLimit').value.trim(),
+        color_limit: $('yColorLimit').value.trim(),
+        moq: $('yMoq').value.trim(),
+        status: $('yStatus').value,
+        test_data: JSON.stringify(tempTestData.filter(r => r.reportNo.trim() || r.spec.trim() || r.tensile.trim() || r.elongation.trim() || r.boiling.trim() || r.dryHeat.trim() || r.yellowing.trim() || r.phenolicYellowing.trim())),
+        // Legacy fields: store from first row for backward compatibility
+        tensile_strength: (tempTestData[0] && tempTestData[0].tensile) || '',
+        elongation: (tempTestData[0] && tempTestData[0].elongation) || '',
+        boiling_shrinkage: (tempTestData[0] && tempTestData[0].boiling) || '',
+        dry_heat_shrinkage: (tempTestData[0] && tempTestData[0].dryHeat) || ''
+    };
+    // attachments will be added after column is confirmed to exist
+
+    try {
+        let result;
+        if(editingYarnId) {
+            result = await sbUpdate('yarns', editingYarnId, data);
+            if(!result) throw new Error('Update failed');
+            toast('纱线更新成功','success');
+        } else {
+            result = await sbInsert('yarns', data);
+            if(!result) throw new Error('Insert failed');
+            toast('纱线创建成功','success');
+        }
+        closeModal('yarnModal');
+        await loadYarns();
+    } catch(e) {
+        console.error('saveYarn error:', e);
+        toast('保存失败: ' + (e.message || '请检查控制台'),'error');
+    }
+}
+
+function editYarn(id) { openYarnModal(id); }
+
+async function deleteYarn(id) {
+    if(!confirm('确定删除该纱线？')) return;
+    try {
+        await sbUpdate('yarns', id, {is_deleted: true});
+        toast('纱线已删除','success');
+        await loadYarns();
+    } catch(e) {
+        toast('删除失败','error');
+    }
+}
+
+// ============ EXPORT (need2: CSV with project names) ============
+function exportAllData() {
+    let csv = '\uFEFF';
+    csv += '项目单号,项目名称,项目类型,项目等级,状态,负责人,跟进人,周期开始,交期,进度(%),目标,方案,数据单号,结案书,产品数据报告\n';
+    for(const p of allProjects) {
+        const owner = allUsers.find(u=>u.id===(p.creator_id||p.owner_id));
+        const follower = allUsers.find(u=>u.id===p.follower_id);
+        csv += [
+            p.project_no||'', p.name||'', p.project_type||'', p.level||'',
+            p.status||'', owner?owner.name:'', follower?follower.name:'',
+            p.period_start||'', p.deadline||'',
+            p.progress||0, (p.objective||'').replace(/"/g,'""'),
+            (p.plan||'').replace(/"/g,'""'), p.data_no||'',
+            (p.closure_report||'').replace(/"/g,'""'),
+            (p.product_data_report||'').replace(/"/g,'""')
+        ].map(v=>'"'+v+'"').join(',') + '\n';
+    }
+
+    // need2: stages with project names
+    csv += '\n\n阶段计划数据\n';
+    csv += '项目名称,项目单号,阶段名称,开始日期,结束日期,状态,输出内容,产品信息,产品数据,备注,解决方案\n';
+    for(const s of allStages) {
+        const proj = allProjects.find(p=>p.id===s.project_id);
+        csv += [
+            proj?proj.name:'', proj?proj.project_no:'', s.name||'', s.start_date||'', s.end_date||'',
+            s.status||'', (s.output||'').replace(/"/g,'""'),
+            (s.product||'').replace(/"/g,'""'),
+            (s.output_product_data||'').replace(/"/g,'""'),
+            (s.anomaly_feedback||'').replace(/"/g,'""'),
+            (s.solution||'').replace(/"/g,'""')
+        ].map(v=>'"'+v+'"').join(',') + '\n';
+    }
+
+    // Also export milestones
+    csv += '\n\n节点数据\n';
+    csv += '项目名称,阶段名称,节点名称,时间,内容,产品信息,产品数据,异常,解决方案,完成状态\n';
+    for(const key of Object.keys(milestonesMap)) {
+        const ms = milestonesMap[key];
+        for(const m of ms) {
+            const proj = allProjects.find(p=>p.id===m.project_id);
+            const stage = allStages.find(s=>s.id===m.stage_id);
+            csv += [
+                proj?proj.name:'', stage?stage.name:'', m.name||'', m.node_time||'',
+                (m.node_content||'').replace(/"/g,'""'),
+                (m.product_info||'').replace(/"/g,'""'),
+                (m.product_data||'').replace(/"/g,'""'),
+                (m.anomaly||'').replace(/"/g,'""'),
+                (m.solution||'').replace(/"/g,'""'),
+                m.is_completed?'已完成':'未完成'
+            ].map(v=>'"'+v+'"').join(',') + '\n';
+        }
+    }
+
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '材料研发项目看板_'+new Date().toISOString().split('T')[0]+'.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('表格导出成功','success');
+}
+
+// ============ WEEKLY REPORT EXPORT (need8) ============
+function openWeeklyReportModal() {
+    // Default to current week (Monday to Sunday)
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(today.setDate(diff));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    $('weekStart').value = monday.toISOString().split('T')[0];
+    $('weekEnd').value = sunday.toISOString().split('T')[0];
+    $('weeklyReportModal').classList.add('active');
+}
+
+function exportWeeklyReport() {
+    const ws = $('weekStart').value;
+    const we = $('weekEnd').value;
+    if(!ws || !we) { toast('请选择日期范围','error'); return; }
+
+    // Calculate next week range
+    const nextStart = new Date(new Date(we).getTime() + 24*60*60*1000);
+    const nextEnd = new Date(nextStart.getTime() + 6*24*60*60*1000);
+    const nsStr = nextStart.toISOString().split('T')[0];
+    const neStr = nextEnd.toISOString().split('T')[0];
+
+    // Helper: get stage completion info for a project
+    function getStageInfo(projectId) {
+        const projStages = allStages.filter(s => s.project_id === projectId);
+        if(projStages.length === 0) return '无阶段计划';
+        const parts = [];
+        for(const s of projStages) {
+            const ms = milestonesMap[projectId + '_' + s.id] || [];
+            const done = ms.filter(m => m.is_completed === true).length;
+            parts.push((s.name||'未命名') + '(' + done + '/' + ms.length + ')');
+        }
+        return parts.join('; ');
+    }
+
+    // Helper: get owner name
+    function getOwnerName(p) {
+        const owner = allUsers.find(u => u.id === (p.creator_id || p.owner_id));
+        return owner ? owner.name : '-';
+    }
+
+    // Find projects with deadline in this week
+    const thisWeekProjects = allProjects.filter(p => p.deadline && p.deadline >= ws && p.deadline <= we);
+    // Find projects with deadline in next week
+    const nextWeekProjects = allProjects.filter(p => p.deadline && p.deadline >= nsStr && p.deadline <= neStr);
+
+    let csv = '\uFEFF';
+    csv += '材料研发项目周报\n';
+    csv += '本周计划完成: ' + ws + ' 至 ' + we + '\n';
+    csv += '下周计划完成: ' + nsStr + ' 至 ' + neStr + '\n\n';
+
+    // This week: projects with deadline in this week
+    csv += '=== 本周计划完成项目 ===\n';
+    csv += '项目负责人,项目编码,项目名称,当前进度,当前状态,各阶段完成情况\n';
+    for(const p of thisWeekProjects) {
+        csv += [
+            getOwnerName(p),
+            p.project_no || p.id,
+            p.name || '',
+            (p.progress || 0) + '%',
+            p.status || '未开始',
+            getStageInfo(p.id)
+        ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',') + '\n';
+    }
+    if(thisWeekProjects.length === 0) {
+        csv += '"无","","","","",""\n';
+    }
+
+    csv += '\n=== 下周计划完成项目 ===\n';
+    csv += '项目负责人,项目编码,项目名称,当前进度,当前状态,各阶段完成情况\n';
+    for(const p of nextWeekProjects) {
+        csv += [
+            getOwnerName(p),
+            p.project_no || p.id,
+            p.name || '',
+            (p.progress || 0) + '%',
+            p.status || '未开始',
+            getStageInfo(p.id)
+        ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',') + '\n';
+    }
+    if(nextWeekProjects.length === 0) {
+        csv += '"无","","","","",""\n';
+    }
+
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '周报_' + ws + '_至_' + we + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    closeModal('weeklyReportModal');
+    toast('周报导出成功','success');
+}
+
+// ============ MODAL ============
+function closeModal(id) { $(id).classList.remove('active'); }
+
+// ============ SETUP WIZARD ============
+function showSetupWizard() {
+    const sql = `-- 材料研发项目看板 v3.1 升级脚本
+-- 在 Supabase SQL Editor 中执行
+
+-- 1. 给 milestones 表增加字段
+ALTER TABLE public.milestones ADD COLUMN IF NOT EXISTS attachments TEXT DEFAULT '[]';
+ALTER TABLE public.milestones ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT false;
+
+-- 2. 给 projects 表增加字段
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS follower_id TEXT;
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS attachments TEXT DEFAULT '[]';
+
+-- 3. 创建纱线信息表
+CREATE TABLE IF NOT EXISTS public.yarns (
+    id TEXT PRIMARY KEY DEFAULT 'y_' || floor(extract(epoch from now()) * 1000)::text || '_' || substr(md5(random()::text), 1, 6),
+    supplier TEXT,
+    name TEXT NOT NULL,
+    specs TEXT DEFAULT '[]',
+    introduction TEXT,
+    features TEXT,
+    verified_categories TEXT DEFAULT '[]',
+    suggested_categories TEXT DEFAULT '[]',
+    applicable_products TEXT DEFAULT '[]',
+    temp_limit TEXT,
+    color_limit TEXT,
+    moq TEXT,
+    status TEXT DEFAULT '未验证',
+    test_data TEXT DEFAULT '[]',
+    tensile_strength TEXT DEFAULT '',
+    elongation TEXT DEFAULT '',
+    boiling_shrinkage TEXT DEFAULT '',
+    dry_heat_shrinkage TEXT DEFAULT '',
+    attachments TEXT DEFAULT '[]',
+    is_deleted BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+GRANT ALL ON public.yarns TO anon, authenticated, service_role;
+
+-- 5. 已有表增加 test_data 列
+ALTER TABLE public.yarns ADD COLUMN IF NOT EXISTS test_data TEXT DEFAULT '[]';
+
+-- 6. 权限
+GRANT ALL ON public.milestones TO anon, authenticated, service_role;
+GRANT ALL ON public.projects TO anon, authenticated, service_role;
+
+-- 升级完成！`;
+    $('setupSql').textContent = sql;
+    $('setupWizard').style.display = 'flex';
+}
+
+function copySql() {
+    const sql = $('setupSql').textContent;
+    navigator.clipboard.writeText(sql).then(()=>toast('SQL已复制','success')).catch(()=>toast('复制失败','error'));
+}
+
+function skipSetup() {
+    $('setupWizard').style.display = 'none';
+    toast('看板已就绪','info');
+}
+
+// ============ CHANGE PASSWORD ============
+async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function openChangePwd() {
+    $('pwdOld').value = '';
+    $('pwdNew').value = '';
+    $('pwdConfirm').value = '';
+    $('pwdErr').style.display = 'none';
+    $('changePwdModal').classList.add('active');
+}
+
+async function submitChangePwd() {
+    const oldPwd = $('pwdOld').value;
+    const newPwd = $('pwdNew').value;
+    const confirmPwd = $('pwdConfirm').value;
+    const errEl = $('pwdErr');
+    errEl.style.display = 'none';
+
+    if(!oldPwd || !newPwd || !confirmPwd) {
+        errEl.textContent = '请填写所有字段';
+        errEl.style.display = 'block';
+        return;
+    }
+    if(newPwd.length < 6) {
+        errEl.textContent = '新密码至少需要6位';
+        errEl.style.display = 'block';
+        return;
+    }
+    if(newPwd !== confirmPwd) {
+        errEl.textContent = '两次输入的新密码不一致';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    try {
+        const users = await sbGet('users', '&id=eq.'+currentUser.id);
+        if(!users.length) {
+            errEl.textContent = '用户信息获取失败';
+            errEl.style.display = 'block';
+            return;
+        }
+        const serverUser = users[0];
+
+        const oldHash = await sha256(oldPwd);
+        let oldMatch = false;
+        if(serverUser.password_hash === oldHash) oldMatch = true;
+        else if(serverUser.password_hash === oldPwd) oldMatch = true;
+
+        if(!oldMatch) {
+            errEl.textContent = '当前密码不正确';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        const newHash = await sha256(newPwd);
+        const result = await sbUpdate('users', currentUser.id, {password_hash: newHash});
+        if(result) {
+            toast('密码修改成功！', 'success');
+            closeModal('changePwdModal');
+            currentUser.password_hash = newHash;
+            localStorage.setItem('rd_board_user', JSON.stringify(currentUser));
+        } else {
+            errEl.textContent = '密码更新失败，请重试';
+            errEl.style.display = 'block';
+        }
+    } catch(e) {
+        errEl.textContent = '网络错误，请检查连接';
+        errEl.style.display = 'block';
+    }
+}
+
+// ============ NOTIFICATION SYSTEM ============
+const NOTIF_STORAGE_KEY = 'rd_board_notif_settings';
+const NOTIF_LOG_KEY = 'rd_board_notif_log';
+const NOTIF_SENT_KEY = 'rd_board_notif_sent';
+
+function getNotifSettings() {
+    try { return JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveNotifSettingsLocal(settings) {
+    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(settings));
+}
+
+function openNotifSettings() {
+    const s = getNotifSettings();
+    $('ddWebhook').value = s.webhook || '';
+    $('ddSecret').value = s.secret || '';
+    $('ddSecMode').value = s.secMode || 'sign';
+    $('advanceDays').value = s.advanceDays || '3';
+    $('browserNotif').value = s.browserNotif || 'on';
+    updateDdStatus();
+    renderNotifLog();
+    $('notifSettingsModal').classList.add('active');
+}
+
+function updateDdStatus() {
+    const s = getNotifSettings();
+    const el = $('ddStatus');
+    if (s.webhook) {
+        el.className = 'notif-status connected';
+        el.textContent = '● 已配置';
+    } else {
+        el.className = 'notif-status disconnected';
+        el.textContent = '● 未连接';
+    }
+}
+
+function saveNotifSettings() {
+    const settings = {
+        webhook: $('ddWebhook').value.trim(),
+        secret: $('ddSecret').value.trim(),
+        secMode: $('ddSecMode').value,
+        advanceDays: parseInt($('advanceDays').value) || 3,
+        browserNotif: $('browserNotif').value
+    };
+    saveNotifSettingsLocal(settings);
+    updateDdStatus();
+    toast('通知设置已保存', 'success');
+    addNotifLog('info', '通知设置已更新');
+}
+
+async function signDingTalk(secret) {
+    const timestamp = Date.now().toString();
+    const stringToSign = timestamp + '\n' + secret;
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const msgData = encoder.encode(stringToSign);
+    const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+    const signBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
+    return { timestamp, sign: encodeURIComponent(signBase64) };
+}
+
+async function sendDingTalkMessage(content, atMobiles) {
+    const s = getNotifSettings();
+    if (!s.webhook) { toast('请先配置钉钉 Webhook', 'error'); return false; }
+    let url = s.webhook;
+    if (s.secMode === 'sign' && s.secret) {
+        const { timestamp, sign } = await signDingTalk(s.secret);
+        url += '&timestamp=' + timestamp + '&sign=' + sign;
+    }
+    const body = { msgtype: 'text', text: { content: content } };
+    if (atMobiles && atMobiles.length > 0) {
+        body.at = { atMobiles: atMobiles, isAtAll: false };
+    } else {
+        body.at = { isAtAll: true };
+    }
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        return data.errcode === 0;
+    } catch(e) {
+        console.error('DingTalk send error:', e);
+        return false;
+    }
+}
+
+// 手机号映射（用于@具体执行人）
+const PHONE_MAP = {
+    'E001': '18065387313',   // 曾庆霖
+    'E002': '13295005002',   // 王松霞
+    'E003': '18850496381',   // 蔡诗茵
+    'E004': '18787805042',   // 张德瑞
+    'E005': '17705067705',   // 郑懋
+    'M001': '15106017794',   // 林煌伟
+    'M003': '18050880096',   // 谢振菲
+    'M004': '18350888826'    // 陈真真
+};
+
+function getAnomalies() {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const s = getNotifSettings();
+    const advanceDays = s.advanceDays || 3;
+    const futureDate = new Date(today.getTime() + advanceDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const anomalies = [];
+
+    // Overdue projects
+    for (const p of allProjects) {
+        if (p.deadline && p.deadline < todayStr && p.status !== '已完成') {
+            anomalies.push({ type: 'overdue', title: p.name || '未命名项目', desc: '交期 ' + p.deadline + ' 已过，当前状态: ' + p.status, userId: p.owner_id });
+        }
+    }
+    // Upcoming deadlines
+    for (const p of allProjects) {
+        if (p.deadline && p.deadline >= todayStr && p.deadline <= futureDate && p.status !== '已完成') {
+            const daysLeft = Math.ceil((new Date(p.deadline) - today) / (1000 * 60 * 60 * 24));
+            anomalies.push({ type: 'upcoming', title: p.name || '未命名项目', desc: '交期 ' + p.deadline + ' 还剩 ' + daysLeft + ' 天', userId: p.owner_id });
+        }
+    }
+    // Overdue stages
+    for (const st of allStages) {
+        if (st.end_date && st.end_date < todayStr && st.status !== '已完成') {
+            const proj = allProjects.find(p => p.id === st.project_id);
+            anomalies.push({ type: 'stage_overdue', title: (proj ? proj.name : '?') + ' / ' + (st.name || '未命名阶段'), desc: '阶段截止 ' + st.end_date + ' 已过', userId: proj ? proj.owner_id : null });
+        }
+    }
+    // Progress stale
+    for (const p of allProjects) {
+        if ((p.progress || 0) > 0 && p.status !== '已完成') {
+            const projStages = allStages.filter(s => s.project_id === p.id);
+            let hasRecent = false;
+            for (const s of projStages) {
+                if (s.start_date && s.start_date >= sevenDaysAgo) { hasRecent = true; break; }
+                if (s.end_date && s.end_date >= sevenDaysAgo) { hasRecent = true; break; }
+                const ms = milestonesMap[p.id + '_' + s.id] || [];
+                for (const m of ms) {
+                    if (m.node_time && m.node_time >= sevenDaysAgo) { hasRecent = true; break; }
+                    if (m.created_at && m.created_at.split('T')[0] >= sevenDaysAgo) { hasRecent = true; break; }
+                }
+                if (hasRecent) break;
+            }
+            if (!hasRecent) {
+                anomalies.push({ type: 'info', title: p.name || '未命名项目', desc: '进度 ' + p.progress + '% 但最近7天无更新', userId: p.owner_id });
+            }
+        }
+    }
+    return anomalies;
+}
+
+function getNotifLog() {
+    try { return JSON.parse(localStorage.getItem(NOTIF_LOG_KEY)) || []; } catch(e) { return []; }
+}
+function addNotifLog(type, text) {
+    const log = getNotifLog();
+    log.unshift({ time: new Date().toLocaleString(), type, text });
+    if (log.length > 50) log.length = 50;
+    localStorage.setItem(NOTIF_LOG_KEY, JSON.stringify(log));
+    renderNotifLog();
+}
+function renderNotifLog() {
+    const log = getNotifLog();
+    const el = $('notifLog');
+    if (!el) return;
+    if (log.length === 0) { el.innerHTML = '<div class="notif-log-item" style="color:#999;text-align:center;">暂无通知记录</div>'; return; }
+    el.innerHTML = log.map(item =>
+        '<div class="notif-log-item"><span class="notif-log-time">' + item.time + '</span><span class="notif-log-type ' + item.type + '">' + ({overdue:'逾期',upcoming:'即将到期',info:'信息',success:'成功',error:'失败'}[item.type]||item.type) + '</span>' + item.text + '</div>'
+    ).join('');
+}
+
+function updateNotifBadge() {
+    const anomalies = getAnomalies();
+    const badge = $('notifBadge');
+    if (badge) {
+        badge.textContent = anomalies.length > 0 ? anomalies.length : '';
+    }
+}
+
+function checkAndShowNotifs() {
+    const anomalies = getAnomalies();
+    updateNotifBadge();
+    if (anomalies.length === 0) {
+        toast('当前无异常项 ✅', 'success');
+        addNotifLog('info', '检查完毕，无异常');
+        return;
+    }
+    // Browser notification
+    const s = getNotifSettings();
+    if (s.browserNotif === 'on' && Notification.permission === 'granted') {
+        const critical = anomalies.filter(a => a.type === 'overdue');
+        if (critical.length > 0) {
+            new Notification('🚨 项目异常提醒', {
+                body: critical.length + ' 个项目/阶段已逾期，请查看详情',
+                icon: '🔬'
+            });
+        }
+    }
+    toast('发现 ' + anomalies.length + ' 项异常', 'warning');
+    addNotifLog('info', '检查发现 ' + anomalies.length + ' 项异常');
+}
+
+async function sendManualNotif() {
+    const s = getNotifSettings();
+    if (!s.webhook) { toast('请先配置钉钉 Webhook', 'error'); return; }
+    const anomalies = getAnomalies();
+    if (anomalies.length === 0) {
+        toast('当前无异常需要提醒', 'info');
+        addNotifLog('info', '手动发送：无异常');
+        return;
+    }
+    // 收集负责人手机号
+    const atMobiles = new Set();
+    anomalies.forEach(a => { if (a.userId && PHONE_MAP[a.userId]) atMobiles.add(PHONE_MAP[a.userId]); });
+    let msg = '🔔 交期提醒：当前有 ' + anomalies.length + ' 项异常\n\n';
+    anomalies.slice(0, 10).forEach((a, i) => {
+        const tag = a.type === 'overdue' ? '🚨' : a.type === 'upcoming' ? '⏰' : '📋';
+        msg += (i + 1) + '. ' + tag + ' ' + a.title + '\n   ' + a.desc + '\n';
+    });
+    if (anomalies.length > 10) msg += '\n... 还有 ' + (anomalies.length - 10) + ' 项';
+    // 在消息内容中加入@手机号
+    if (atMobiles.size > 0) { msg += '\n\n' + Array.from(atMobiles).map(p => '@' + p).join(' '); }
+    msg += '\n\n——材料研发项目看板';
+
+    const ok = await sendDingTalkMessage(msg, Array.from(atMobiles));
+    if (ok) {
+        toast('钉钉通知已发送 ✅', 'success');
+        addNotifLog('success', '手动发送通知，共 ' + anomalies.length + ' 项异常');
+    } else {
+        toast('钉钉通知发送失败 ❌', 'error');
+        addNotifLog('error', '手动发送失败');
+    }
+}
+
+async function testDingTalkNotif() {
+    const s = getNotifSettings();
+    const webhook = $('ddWebhook').value.trim();
+    const secret = $('ddSecret').value.trim();
+    const secMode = $('ddSecMode').value;
+    if (!webhook) { toast('请填写 Webhook 地址', 'error'); return; }
+
+    // Temporarily save for test
+    saveNotifSettingsLocal({ webhook, secret, secMode, advanceDays: parseInt($('advanceDays').value) || 3, browserNotif: $('browserNotif').value });
+
+    const resultEl = $('ddTestResult');
+    resultEl.className = 'notif-test-result';
+    resultEl.textContent = '正在发送...';
+    resultEl.style.display = 'block';
+
+    let url = webhook;
+    if (secMode === 'sign' && secret) {
+        try {
+            const { timestamp, sign } = await signDingTalk(secret);
+            url += '&timestamp=' + timestamp + '&sign=' + sign;
+        } catch(e) {
+            resultEl.className = 'notif-test-result error';
+            resultEl.textContent = '签名计算失败: ' + e.message;
+            return;
+        }
+    }
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ msgtype: 'text', text: { content: '🔔 交期提醒：材料研发项目看板 - 通知测试\n\n如果您收到此消息，说明钉钉通知配置成功！' } })
+        });
+        const data = await res.json();
+        if (data.errcode === 0) {
+            resultEl.className = 'notif-test-result success';
+            resultEl.textContent = '✅ 发送成功！请检查钉钉群是否收到消息。';
+            addNotifLog('success', '测试发送成功');
+        } else {
+            resultEl.className = 'notif-test-result error';
+            resultEl.textContent = '❌ 发送失败: ' + (data.errmsg || '未知错误');
+            addNotifLog('error', '测试发送失败: ' + (data.errmsg || ''));
+        }
+    } catch(e) {
+        resultEl.className = 'notif-test-result error';
+        resultEl.textContent = '❌ 网络错误: ' + e.message;
+        addNotifLog('error', '测试发送网络错误');
+    }
+}
+
+function requestBrowserNotif() {
+    if (!('Notification' in window)) {
+        toast('当前浏览器不支持通知', 'error');
+        return;
+    }
+    Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+            toast('浏览器通知已授权 ✅', 'success');
+            new Notification('🔔 通知已开启', { body: '材料研发项目看板通知已启用' });
+        } else {
+            toast('浏览器通知被拒绝', 'error');
+        }
+    });
+}
+
+// ============ MOBILE NAV ============
+function updateMobileNav(el) {
+    document.querySelectorAll('.mobile-nav-item').forEach(item => item.classList.remove('active'));
+    el.classList.add('active');
+}
+
+// ============ INIT ============
+window.onload = function() {
+    const saved = localStorage.getItem('rd_board_user');
+    if(saved) {
+        currentUser = JSON.parse(saved);
+        showApp();
+    }
+    $('loginPassword').addEventListener('keypress', e=>{if(e.key==='Enter')doLogin();});
+    $('loginEmail').addEventListener('keypress', e=>{if(e.key==='Enter')$('loginPassword').focus();});
+};
+</script>
+</body>
+</html>
