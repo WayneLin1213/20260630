@@ -1642,15 +1642,6 @@ function renderStagesList() {
         html += '<div style="display:flex;gap:6px;align-items:end;"><button class="btn btn-sm btn-outline" onclick="addMilestone('+idx+')">＋节点</button><button class="btn btn-sm btn-danger" onclick="removeStage('+idx+')">删除</button></div>';
         html += '</div>';
 
-        // 纱线事业部 | 纱线预计完成时间 | 纱线完成时间
-        html += '<div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:6px;font-size:11px;margin-bottom:8px;">';
-        html += '<div><span style="color:#888;">纱线事业部:</span> <select onchange="tempStages['+idx+'].yarn_department=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+((stageLocked&&!isManager)?' disabled':'')+'>';
-        html += '<option value="">请选择</option>';
-        ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+((s.yarn_department===d)?'selected':'')+'>'+d+'</option>';});
-        html += '</select></div>';
-        html += '<div><span style="color:#888;">纱线预计完成时间:</span> <input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
-        html += '<div><span style="color:#888;">纱线完成时间:</span> <input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
-        html += '</div>';
         
         // 检测单号 | 检测结果
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:8px;">';
