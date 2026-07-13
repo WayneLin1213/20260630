@@ -1584,6 +1584,32 @@ function downloadMsAttachment(stageIdx, mIdx, attIdx) {
     a.click();
 }
 
+// Stage-level attachment handlers
+async function handleStageFileUpload(event, stageIdx) {
+    const files = event.target.files;
+    if(!tempStages[stageIdx].attachments) tempStages[stageIdx].attachments = [];
+    for(const f of files) {
+        const data = await fileToBase64(f);
+        tempStages[stageIdx].attachments.push({name: f.name, type: f.type, data: data});
+    }
+    renderStagesList();
+    event.target.value = '';
+}
+
+function removeStageAttachment(stageIdx, attIdx) {
+    tempStages[stageIdx].attachments.splice(attIdx, 1);
+    renderStagesList();
+}
+
+function downloadStageAttachment(stageIdx, attIdx) {
+    const att = tempStages[stageIdx].attachments[attIdx];
+    if(!att) return;
+    const a = document.createElement('a');
+    a.href = att.data;
+    a.download = att.name;
+    a.click();
+}
+
 // ============ STAGES & MILESTONES (need3/4/12) ============
 function renderStagesList() {
     let html = '';
@@ -1752,7 +1778,7 @@ function unlockStage(stageIdx) {
 }
 
 function addStage() {
-    tempStages.push({name:'新阶段',start_date:'',end_date:'',status:'未开始',output:'',product:'',output_product_data:'',anomaly_feedback:'',solution:'',milestones:[]});
+    tempStages.push({name:'新阶段',start_date:'',end_date:'',status:'未开始',output:'',product:'',output_product_data:'',anomaly_feedback:'',solution:'',yarn_formula:'',yarn_department:'',yarn_time:'',yarn_complete_time:'',test_no:'',test_result:'',attachments:[],milestones:[]});
     renderStagesList();
 }
 function removeStage(idx) {
@@ -1823,7 +1849,7 @@ async function saveProject() {
                     status: s.status, output: s.output, product: s.product,
                     output_product_data: s.output_product_data||'',
                     anomaly_feedback: s.anomaly_feedback||'',
-                    solution: s.solution||'',
+                    solution: JSON.stringify({yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',test_no:s.test_no||'',test_result:s.test_result||'',attachments:s.attachments||[]}),
                     is_deleted: false
                 };
                 if(s.id) {
@@ -1852,7 +1878,7 @@ async function saveProject() {
                         status: s.status, output: s.output, product: s.product,
                         output_product_data: s.output_product_data||'',
                         anomaly_feedback: s.anomaly_feedback||'',
-                        solution: s.solution||'',
+                        solution: JSON.stringify({yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',test_no:s.test_no||'',test_result:s.test_result||'',attachments:s.attachments||[]}),
                         is_deleted: false
                     });
                     if(newStage && newStage[0] && s.milestones) {
@@ -1949,8 +1975,18 @@ function previewProject(id) {
     renderProjectAttachments();
 
     // Load stages
-    tempStages = allStages.filter(s=>s.project_id===id).map(s=>({
+    tempStages = allStages.filter(s=>s.project_id===id).map(s=>{
+        var stageExt = {};
+        try { stageExt = JSON.parse(s.solution||'{}'); } catch(e) {}
+        return {
         ...s,
+        yarn_formula: stageExt.yarn_formula||'',
+        yarn_department: stageExt.yarn_department||'',
+        yarn_time: stageExt.yarn_time||'',
+        yarn_complete_time: stageExt.yarn_complete_time||'',
+        test_no: stageExt.test_no||'',
+        test_result: stageExt.test_result||'',
+        attachments: stageExt.attachments||[],
         milestones: milestonesMap[id+'_'+s.id] ? milestonesMap[id+'_'+s.id].map(m=>({
             name: m.name||'', time: m.node_time||'', content: m.node_content||'',
             product_info: m.product_info||'', product_data: m.product_data||'',
@@ -1960,7 +1996,7 @@ function previewProject(id) {
             _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
             id: m.id
         })) : []
-    }));
+    };});
 
     renderStagesList();
     $('projectModal').classList.add('active');
