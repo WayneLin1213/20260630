@@ -1621,7 +1621,10 @@ function renderStagesList() {
         html += '<div class="timeline-item">';
         html += '<div class="tl-header">';
         // need3: editable stage name
-        html += '<input class="stage-name-input" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="输入阶段名称（如: 方案设计）">';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线名称（严格按照系统）</span><input type="text" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="纱线名称" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线配方</span><input type="text" value="'+(s.yarn_formula||'')+'" onchange="tempStages['+idx+'].yarn_formula=this.value" placeholder="纱线配方" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
+        html += '</div>';
         html += '<div style="display:flex;gap:6px;">';
         html += '<button class="btn btn-sm btn-outline" onclick="addMilestone('+idx+')">＋节点</button>';
         html += '<button class="btn btn-sm btn-danger" onclick="removeStage('+idx+')">删除</button>';
@@ -1635,6 +1638,23 @@ function renderStagesList() {
         html += '<option '+(s.status==='已完成'?'selected':'')+'>已完成</option>';
         html += '</select></div></div>';
 
+        // 纱线事业部 | 纱线预计完成时间 | 纱线完成时间
+        html += '<div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:6px;font-size:11px;margin-bottom:8px;">';
+        html += '<div><span style="color:#888;">纱线事业部:</span> <select onchange="tempStages['+idx+'].yarn_department=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+((stageLocked&&!isManager)?' disabled':'')+'>';
+        html += '<option value="">请选择</option>';
+        ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+((s.yarn_department===d)?'selected':'')+'>'+d+'</option>';});
+        html += '</select></div>';
+        html += '<div><span style="color:#888;">纱线预计完成时间:</span> <input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
+        html += '<div><span style="color:#888;">纱线完成时间:</span> <input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
+        html += '</div>';
+        
+        // 检测单号 | 检测结果
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:8px;">';
+        html += '<div><span style="color:#888;">检测单号:</span> <input type="text" value="'+(s.test_no||'')+'" onchange="tempStages['+idx+'].test_no=this.value" placeholder="检测单号" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
+        html += '<div><span style="color:#888;">检测结果:</span> <select onchange="tempStages['+idx+'].test_result=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+((stageLocked&&!isManager)?' disabled':'')+'>';
+        html += '<option value="">请选择</option><option value="合格" '+((s.test_result==='合格')?'selected':'')+'>合格</option><option value="不合格" '+((s.test_result==='不合格')?'selected':'')+'>不合格</option><option value="待检测" '+((s.test_result==='待检测')?'selected':'')+'>待检测</option></select></div>';
+        html += '</div>';
+        
         html += '<div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:8px;">';
         html += '<div><span class="field-label" style="font-size:11px;color:#888;">备注</span><input type="text" value="'+(s.anomaly_feedback||'')+'" id="stage_anomaly_'+idx+'" onchange="tempStages['+idx+'].anomaly_feedback=this.value" placeholder="备注信息" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
         html += '</div>';
@@ -1679,19 +1699,6 @@ function renderMilestones(stageIdx) {
         if(msCanEdit) {
             html += '<button class="btn btn-sm btn-danger" onclick="removeMilestone('+stageIdx+','+mIdx+')" style="font-size:10px;padding:2px 8px;">删除</button>';
         }
-        html += '</div>';
-        // Row2: 纱线名称 | 纱线配方
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
-        html += '<div><span style="color:#888;">纱线名称（严格按照系统）:</span> <input type="text" value="'+(m.product_info||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_info=this.value" placeholder="纱线名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        html += '<div><span style="color:#888;">纱线配方:</span> <input type="text" value="'+(m.product_data||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_data=this.value" placeholder="纱线配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        html += '</div>';
-        // Row3: 纱线事业部 | 纱线预计完成时间 | 纱线完成时间 (3列同行)
-        html += '<div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
-        html += '<div><span style="color:#888;">纱线事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option>';
-        ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+(ext.department===d?'selected':'')+'>'+d+'</option>';});
-        html += '</select></div>';
-        html += '<div><span style="color:#888;">纱线预计完成时间:</span> <input type="date" value="'+(m.time||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        html += '<div><span style="color:#888;">纱线完成时间:</span> <input type="date" value="'+(ext.complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '</div>';
         // Row4: 成品名称 | 成品配方
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
