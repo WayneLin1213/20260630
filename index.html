@@ -1942,7 +1942,6 @@ async function syncMilestones(projectId, stageId, milestones) {
     }
     for(const m of milestones) {
         const msData = {
-            id: m.id || ('ms_' + Date.now() + '_' + Math.random().toString(36).substr(2,6)),
             project_id: projectId,
             stage_id: stageId,
             name: m.name || '',
