@@ -1485,7 +1485,7 @@ function openProjectModal(id) {
                 anomaly: m.anomaly||'', solution: m.solution||'',
                 is_completed: m.is_completed||false,
                 attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
-                _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
+                _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
                 id: m.id
             })) : []
         }));
@@ -1654,30 +1654,29 @@ function renderMilestones(stageIdx) {
             html += '<button class="btn btn-sm btn-danger" onclick="removeMilestone('+stageIdx+','+mIdx+')" style="font-size:10px;padding:2px 8px;">删除</button>';
         }
         html += '</div>';
-        // Row2: 纱线事业部
-        html += '<div style="display:grid;grid-template-columns:1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        // Row2: 纱线名称 | 纱线配方
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        html += '<div><span style="color:#888;">纱线名称（严格按照系统）:</span> <input type="text" value="'+(m.product_info||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_info=this.value" placeholder="纱线名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div><span style="color:#888;">纱线配方:</span> <input type="text" value="'+(m.product_data||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_data=this.value" placeholder="纱线配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '</div>';
+        // Row3: 纱线事业部 | 纱线预计完成时间 | 纱线完成时间 (3列同行)
+        html += '<div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
         html += '<div><span style="color:#888;">纱线事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option>';
         ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+(ext.department===d?'selected':'')+'>'+d+'</option>';});
         html += '</select></div>';
-        html += '</div>';
-        // Row3: 纱线预计完成时间 | 纱线完成时间
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
         html += '<div><span style="color:#888;">纱线预计完成时间:</span> <input type="date" value="'+(m.time||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '<div><span style="color:#888;">纱线完成时间:</span> <input type="date" value="'+(ext.complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '</div>';
-        // Row4: 成品名称 | 配方
+        // Row4: 成品名称 | 成品配方
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
-        html += '<div><span style="color:#888;">成品名称:</span> <input type="text" value="'+(m.product_info||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_info=this.value" placeholder="成品名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        html += '<div><span style="color:#888;">配方:</span> <input type="text" value="'+(ext.weave_formula||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_formula=this.value" placeholder="配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div><span style="color:#888;">成品名称:</span> <input type="text" value="'+(ext.weave_name||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_name=this.value" placeholder="成品名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div><span style="color:#888;">成品配方:</span> <input type="text" value="'+(ext.weave_formula||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_formula=this.value" placeholder="成品配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '</div>';
-        // Row5: 织造事业部
-        html += '<div style="display:grid;grid-template-columns:1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        // Row5: 织造事业部 | 织造预计完成时间 | 织造完成时间 (3列同行)
+        html += '<div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
         html += '<div><span style="color:#888;">织造事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option>';
         ['飞织','经编','梭织','纬编','速织'].forEach(function(d){html += '<option value="'+d+'" '+(ext.weave_department===d?'selected':'')+'>'+d+'</option>';});
         html += '</select></div>';
-        html += '</div>';
-        // Row6: 织造预计完成时间 | 织造完成时间
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
         html += '<div><span style="color:#888;">织造预计完成时间:</span> <input type="date" value="'+(ext.weave_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '<div><span style="color:#888;">织造完成时间:</span> <input type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '</div>';
@@ -1774,7 +1773,7 @@ function syncMilestoneToStage(stageIdx) {
 }
 function addMilestone(stageIdx) {
     if(!tempStages[stageIdx].milestones) tempStages[stageIdx].milestones = [];
-    tempStages[stageIdx].milestones.push({name:'',time:'',content:'',product_info:'',product_data:'',anomaly:'',solution:'',is_completed:false,attachments:[],_ext:{department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''}});
+    tempStages[stageIdx].milestones.push({name:'',time:'',content:'',product_info:'',product_data:'',anomaly:'',solution:'',is_completed:false,attachments:[],_ext:{department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''}});
     renderStagesList();
 }
 function removeMilestone(stageIdx, mIdx) {
@@ -1905,7 +1904,7 @@ async function syncMilestones(projectId, stageId, milestones) {
             product_info: m.product_info || '',
             product_data: m.product_data || '',
             anomaly: m.anomaly || '',
-            solution: (function(){var e=m._ext||{};return JSON.stringify({department:e.department||'',ms_status:e.ms_status||'',sales_no:e.sales_no||'',test_no:e.test_no||'',test_result:e.test_result||'',complete_time:e.complete_time||'',weave_formula:e.weave_formula||'',weave_department:e.weave_department||'',weave_time:e.weave_time||'',weave_complete_time:e.weave_complete_time||''});})(),
+            solution: (function(){var e=m._ext||{};return JSON.stringify({department:e.department||'',ms_status:e.ms_status||'',sales_no:e.sales_no||'',test_no:e.test_no||'',test_result:e.test_result||'',complete_time:e.complete_time||'',weave_name:e.weave_name||'',weave_formula:e.weave_formula||'',weave_department:e.weave_department||'',weave_time:e.weave_time||'',weave_complete_time:e.weave_complete_time||''});})(),
             is_completed: m.is_completed || false,
             attachments: JSON.stringify(m.attachments || []),
             is_deleted: false
@@ -1958,7 +1957,7 @@ function previewProject(id) {
             anomaly: m.anomaly||'', solution: m.solution||'',
             is_completed: m.is_completed||false,
             attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
-            _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
+            _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
             id: m.id
         })) : []
     }));
