@@ -1636,10 +1636,8 @@ function renderMilestones(stageIdx) {
         const msReadonly = msRo ? ' readonly' : '';
         var ext = m._ext || {};
         var nodeType = m.name || '';
-        var isYarn = (nodeType === '纱线研发');
-        var isWeave = (nodeType === '织造验证');
         html += '<div class="ms-item'+completedClass+'">';
-        // Header: completion toggle + node type select + delete btn
+        // Header: completion toggle + node type (readonly text) + delete btn
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
         html += '<div style="display:flex;align-items:center;gap:4px;">';
         if(msLocked && isManager) {
@@ -1650,58 +1648,47 @@ function renderMilestones(stageIdx) {
             html += '<span style="font-size:16px;margin-right:6px;">'+(isCompleted?'✅':'⭕')+'</span>';
         }
         if(msLocked) html += '<span style="font-size:11px;color:#e65100;margin-right:4px;">🔒</span>';
-        html += '<span class="ms-title" style="display:flex;align-items:center;gap:4px;">节点类型: <select onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].name=this.value;renderStagesList();" style="font-size:12px;padding:3px 8px;border:1px solid #ddd;border-radius:4px;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option><option value="纱线研发" '+(isYarn?'selected':'')+'>纱线研发</option><option value="织造验证" '+(isWeave?'selected':'')+'>织造验证</option></select></span>';
+        html += '<span class="ms-title" style="display:flex;align-items:center;gap:4px;">节点: <span style="font-size:12px;padding:3px 8px;border:1px solid #ddd;border-radius:4px;'+msBg+'display:inline-block;">'+(nodeType||'请选择')+'</span></span>';
         html += '</div>';
         if(msCanEdit) {
             html += '<button class="btn btn-sm btn-danger" onclick="removeMilestone('+stageIdx+','+mIdx+')" style="font-size:10px;padding:2px 8px;">删除</button>';
         }
         html += '</div>';
-        // === 纱线区块 (shown when type=纱线研发) ===
-        if(isYarn) {
-            html += '<div style="background:#f0f7ff;border:1px solid #c8e0ff;border-radius:6px;padding:8px 10px;margin-bottom:6px;">';
-            html += '<div style="font-size:11px;font-weight:600;color:#1565c0;margin-bottom:6px;">🧶 纱线信息</div>';
-            // Row1: 纱线名称 | 配方
-            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">';
-            html += '<div><span style="color:#888;">纱线名称（严格按照系统）:</span> <input type="text" value="'+(m.product_info||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_info=this.value" placeholder="纱线名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-            html += '<div><span style="color:#888;">配方:</span> <input type="text" value="'+(m.product_data||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_data=this.value" placeholder="纱线配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-            html += '</div>';
-            // Row2: 纱线事业部 | 纱线预计完成时间 | 纱线完成时间
-            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-top:4px;">';
-            html += '<div><span style="color:#888;">纱线事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option>';
-            ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+(ext.department===d?'selected':'')+'>'+d+'</option>';});
-            html += '</select></div>';
-            html += '<div><span style="color:#888;">纱线预计完成时间:</span> <input type="date" value="'+(m.time||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-            html += '<div><span style="color:#888;">纱线完成时间:</span> <input type="date" value="'+(ext.complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-            html += '</div>';
-            html += '</div>';
-        }
-        // === 织造区块 (shown when type=织造验证) ===
-        if(isWeave) {
-            html += '<div style="background:#fff8f0;border:1px solid #ffd6a5;border-radius:6px;padding:8px 10px;margin-bottom:6px;">';
-            html += '<div style="font-size:11px;font-weight:600;color:#e65100;margin-bottom:6px;">🏭 织造信息</div>';
-            // Row3: 成品品名 | 配方
-            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">';
-            html += '<div><span style="color:#888;">成品品名:</span> <input type="text" value="'+(m.product_info||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_info=this.value" placeholder="成品品名" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-            html += '<div><span style="color:#888;">配方:</span> <input type="text" value="'+(ext.weave_formula||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_formula=this.value" placeholder="织造配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-            html += '</div>';
-            // Row4: 织造事业部 | 织造预计完成时间 | 织造完成时间
-            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-top:4px;">';
-            html += '<div><span style="color:#888;">织造事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option>';
-            ['飞织','经编','梭织','纬编','速织'].forEach(function(d){html += '<option value="'+d+'" '+(ext.weave_department===d?'selected':'')+'>'+d+'</option>';});
-            html += '</select></div>';
-            html += '<div><span style="color:#888;">织造预计完成时间:</span> <input type="date" value="'+(ext.weave_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-            html += '<div><span style="color:#888;">织造完成时间:</span> <input type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-            html += '</div>';
-            html += '</div>';
-        }
-        // Row5: 检测单号 | 测试结果
+        // Row2: 纱线事业部
+        html += '<div style="display:grid;grid-template-columns:1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        html += '<div><span style="color:#888;">纱线事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option>';
+        ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+(ext.department===d?'selected':'')+'>'+d+'</option>';});
+        html += '</select></div>';
+        html += '</div>';
+        // Row3: 纱线预计完成时间 | 纱线完成时间
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        html += '<div><span style="color:#888;">纱线预计完成时间:</span> <input type="date" value="'+(m.time||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div><span style="color:#888;">纱线完成时间:</span> <input type="date" value="'+(ext.complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '</div>';
+        // Row4: 成品名称 | 配方
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        html += '<div><span style="color:#888;">成品名称:</span> <input type="text" value="'+(m.product_info||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_info=this.value" placeholder="成品名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div><span style="color:#888;">配方:</span> <input type="text" value="'+(ext.weave_formula||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_formula=this.value" placeholder="配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '</div>';
+        // Row5: 织造事业部
+        html += '<div style="display:grid;grid-template-columns:1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        html += '<div><span style="color:#888;">织造事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option>';
+        ['飞织','经编','梭织','纬编','速织'].forEach(function(d){html += '<option value="'+d+'" '+(ext.weave_department===d?'selected':'')+'>'+d+'</option>';});
+        html += '</select></div>';
+        html += '</div>';
+        // Row6: 织造预计完成时间 | 织造完成时间
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        html += '<div><span style="color:#888;">织造预计完成时间:</span> <input type="date" value="'+(ext.weave_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div><span style="color:#888;">织造完成时间:</span> <input type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '</div>';
+        // Row7: 检测单号 | 检测结果
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
         html += '<div><span style="color:#888;">检测单号:</span> <input type="text" value="'+(ext.test_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_no=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        html += '<div><span style="color:#888;">测试结果:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option><option value="合格" '+(ext.test_result==='合格'?'selected':'')+'>合格</option><option value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'>不合格</option><option value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'>待检测</option></select></div>';
+        html += '<div><span style="color:#888;">检测结果:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option><option value="合格" '+(ext.test_result==='合格'?'selected':'')+'>合格</option><option value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'>不合格</option><option value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'>待检测</option></select></div>';
         html += '</div>';
-        // Row6: 备注
+        // Row8: 备注
         html += '<div style="font-size:11px;margin-bottom:4px;"><span style="color:#888;">备注:</span> <input type="text" value="'+(m.anomaly||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].anomaly=this.value" placeholder="备注信息" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        // Row7: 附件
+        // Row9: 附件
         html += '<div style="font-size:11px;">';
         html += '<span style="color:#888;">附件:</span> ';
         const atts = m.attachments || [];
