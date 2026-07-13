@@ -1619,7 +1619,6 @@ function renderStagesList() {
         const bgStyle = previewMode ? 'background:#f5f5f5;color:#666;' : '';
         const lockAttr = previewMode;
         html += '<div class="timeline-item">';
-        html += '<div class="tl-header">';
         
         // Row 1: 纱线名称 | 纱线配方 (同一行)
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
@@ -1674,8 +1673,7 @@ function renderStagesList() {
         // 节点列表
         html += renderMilestones(idx);
         
-        // 关闭 tl-header 和 timeline-item
-        html += '</div>';
+        // 关闭 timeline-item
         html += '</div>';
     });
     $('stagesList').innerHTML = html || '<div class="empty-state" style="padding:24px;"><p>暂无阶段计划，点击"添加阶段"开始</p></div>';
