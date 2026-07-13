@@ -1625,18 +1625,22 @@ function renderStagesList() {
         html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线名称（严格按照系统）</span><input type="text" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="纱线名称" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
         html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线配方</span><input type="text" value="'+(s.yarn_formula||'')+'" onchange="tempStages['+idx+'].yarn_formula=this.value" placeholder="纱线配方" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
         html += '</div>';
-        html += '<div style="display:flex;gap:6px;">';
-        html += '<button class="btn btn-sm btn-outline" onclick="addMilestone('+idx+')">＋节点</button>';
-        html += '<button class="btn btn-sm btn-danger" onclick="removeStage('+idx+')">删除</button>';
-        html += '</div></div>';
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">预计完成时间</span><input type="date" value="'+(s.start_date||'')+'" onchange="tempStages['+idx+'].start_date=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">完成时间</span><input type="date" value="'+(s.end_date||'')+'" onchange="tempStages['+idx+'].end_date=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">状态</span><select onchange="tempStages['+idx+'].status=this.value;if(this.value===\'已完成\'){tempStages['+idx+'].end_date=new Date().toISOString().split(\'T\')[0];}renderStagesList();" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+((stageLocked && !isManager)?' disabled':'')+'>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+(lockAttr?' readonly':'')+'>'  ;
+        html += '</div>';
+        html += '<div style="display:grid;grid-template-columns:120px 1fr auto;gap:6px;margin-bottom:8px;">';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线事业部</span><select onchange="tempStages['+idx+'].yarn_department=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+((stageLocked&&!isManager)?' disabled':'')+'>';
+        html += '<option value="">请选择</option>';
+        ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+((s.yarn_department===d)?'selected':'')+'>'+d+'</option>';});
+        html += '</select></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">状态</span><select onchange="tempStages['+idx+'].status=this.value;if(this.value===\'已完成\'){tempStages['+idx+'].end_date=new Date().toISOString().split(\'T\')[0];}renderStagesList();" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"</'+((stageLocked&&!isManager)?' disabled':'')+'>';
         html += '<option '+(s.status==='未开始'?'selected':'')+'>未开始</option>';
         html += '<option '+(s.status==='进行中'?'selected':'')+'>进行中</option>';
         html += '<option '+(s.status==='已完成'?'selected':'')+'>已完成</option>';
-        html += '</select></div></div>';
+        html += '</select></div>';
+        html += '<div style="display:flex;gap:6px;align-items:end;"><button class="btn btn-sm btn-outline" onclick="addMilestone('+idx+')">＋节点</button><button class="btn btn-sm btn-danger" onclick="removeStage('+idx+')">删除</button></div>';
+        html += '</div>';
 
         // 纱线事业部 | 纱线预计完成时间 | 纱线完成时间
         html += '<div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:6px;font-size:11px;margin-bottom:8px;">';
