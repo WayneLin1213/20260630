@@ -1483,6 +1483,7 @@ function openProjectModal(id) {
             try { stageExt = JSON.parse(s.solution||'{}'); } catch(e) { stageExt = {}; }
             return {
                 ...s,
+                plan_desc: stageExt.plan_desc||'',
                 yarn_formula: stageExt.yarn_formula||'',
                 yarn_department: stageExt.yarn_department||'',
                 yarn_time: stageExt.yarn_time||'',
@@ -1496,7 +1497,7 @@ function openProjectModal(id) {
                     anomaly: m.anomaly||'', solution: m.solution||'',
                     is_completed: m.is_completed||false,
                     attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
-                    _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
+                    _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'进行中',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
                     id: m.id
                 })) : []
             };
@@ -1632,19 +1633,7 @@ function renderStagesList() {
         const lockAttr = previewMode;
         html += '<div class="timeline-item">';
         
-        // Row 1: 纱线名称 | 纱线配方 (同一行)
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线名称（严格按照系统）</span><input type="text" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="纱线名称" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线配方</span><input type="text" value="'+(s.yarn_formula||'')+'" onchange="tempStages['+idx+'].yarn_formula=this.value" placeholder="纱线配方" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '</div>';
-        
-        // Row 2: 纱线预计完成时间 | 纱线完成时间 (同一行)
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '</div>';
-        
-        // Row 3: 纱线事业部 | 状态 | 按钮
+        // Row 1: 纱线事业部 | 状态 | 按钮 (移到最上面)
         html += '<div style="display:grid;grid-template-columns:120px 1fr auto;gap:6px;margin-bottom:8px;">';
         html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线事业部</span><select onchange="tempStages['+idx+'].yarn_department=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+((stageLocked&&!isManager)?' disabled':'')+'">';
         html += '<option value="">请选择</option>';
@@ -1658,7 +1647,22 @@ function renderStagesList() {
         html += '<div style="display:flex;gap:6px;align-items:end;"><button class="btn btn-sm btn-outline" onclick="addMilestone('+idx+')">＋节点</button><button class="btn btn-sm btn-danger" onclick="removeStage('+idx+')">删除</button></div>';
         html += '</div>';
         
-        // Row 4: 检测单号 | 检测结果 (同一行)
+        // Row 2: 方案说明 (新增)
+        html += '<div style="margin-bottom:8px;"><span class="field-label" style="font-size:11px;color:#888;">方案说明</span><input type="text" value="'+(s.plan_desc||'')+'" onchange="tempStages['+idx+'].plan_desc=this.value" placeholder="例如：提高耐磨" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        
+        // Row 3: 纱线名称 | 纱线配方 (同一行)
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线名称（严格按照系统）</span><input type="text" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="纱线名称" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线配方</span><input type="text" value="'+(s.yarn_formula||'')+'" onchange="tempStages['+idx+'].yarn_formula=this.value" placeholder="纱线配方" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '</div>';
+        
+        // Row 4: 纱线预计完成时间 | 纱线完成时间 (同一行)
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '</div>';
+        
+        // Row 5: 检测单号 | 检测结果 (同一行)
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
         html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测单号</span><input type="text" value="'+(s.test_no||'')+'" onchange="tempStages['+idx+'].test_no=this.value" placeholder="检测单号" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
         html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测结果</span><select onchange="tempStages['+idx+'].test_result=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+((stageLocked&&!isManager)?' disabled':'')+'">';
@@ -1666,20 +1670,20 @@ function renderStagesList() {
         html += '</select></div>';
         html += '</div>';
         
-        // Row 5: 备注
+        // Row 6: 备注
         html += '<div style="margin-bottom:8px;"><span class="field-label" style="font-size:11px;color:#888;">备注</span><input type="text" value="'+(s.anomaly_feedback||'')+'" id="stage_anomaly_'+idx+'" onchange="tempStages['+idx+'].anomaly_feedback=this.value" placeholder="备注信息" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
         
-        // Row 6: 附件
+        // Row 7: 附件
         html += '<div style="font-size:11px;margin-bottom:8px;"><span style="color:#888;">附件:</span> ';
         const stageAtts = s.attachments || [];
         stageAtts.forEach((att, aIdx) => {
             if(att.type && att.type.startsWith('image/')) {
-                html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+(lockAttr?'':' <span class="remove-att" onclick="removeStageAttachment('+idx+','+aIdx+')">✕</span>')+'</span>';
+                html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+(lockAttr?'':' <span class="remove-att" onclick="removeStageAttachment('+idx+','+aIdx+')"></span>')+'</span>';
             } else {
                 html += '<span class="attachment-item" onclick="downloadStageAttachment('+idx+','+aIdx+')">📄 '+att.name+(lockAttr?'':' <span class="remove-att" onclick="event.stopPropagation();removeStageAttachment('+idx+','+aIdx+')">✕</span>')+'</span>';
             }
         });
-        if(!lockAttr) html += '<label class="upload-btn">📎 上传<input type="file" multiple style="display:none;" onchange="handleStageFileUpload(event,'+idx+')"></label>';
+        if(!lockAttr) html += '<label class="upload-btn"> 上传<input type="file" multiple style="display:none;" onchange="handleStageFileUpload(event,'+idx+')"></label>';
         html += '</div>';
         
         // 节点列表
@@ -1699,60 +1703,56 @@ function renderMilestones(stageIdx) {
     const stageLocked = stage.status === '已完成' && !previewMode;
     let html = '<div class="milestone-sub">';
     milestones.forEach((m, mIdx) => {
-        const isCompleted = m.is_completed === true;
-        const completedClass = isCompleted ? ' completed' : '';
-        const msLocked = (isCompleted || stageLocked) && !previewMode;
+        const msStatus = m._ext && m._ext.ms_status ? m._ext.ms_status : '进行中';
+        const msLocked = (stageLocked) && !previewMode;
         const msCanEdit = msLocked ? isManager : !previewMode;
         const msRo = msLocked && !isManager;
         const msBg = msRo ? 'background:#f5f5f5;color:#666;' : '';
         const msReadonly = msRo ? ' readonly' : '';
         var ext = m._ext || {};
         var nodeType = m.name || '';
-        html += '<div class="ms-item'+completedClass+'">';
-        // Header: completion toggle + node type (readonly text) + delete btn
+        html += '<div class="ms-item">';
+        // Header: 节点 + 状态选项 + 删除
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
-        html += '<div style="display:flex;align-items:center;gap:4px;">';
-        if(msLocked && isManager) {
-            html += '<span class="ms-complete-btn" onclick="unlockMilestone('+stageIdx+','+mIdx+')" title="管理者: 改为进行中">🔓</span>';
-        } else if(!msLocked && !previewMode) {
-            html += '<span class="ms-complete-btn" onclick="toggleMilestoneComplete('+stageIdx+','+mIdx+')" title="'+(isCompleted?'点击取消完成':'点击标记完成')+'">'+(isCompleted?'✅':'⭕')+'</span>';
-        } else {
-            html += '<span style="font-size:16px;margin-right:6px;">'+(isCompleted?'✅':'⭕')+'</span>';
-        }
-        if(msLocked) html += '<span style="font-size:11px;color:#e65100;margin-right:4px;">🔒</span>';
-        html += '<span class="ms-title" style="display:flex;align-items:center;gap:4px;">节点: <span style="font-size:12px;padding:3px 8px;border:1px solid #ddd;border-radius:4px;'+msBg+'display:inline-block;">'+(nodeType||'请选择')+'</span></span>';
+        html += '<div style="display:flex;align-items:center;gap:8px;">';
+        html += '<span class="ms-title" style="font-size:13px;font-weight:600;color:#333;">节点</span>';
+        html += '<select onchange="tempStages['+stageIdx+'].milestones['+mIdx+']._ext.ms_status=this.value;autoCalcStageStatus('+stageIdx+');" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;'+msBg+'"'+(msRo?' disabled':'')+'">';
+        html += '<option value="进行中" '+(msStatus==='进行中'?'selected':'')+'>进行中</option>';
+        html += '<option value="完成" '+(msStatus==='完成'?'selected':'')+'>完成</option>';
+        html += '<option value="失败" '+(msStatus==='失败'?'selected':'')+'>失败</option>';
+        html += '</select>';
         html += '</div>';
         if(msCanEdit) {
-            html += '<button class="btn btn-sm btn-danger" onclick="removeMilestone('+stageIdx+','+mIdx+')" style="font-size:10px;padding:2px 8px;">删除</button>';
+            html += '<button class="btn btn-sm btn-danger" onclick="removeMilestone('+stageIdx+','+mIdx+');autoCalcStageStatus('+stageIdx+');" style="font-size:10px;padding:2px 8px;">删除</button>';
         }
         html += '</div>';
-        // Row4: 成品名称 | 成品配方
+        // Row: 成品名称 | 成品配方
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
         html += '<div><span style="color:#888;">成品名称:</span> <input type="text" value="'+(ext.weave_name||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_name=this.value" placeholder="成品名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '<div><span style="color:#888;">成品配方:</span> <input type="text" value="'+(ext.weave_formula||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_formula=this.value" placeholder="成品配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '</div>';
-        // Row5: 织造事业部 | 织造预计完成时间 | 织造完成时间 (3列同行)
+        // Row: 织造事业部 | 织造预计完成时间 | 织造完成时间
         html += '<div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
-        html += '<div><span style="color:#888;">织造事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option>';
+        html += '<div><span style="color:#888;">织造事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"><option value="">请选择</option>';
         ['飞织','经编','梭织','纬编','速织'].forEach(function(d){html += '<option value="'+d+'" '+(ext.weave_department===d?'selected':'')+'>'+d+'</option>';});
         html += '</select></div>';
         html += '<div><span style="color:#888;">织造预计完成时间:</span> <input type="date" value="'+(ext.weave_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '<div><span style="color:#888;">织造完成时间:</span> <input type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '</div>';
-        // Row7: 检测单号 | 检测结果
+        // Row: 检测单号 | 检测结果
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
         html += '<div><span style="color:#888;">检测单号:</span> <input type="text" value="'+(ext.test_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_no=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        html += '<div><span style="color:#888;">检测结果:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'><option value="">请选择</option><option value="合格" '+(ext.test_result==='合格'?'selected':'')+'>合格</option><option value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'>不合格</option><option value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'>待检测</option></select></div>';
+        html += '<div><span style="color:#888;">检测结果:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"><option value="">请选择</option><option value="合格" '+(ext.test_result==='合格'?'selected':'')+'>合格</option><option value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'>不合格</option><option value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'>待检测</option></select></div>';
         html += '</div>';
-        // Row8: 备注
+        // Row: 备注
         html += '<div style="font-size:11px;margin-bottom:4px;"><span style="color:#888;">备注:</span> <input type="text" value="'+(m.anomaly||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].anomaly=this.value" placeholder="备注信息" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        // Row9: 附件
+        // Row: 附件
         html += '<div style="font-size:11px;">';
         html += '<span style="color:#888;">附件:</span> ';
         const atts = m.attachments || [];
         atts.forEach((att, aIdx) => {
             if(att.type && att.type.startsWith('image/')) {
-                html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+(msRo?'':' <span class="remove-att" onclick="removeMilestoneAttachment('+stageIdx+','+mIdx+','+aIdx+')">✕</span>')+'</span>';
+                html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+(msRo?'':' <span class="remove-att" onclick="removeMilestoneAttachment('+stageIdx+','+mIdx+','+aIdx+')"></span>')+'</span>';
             } else {
                 html += '<span class="attachment-item" onclick="downloadMsAttachment('+stageIdx+','+mIdx+','+aIdx+')">📄 '+att.name+(msRo?'':' <span class="remove-att" onclick="event.stopPropagation();removeMilestoneAttachment('+stageIdx+','+mIdx+','+aIdx+')">✕</span>')+'</span>';
             }
@@ -1764,6 +1764,26 @@ function renderMilestones(stageIdx) {
     html += '</div>';
     return html;
 }
+
+// 自动计算阶段状态 based on 节点状态
+function autoCalcStageStatus(stageIdx) {
+    const stage = tempStages[stageIdx];
+    if(!stage) return;
+    const milestones = stage.milestones || [];
+    if(milestones.length === 0) {
+        stage.status = '未开始';
+    } else {
+        const statuses = milestones.map(m => (m._ext && m._ext.ms_status) || '进行中');
+        const allDone = statuses.every(s => s === '完成' || s === '失败');
+        if(allDone) {
+            stage.status = '已完成';
+        } else {
+            stage.status = '进行中';
+        }
+    }
+    renderStagesList();
+}
+
 
 // need12: toggle milestone completion
 function toggleMilestoneComplete(stageIdx, mIdx) {
@@ -1811,7 +1831,7 @@ function unlockStage(stageIdx) {
 }
 
 function addStage() {
-    tempStages.push({name:'新阶段',start_date:'',end_date:'',status:'未开始',output:'',product:'',output_product_data:'',anomaly_feedback:'',solution:'',yarn_formula:'',yarn_department:'',yarn_time:'',yarn_complete_time:'',test_no:'',test_result:'',attachments:[],milestones:[]});
+    tempStages.push({name:'新阶段',start_date:'',end_date:'',status:'未开始',output:'',product:'',output_product_data:'',anomaly_feedback:'',solution:'',plan_desc:'',yarn_formula:'',yarn_department:'',yarn_time:'',yarn_complete_time:'',test_no:'',test_result:'',attachments:[],milestones:[]});
     renderStagesList();
 }
 function removeStage(idx) {
@@ -1832,7 +1852,7 @@ function syncMilestoneToStage(stageIdx) {
 }
 function addMilestone(stageIdx) {
     if(!tempStages[stageIdx].milestones) tempStages[stageIdx].milestones = [];
-    tempStages[stageIdx].milestones.push({name:'',time:'',content:'',product_info:'',product_data:'',anomaly:'',solution:'',is_completed:false,attachments:[],_ext:{department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''}});
+    tempStages[stageIdx].milestones.push({name:'',time:'',content:'',product_info:'',product_data:'',anomaly:'',solution:'',is_completed:false,attachments:[],_ext:{department:'',ms_status:'进行中',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''}});
     renderStagesList();
 }
 function removeMilestone(stageIdx, mIdx) {
@@ -1882,7 +1902,7 @@ async function saveProject() {
                     status: s.status, output: s.output, product: s.product,
                     output_product_data: s.output_product_data||'',
                     anomaly_feedback: s.anomaly_feedback||'',
-                    solution: JSON.stringify({yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',test_no:s.test_no||'',test_result:s.test_result||'',attachments:s.attachments||[]}),
+                    solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',test_no:s.test_no||'',test_result:s.test_result||'',attachments:s.attachments||[]}),
                     is_deleted: false
                 };
                 if(s.id) {
@@ -1911,7 +1931,7 @@ async function saveProject() {
                         status: s.status, output: s.output, product: s.product,
                         output_product_data: s.output_product_data||'',
                         anomaly_feedback: s.anomaly_feedback||'',
-                        solution: JSON.stringify({yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',test_no:s.test_no||'',test_result:s.test_result||'',attachments:s.attachments||[]}),
+                        solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',test_no:s.test_no||'',test_result:s.test_result||'',attachments:s.attachments||[]}),
                         is_deleted: false
                     });
                     if(newStage && newStage[0] && s.milestones) {
@@ -2012,7 +2032,8 @@ function previewProject(id) {
         try { stageExt = JSON.parse(s.solution||'{}'); } catch(e) {}
         return {
         ...s,
-        yarn_formula: stageExt.yarn_formula||'',
+        plan_desc: stageExt.plan_desc||'',
+                yarn_formula: stageExt.yarn_formula||'',
         yarn_department: stageExt.yarn_department||'',
         yarn_time: stageExt.yarn_time||'',
         yarn_complete_time: stageExt.yarn_complete_time||'',
@@ -2025,7 +2046,7 @@ function previewProject(id) {
             anomaly: m.anomaly||'', solution: m.solution||'',
             is_completed: m.is_completed||false,
             attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
-            _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
+            _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'进行中',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
             id: m.id
         })) : []
     };});
