@@ -1477,18 +1477,30 @@ function openProjectModal(id) {
         renderProjectAttachments();
 
         // Load stages
-        tempStages = allStages.filter(s=>s.project_id===id).map(s=>({
-            ...s,
-            milestones: milestonesMap[id+'_'+s.id] ? milestonesMap[id+'_'+s.id].map(m=>({
-                name: m.name||'', time: m.node_time||'', content: m.node_content||'',
-                product_info: m.product_info||'', product_data: m.product_data||'',
-                anomaly: m.anomaly||'', solution: m.solution||'',
-                is_completed: m.is_completed||false,
-                attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
-                _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
-                id: m.id
-            })) : []
-        }));
+        tempStages = allStages.filter(s=>s.project_id===id).map(s=>{
+            // Parse solution JSON for stage-level yarn fields
+            var stageExt = {};
+            try { stageExt = JSON.parse(s.solution||'{}'); } catch(e) { stageExt = {}; }
+            return {
+                ...s,
+                yarn_formula: stageExt.yarn_formula||'',
+                yarn_department: stageExt.yarn_department||'',
+                yarn_time: stageExt.yarn_time||'',
+                yarn_complete_time: stageExt.yarn_complete_time||'',
+                test_no: stageExt.test_no||'',
+                test_result: stageExt.test_result||'',
+                attachments: stageExt.attachments||[],
+                milestones: milestonesMap[id+'_'+s.id] ? milestonesMap[id+'_'+s.id].map(m=>({
+                    name: m.name||'', time: m.node_time||'', content: m.node_content||'',
+                    product_info: m.product_info||'', product_data: m.product_data||'',
+                    anomaly: m.anomaly||'', solution: m.solution||'',
+                    is_completed: m.is_completed||false,
+                    attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
+                    _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'',sales_no:o.sales_no||'',test_no:o.test_no||'',test_result:o.test_result||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',test_no:'',test_result:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
+                    id: m.id
+                })) : []
+            };
+        });
     } else {
         ['pProjectNo','pName','pObjective','pClosure','pDataReport'].forEach(fid=>{$(fid).value='';});
         document.querySelectorAll('input[name="pType"]').forEach(function(cb){cb.checked=false;});
