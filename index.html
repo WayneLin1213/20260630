@@ -1040,6 +1040,9 @@ async function loadData() {
 
         milestonesMap = {};
         allMilestones.forEach(m => {
+            // Parse solution JSON into _ext for status calculations
+            try { m._ext = JSON.parse(m.solution || '{}'); } catch(e) { m._ext = {}; }
+            if(!m._ext.ms_status) m._ext.ms_status = '进行中';
             const key = m.project_id + '_' + m.stage_id;
             if(!milestonesMap[key]) milestonesMap[key] = [];
             milestonesMap[key].push(m);
