@@ -1730,7 +1730,7 @@ function renderMilestones(stageIdx) {
         var nodeType = m.name || '';
         html += '<div class="ms-item">';
         // Header: 节点 | 状态 | 销售订单号 | 删除按钮
-        html += '<div style="display:grid;grid-template-columns:auto auto 1fr auto;gap:6px;align-items:end;margin-bottom:8px;">';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:6px;align-items:end;margin-bottom:8px;">';
         html += '<div><span class="ms-title" style="font-size:13px;font-weight:600;color:#333;">节点</span></div>';
         html += '<div><select onchange="tempStages['+stageIdx+'].milestones['+mIdx+']._ext.ms_status=this.value;autoCalcStageStatus('+stageIdx+');" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;'+msBg+'"'+(msRo?' disabled':'')+'">';
         html += '<option value="进行中" '+(msStatus==='进行中'?'selected':'')+'>进行中</option>';
