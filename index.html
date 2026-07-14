@@ -124,7 +124,7 @@
         /* Modal */
         .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center;}
         .modal-overlay.active{display:flex;}
-        .modal{background:#fff;border-radius:12px;width:90vw;max-width:1400px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+        .modal{background:#fff;border-radius:12px;width:85vw;max-width:1600px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
         .modal-header{padding:20px 24px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;}
         .modal-header h3{font-size:16px;font-weight:600;}
         .modal-close{width:28px;height:28px;border-radius:50%;border:none;background:#f5f5f5;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
@@ -1651,40 +1651,31 @@ function renderStagesList() {
         const lockAttr = previewMode;
         html += '<div class="timeline-item">';
         
-        // Row 1: 纱线事业部 | 方案说明 | 状态 | 按钮
-        html += '<div style="display:grid;grid-template-columns:1fr 2fr auto auto;gap:6px;margin-bottom:8px;align-items:end;">';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线事业部</span><select onchange="tempStages['+idx+'].yarn_department=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+((stageLocked&&!isManager)?' disabled':'')+'">';
+        // Single grid container for all stage fields (4 columns)
+        html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">';
+        // Row 1: 纱线事业部 | 方案说明(span2) | 状态+按钮
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线事业部</span><select onchange="tempStages['+idx+'].yarn_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' disabled':'')+'">';
         html += '<option value="">请选择</option>';
         ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+((s.yarn_department===d)?'selected':'')+'>'+d+'</option>';});
         html += '</select></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">方案说明</span><input type="text" value="'+(s.plan_desc||'')+'" onchange="tempStages['+idx+'].plan_desc=this.value" placeholder="例如：提高耐磨" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">状态</span><span style="font-size:12px;padding:4px 8px;display:inline-block;min-width:60px;text-align:center;border-radius:4px;font-weight:600;'+(s.status==='已完成'?'background:#e6f7ee;color:#1a9d64;':s.status==='进行中'?'background:#fff3e0;color:#e67e22;':'background:#f5f5f5;color:#888;')+'">'+s.status+'</span></div>';
-        
-        // Row 2: 纱线名称 | 纱线配方
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线名称（严格按照系统）</span><input type="text" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="纱线名称" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线配方</span><input type="text" value="'+(s.yarn_formula||'')+'" onchange="tempStages['+idx+'].yarn_formula=this.value" placeholder="纱线配方" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '</div>';
-        
+        html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">方案说明</span><input type="text" value="'+(s.plan_desc||'')+'" onchange="tempStages['+idx+'].plan_desc=this.value" placeholder="例如：提高耐磨" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div style="text-align:right;"><span class="field-label" style="font-size:11px;color:#888;">状态</span> <span style="font-size:12px;padding:4px 8px;display:inline-block;min-width:60px;text-align:center;border-radius:4px;'+(s.status==='已完成'?'background:#e8f5e9;color:#4caf50;':s.status==='进行中'?'background:#fff3e0;color:#e67e22;':'background:#f5f5f5;color:#888;')+'">'+s.status+'</span>'+(lockAttr?'':' <button class="btn-add" onclick="addMilestone('+idx+')" style="font-size:11px;padding:2px 8px;margin-left:4px;">+节点</button> <button class="btn-del" onclick="deleteStage('+idx+')" style="font-size:11px;padding:2px 8px;">删除</button>')+'</div>';
+        // Row 2: 纱线名称(span2) | 纱线配方(span2)
+        html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">纱线名称（严格按照系统）</span><input type="text" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="纱线名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">纱线配方</span><input type="text" value="'+(s.yarn_formula||'')+'" onchange="tempStages['+idx+'].yarn_formula=this.value" placeholder="纱线配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
         // Row 3: 销售订单号 | 纱线预计完成时间 | 纱线完成时间
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">销售订单号</span><input type="text" value="'+(s.sales_no||'')+'" onchange="tempStages['+idx+'].sales_no=this.value" placeholder="销售订单号" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '</div>';
-        
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">销售订单号</span><input type="text" value="'+(s.sales_no||'')+'" onchange="tempStages['+idx+'].sales_no=this.value" placeholder="销售订单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div></div>';
         // Row 4: 检测单号 | 检测预计完成时间 | 检测完成时间
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测单号</span><input type="text" value="'+(s.test_no||'')+'" onchange="tempStages['+idx+'].test_no=this.value" placeholder="检测单号" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测预计完成时间</span><input type="date" value="'+(s.test_est_time||'')+'" onchange="tempStages['+idx+'].test_est_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测完成时间</span><input type="date" value="'+(s.test_done_time||'')+'" onchange="tempStages['+idx+'].test_done_time=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '</div>';
-        // Row 4b: 检测结果 | 不合格信息
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测结果</span><select onchange="tempStages['+idx+'].test_result=this.value;renderStagesList();" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+((stageLocked&&!isManager)?' disabled':'')+'">';
-        html += '<option value="">请选择</option><option value="合格" '+((s.test_result==='合格')?'selected':'')+'>合格</option><option value="不合格" '+((s.test_result==='不合格')?'selected':'')+'>不合格</option><option value="待检测" '+((s.test_result==='待检测')?'selected':'')+'>待检测</option>';
-        html += '</select></div>';
-        html += '<div'+(s.test_result!=='不合格'?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#c00;">不合格信息 <span style="color:#f00;">*</span></span><input type="text" value="'+(s.unqual_info||'')+'" onchange="tempStages['+idx+'].unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:12px;padding:4px 8px;border:1px solid #f99;border-radius:4px;width:100%;background:#fff5f5;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测单号</span><input type="text" value="'+(s.test_no||'')+'" onchange="tempStages['+idx+'].test_no=this.value" placeholder="检测单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测预计完成时间</span><input type="date" value="'+(s.test_est_time||'')+'" onchange="tempStages['+idx+'].test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测完成时间</span><input type="date" value="'+(s.test_done_time||'')+'" onchange="tempStages['+idx+'].test_done_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div></div>';
+        // Row 4b: 检测结果(span2) | 不合格信息(span2)
+        html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">检测结果</span><select onchange="tempStages['+idx+'].test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' disabled':'')+'"><option value="">请选择</option><option value="合格" '+((s.test_result==='合格')?'selected':'')+'>合格</option><option value="不合格" '+((s.test_result==='不合格')?'selected':'')+'>不合格</option><option value="待检测" '+((s.test_result==='待检测')?'selected':'')+'>待检测</option></select></div>';
+        html += '<div style="grid-column:span 2;"'+(s.test_result!=='不合格'?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#c00;">不合格信息 <span style="color:#f00;">*</span>:</span> <input type="text" value="'+(s.unqual_info||'')+'" onchange="tempStages['+idx+'].unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
         html += '</div>';
         
         // Row 5: 备注
@@ -1729,46 +1720,36 @@ function renderMilestones(stageIdx) {
         var ext = m._ext || {};
         var nodeType = m.name || '';
         html += '<div class="ms-item">';
-        // Header: 节点 | 状态 | 销售订单号 | 删除按钮
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:6px;align-items:end;margin-bottom:8px;">';
+        // Single grid container for all node fields (4 columns)
+        html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">';
+        // Header: 节点 | 状态 | 销售订单号 | 删除
         html += '<div><span class="ms-title" style="font-size:13px;font-weight:600;color:#333;">节点</span></div>';
-        html += '<div><select onchange="tempStages['+stageIdx+'].milestones['+mIdx+']._ext.ms_status=this.value;autoCalcStageStatus('+stageIdx+');" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;'+msBg+'"'+(msRo?' disabled':'')+'">';
-        html += '<option value="进行中" '+(msStatus==='进行中'?'selected':'')+'>进行中</option>';
-        html += '<option value="完成" '+(msStatus==='完成'?'selected':'')+'>完成</option>';
-        html += '<option value="失败" '+(msStatus==='失败'?'selected':'')+'>失败</option>';
-        html += '</select></div>';
+        html += '<div><select onchange="tempStages['+stageIdx+'].milestones['+mIdx+']._ext.ms_status=this.value;autoCalcStageStatus('+stageIdx+');" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;'+msBg+'"'+(msRo?' disabled':'')+'"><option value="进行中" '+(msStatus==='进行中'?'selected':'')+'>进行中</option><option value="完成" '+(msStatus==='完成'?'selected':'')+'>完成</option><option value="失败" '+(msStatus==='失败'?'selected':'')+'>失败</option></select></div>';
         html += '<div><span style="font-size:10px;color:#888;">销售订单号</span><input type="text" value="'+(ext.ms_sales_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.ms_sales_no=this.value" placeholder="销售订单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         if(msCanEdit) {
-            html += '<div><button class="btn btn-sm btn-danger" onclick="removeMilestone('+stageIdx+','+mIdx+');autoCalcStageStatus('+stageIdx+');" style="font-size:10px;padding:2px 8px;">删除</button></div>';
+            html += '<div><button class="btn btn-sm btn-danger" onclick="removeMilestone('+stageIdx+','+mIdx+');autoCalcStageStatus('+stageIdx+');" style="font-size:11px;padding:2px 8px;">删除</button></div>';
         } else {
             html += '<div></div>';
         }
-        html += '</div>';
-        // Row: 成品名称 | 成品配方
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
-        html += '<div><span style="color:#888;">成品名称:</span> <input type="text" value="'+(ext.weave_name||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_name=this.value" placeholder="成品名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        html += '<div><span style="color:#888;">成品配方:</span> <input type="text" value="'+(ext.weave_formula||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_formula=this.value" placeholder="成品配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        html += '</div>';
-        // Row: 织造事业部 | 织造预计完成时间 | 织造完成时间
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        // 成品名称(span2) | 成品配方(span2)
+        html += '<div style="grid-column:span 2;"><span style="color:#888;">成品名称:</span> <input type="text" value="'+(ext.weave_name||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_name=this.value" placeholder="成品名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div style="grid-column:span 2;"><span style="color:#888;">成品配方:</span> <input type="text" value="'+(ext.weave_formula||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_formula=this.value" placeholder="成品配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        // 织造事业部 | 织造预计完成时间 | 织造完成时间
         html += '<div><span style="color:#888;">织造事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"><option value="">请选择</option>';
         ['飞织','经编','梭织','纬编','速织'].forEach(function(d){html += '<option value="'+d+'" '+(ext.weave_department===d?'selected':'')+'>'+d+'</option>';});
         html += '</select></div>';
         html += '<div><span style="color:#888;">织造预计完成时间:</span> <input type="date" value="'+(ext.weave_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '<div><span style="color:#888;">织造完成时间:</span> <input type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        html += '</div>';
-        // Row: 检测单号 | 检测预计完成时间 | 检测完成时间
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        html += '<div></div>';
+        // 检测单号 | 检测预计完成时间 | 检测完成时间
         html += '<div><span style="color:#888;">检测单号:</span> <input type="text" value="'+(ext.test_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_no=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '<div><span style="color:#888;">检测预计完成时间:</span> <input type="date" value="'+(ext.test_est_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '<div><span style="color:#888;">检测完成时间:</span> <input type="date" value="'+(ext.test_done_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_done_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div></div>';
+        // 检测结果(span2) | 不合格信息(span2)
+        html += '<div style="grid-column:span 2;"><span style="color:#888;">检测结果:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"><option value="">请选择</option><option value="合格" '+(ext.test_result==='合格'?'selected':'')+'>合格</option><option value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'>不合格</option><option value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'>待检测</option></select></div>';
+        html += '<div style="grid-column:span 2;"'+(ext.test_result!=='不合格'?' style="display:none;"':'')+'><span style="color:#c00;">不合格信息 <span style="color:#f00;">*</span>:</span> <input type="text" value="'+(ext.ms_unqual_info||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.ms_unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+msBg+'"'+msReadonly+'></div>';
         html += '</div>';
-        // Row: 检测结果 | 不合格信息
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
-        html += '<div><span style="color:#888;">检测结果:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"><option value="">请选择</option><option value="合格" '+(ext.test_result==='合格'?'selected':'')+'>合格</option><option value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'>不合格</option><option value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'>待检测</option></select></div>';
-        html += '<div'+(ext.test_result!=='不合格'?' style="display:none;"':'')+'><span style="color:#c00;">不合格信息 <span style="color:#f00;">*</span>:</span> <input type="text" value="'+(ext.ms_unqual_info||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.ms_unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+msBg+'"'+msReadonly+'></div>';
-        html += '</div>';
-        // Row: 备注
         html += '<div style="font-size:11px;margin-bottom:4px;"><span style="color:#888;">备注:</span> <input type="text" value="'+(m.anomaly||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].anomaly=this.value" placeholder="备注信息" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         // Row: 附件
         html += '<div style="font-size:11px;">';
