@@ -1652,7 +1652,7 @@ function renderStagesList() {
         html += '<div class="timeline-item">';
         
         // Row 1: 纱线事业部 | 方案说明 | 状态 | 按钮
-        html += '<div style="display:grid;grid-template-columns:120px 1fr auto auto;gap:6px;margin-bottom:8px;align-items:end;">';
+        html += '<div style="display:grid;grid-template-columns:1fr 2fr auto auto;gap:6px;margin-bottom:8px;align-items:end;">';
         html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线事业部</span><select onchange="tempStages['+idx+'].yarn_department=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+((stageLocked&&!isManager)?' disabled':'')+'">';
         html += '<option value="">请选择</option>';
         ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+((s.yarn_department===d)?'selected':'')+'>'+d+'</option>';});
@@ -1750,7 +1750,7 @@ function renderMilestones(stageIdx) {
         html += '<div><span style="color:#888;">成品配方:</span> <input type="text" value="'+(ext.weave_formula||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_formula=this.value" placeholder="成品配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         html += '</div>';
         // Row: 织造事业部 | 织造预计完成时间 | 织造完成时间
-        html += '<div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-bottom:4px;">';
         html += '<div><span style="color:#888;">织造事业部:</span> <select onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"><option value="">请选择</option>';
         ['飞织','经编','梭织','纬编','速织'].forEach(function(d){html += '<option value="'+d+'" '+(ext.weave_department===d?'selected':'')+'>'+d+'</option>';});
         html += '</select></div>';
