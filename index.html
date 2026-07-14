@@ -1112,7 +1112,7 @@ function calcProjectStatus(projectId) {
         const ms = milestonesMap[projectId + '_' + s.id] || [];
         if(ms.length > 0) {
             hasAnyMilestone = true;
-            if(!ms.every(m => m.is_completed === true)) {
+            if(!ms.every(m => { var msSt = (m._ext && m._ext.ms_status) || '进行中'; return msSt === '完成' || msSt === '失败'; })) {
                 allMilestonesCompleted = false;
                 break;
             }
@@ -1631,6 +1631,17 @@ function downloadStageAttachment(stageIdx, attIdx) {
 function renderStagesList() {
     let html = '';
     const isManager = currentUser && currentUser.role === 'manager';
+    // Auto-calculate all stage statuses before rendering
+    tempStages.forEach((s, idx) => {
+        const milestones = s.milestones || [];
+        if(milestones.length === 0) {
+            s.status = '未开始';
+        } else {
+            const statuses = milestones.map(m => (m._ext && m._ext.ms_status) || '进行中');
+            const allDone = statuses.every(st => st === '完成' || st === '失败');
+            s.status = allDone ? '已完成' : '进行中';
+        }
+    });
     tempStages.forEach((s, idx) => {
         const stageLocked = s.status === '已完成' && !previewMode;
         const bgStyle = previewMode ? 'background:#f5f5f5;color:#666;' : '';
@@ -1644,13 +1655,7 @@ function renderStagesList() {
         ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+((s.yarn_department===d)?'selected':'')+'>'+d+'</option>';});
         html += '</select></div>';
         html += '<div><span class="field-label" style="font-size:11px;color:#888;">方案说明</span><input type="text" value="'+(s.plan_desc||'')+'" onchange="tempStages['+idx+'].plan_desc=this.value" placeholder="例如：提高耐磨" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">状态</span><select onchange="tempStages['+idx+'].status=this.value;if(this.value===\'已完成\'){tempStages['+idx+'].end_date=new Date().toISOString().split(\'T\')[0];}renderStagesList();" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+((stageLocked&&!isManager)?' disabled':'')+'">';
-        html += '<option '+(s.status==='未开始'?'selected':'')+'>未开始</option>';
-        html += '<option '+(s.status==='进行中'?'selected':'')+'>进行中</option>';
-        html += '<option '+(s.status==='已完成'?'selected':'')+'>已完成</option>';
-        html += '</select></div>';
-        html += '<div style="display:flex;gap:6px;align-items:end;"><button class="btn btn-sm btn-outline" onclick="addMilestone('+idx+')">＋节点</button><button class="btn btn-sm btn-danger" onclick="removeStage('+idx+')">删除</button></div>';
-        html += '</div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">状态</span><span style="font-size:12px;padding:4px 8px;display:inline-block;min-width:60px;text-align:center;border-radius:4px;font-weight:600;'+(s.status==='已完成'?'background:#e6f7ee;color:#1a9d64;':s.status==='进行中'?'background:#fff3e0;color:#e67e22;':'background:#f5f5f5;color:#888;')+'">'+s.status+'</span></div>';
         
         // Row 2: 纱线名称 | 纱线配方
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
@@ -1975,7 +1980,10 @@ function calcTempProgress() {
         if(ms.length === 0) {
             if(s.status === '已完成') total += 100;
         } else {
-            const done = ms.filter(m => m.is_completed === true).length;
+            const done = ms.filter(m => {
+                var msSt = (m._ext && m._ext.ms_status) || '进行中';
+                return msSt === '完成' || msSt === '失败';
+            }).length;
             total += Math.round((done / ms.length) * 100);
         }
     }
