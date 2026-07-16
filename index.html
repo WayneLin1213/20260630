@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <!-- VERSION: 20260706_1914 - add DingTalk notification + mobile responsive -->
+    <!-- VERSION: 20260706_1658 - improved OCR with line-by-line + window search, average-column priority -->
     <title>材料研发项目看板</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
@@ -124,7 +121,7 @@
         /* Modal */
         .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center;}
         .modal-overlay.active{display:flex;}
-        .modal{background:#fff;border-radius:12px;width:85vw;max-width:1600px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+        .modal{background:#fff;border-radius:12px;width:700px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
         .modal-header{padding:20px 24px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;}
         .modal-header h3{font-size:16px;font-weight:600;}
         .modal-close{width:28px;height:28px;border-radius:50%;border:none;background:#f5f5f5;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
@@ -215,49 +212,9 @@
         .yarn-spec-item input{flex:1;font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:4px;}
         .yarn-spec-item button{background:none;border:none;color:#e74c3c;cursor:pointer;font-size:16px;}
         .locked-indicator{font-size:11px;color:#e65100;margin-left:6px;}
-        /* ===== Notification System ===== */
-        .notif-btn{position:relative;padding:6px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:16px;color:#666;transition:all .2s;}
-        .notif-btn:hover{border-color:#667eea;color:#667eea;background:#f0f0ff;}
-        .notif-badge{position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;}
-        .notif-badge:empty{display:none;}
-        .notif-config-section{margin-bottom:20px;padding:16px;background:#f8f9fa;border-radius:8px;border:1px solid #e8e8e8;}
-        .notif-config-section h4{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
-        .notif-config-row{display:flex;gap:12px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
-        .notif-config-row label{font-size:13px;color:#666;min-width:80px;}
-        .notif-config-row input,.notif-config-row select{padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;flex:1;min-width:200px;}
-        .notif-config-row input:focus,.notif-config-row select:focus{outline:none;border-color:#667eea;}
-        .notif-status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:500;}
-        .notif-status.connected{background:#e8f5e9;color:#2e7d32;}
-        .notif-status.disconnected{background:#fee;color:#e74c3c;}
-        .notif-test-result{margin-top:8px;padding:8px 12px;border-radius:6px;font-size:12px;display:none;}
-        .notif-test-result.success{background:#e8f5e9;color:#2e7d32;display:block;}
-        .notif-test-result.error{background:#fee;color:#e74c3c;display:block;}
-        .notif-log{max-height:200px;overflow-y:auto;margin-top:12px;border:1px solid #e8e8e8;border-radius:6px;background:#fff;}
-        .notif-log-item{padding:6px 10px;font-size:12px;border-bottom:1px solid #f0f0f0;display:flex;gap:6px;align-items:flex-start;}
-        .notif-log-item:last-child{border-bottom:none;}
-        .notif-log-time{color:#999;font-size:11px;min-width:120px;flex-shrink:0;}
-        .notif-log-type{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;flex-shrink:0;}
-        .notif-log-type.success{background:#e8f5e9;color:#2e7d32;}
-        .notif-log-type.error{background:#fee;color:#e74c3c;}
-        .notif-log-type.overdue{background:#fce4ec;color:#c62828;}
-        .notif-log-type.upcoming{background:#fff8e1;color:#f57f17;}
-        .notif-log-type.info{background:#e3f2fd;color:#1565c0;}
-        /* Mobile Nav */
-        @media(max-width:768px){
-            .stats-row{grid-template-columns:1fr 1fr;}
-            .charts-row{grid-template-columns:1fr;}
-            .form-row{grid-template-columns:1fr;}
-            .modal{width:95%;}
-            .mobile-nav{display:flex !important;}
-        }
-        .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8e8e8;z-index:200;padding:6px 0 env(safe-area-inset-bottom,6px);box-shadow:0 -2px 10px rgba(0,0,0,.05);}
-        .mobile-nav-inner{display:flex;justify-content:space-around;align-items:center;max-width:500px;margin:0 auto;}
-        .mobile-nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px;border-radius:8px;cursor:pointer;color:#888;font-size:10px;transition:all .2s;-webkit-tap-highlight-color:transparent;}
-        .mobile-nav-item.active{color:#667eea;}
-        .mobile-nav-item .nav-icon{font-size:20px;}
-        .mobile-nav-item .nav-label{font-weight:500;}
 
     </style>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 
@@ -295,19 +252,8 @@
                 <div class="uname" id="userName">-</div>
                 <div class="urole" id="userRole">-</div>
             </div>
-            <button class="notif-btn" onclick="openNotifSettings()" title="通知设置">🔔<span class="notif-badge" id="notifBadge"></span></button>
             <button class="pwd-btn" onclick="openChangePwd()">修改密码</button>
             <button class="logout-btn" onclick="doLogout()">退出</button>
-        </div>
-    </div>
-    <!-- Mobile Bottom Nav -->
-    <div class="mobile-nav" id="mobileNav">
-        <div class="mobile-nav-inner">
-            <div class="mobile-nav-item active" onclick="switchPage('overview');updateMobileNav(this)"><span class="nav-icon">🏠</span><span class="nav-label">总览</span></div>
-            <div class="mobile-nav-item" onclick="switchPage('projects');updateMobileNav(this)"><span class="nav-icon">📋</span><span class="nav-label">项目</span></div>
-            <div class="mobile-nav-item" onclick="switchPage('yarns');updateMobileNav(this)"><span class="nav-icon">🧶</span><span class="nav-label">纱线</span></div>
-            <div class="mobile-nav-item" onclick="openNotifSettings();updateMobileNav(this)"><span class="nav-icon">🔔</span><span class="nav-label">通知</span></div>
-            <div class="mobile-nav-item" onclick="switchPage('users');updateMobileNav(this)" id="mobileNavUsers"><span class="nav-icon">👤</span><span class="nav-label">用户</span></div>
         </div>
     </div>
 
@@ -335,7 +281,7 @@
                 <div class="section-header">
                     <h3>项目列表</h3>
                     <div class="filters">
-                        <input type="text" id="searchInput" placeholder="🔍 搜索项目名称/编码..." oninput="renderProjectList()">
+                        <input type="text" id="searchInput" placeholder="🔍 搜索项目名称/单号..." oninput="renderProjectList()">
                         <select id="filterLevel" onchange="renderProjectList()">
                             <option value="">全部等级</option>
                             <option value="S">S级</option>
@@ -345,11 +291,10 @@
                         </select>
                         <select id="filterType" onchange="renderProjectList()">
                             <option value="">全部类型</option>
-                            <option value="品牌需求">品牌需求</option>
+                            <option value="品牌研发">品牌研发</option>
                             <option value="自主研发">自主研发</option>
-                            <option value="里程碑">里程碑</option>
-                            <option value="立项">立项</option>
-                            <option value="研发计划">研发计划</option>
+                            <option value="外部引进">外部引进</option>
+                            <option value="迭代升级">迭代升级</option>
                         </select>
                         <select id="filterStatus" onchange="renderProjectList()">
                             <option value="">全部状态</option>
@@ -371,7 +316,7 @@
         <div id="page-yarns" class="hidden">
             <div class="section">
                 <div class="section-header">
-                    <h3>纱线信息 <span style="font-size:10px;color:#ccc;font-weight:normal;">v0706-2302</span></h3>
+                    <h3>纱线信息 <span style="font-size:10px;color:#ccc;font-weight:normal;">v0706-1658</span></h3>
                     <div class="filters">
                         <input type="text" id="yarnSearchInput" placeholder="🔍 搜索纱线名称/供应商..." oninput="renderYarnList()">
                         <select id="yarnFilterCategory" onchange="renderYarnList()">
@@ -398,9 +343,7 @@
                             <option value="圆机">圆机</option>
                             <option value="速织">速织</option>
                         </select>
-                        <button class="btn btn-outline" onclick="importYarnData()">📥 导入</button>
                         <button class="btn btn-outline" onclick="exportYarnData()">📥 导出表格</button>
-                        <button class="btn btn-danger" id="btnBatchDeleteYarn" style="display:none;" onclick="batchDeleteYarns()">🗑️ 批量删除</button>
                         <button class="btn btn-primary" id="btnNewYarn" onclick="openYarnModal()">＋ 新增纱线</button>
                     </div>
                 </div>
@@ -423,7 +366,7 @@
 
 <!-- Project Modal -->
 <div class="modal-overlay" id="projectModal">
-    <div class="modal">
+    <div class="modal" style="width:750px;">
         <div class="modal-header">
             <h3 id="projectModalTitle">新建项目</h3>
             <button class="modal-close" onclick="closeModal('projectModal')">✕</button>
@@ -437,8 +380,8 @@
             <div class="tab-content active" id="tab-basic">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>项目编码</label>
-                        <input type="text" id="pProjectNo" placeholder="请输入项目编码">
+                        <label>项目单号</label>
+                        <input type="text" id="pProjectNo" placeholder="RD-2026-XXX">
                     </div>
                     <div class="form-group">
                         <label>项目名称</label>
@@ -448,16 +391,12 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>项目类型</label>
-                        <div id="pTypeGroup" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">
-                            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" name="pType" value="品牌需求"> 品牌需求</label>
-                            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" name="pType" value="自主研发"> 自主研发</label>
-                            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" name="pType" value="里程碑"> 里程碑</label>
-                            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" name="pType" value="立项"> 立项</label>
-                            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" name="pType" value="研发计划"> 研发计划</label>
-                        </div>
-                        <div id="pBrandNameWrap" style="display:none;margin-top:6px;">
-                            <input type="text" id="pBrandName" placeholder="请输入品牌名称" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
-                        </div>
+                        <select id="pType">
+                            <option value="品牌研发">品牌研发</option>
+                            <option value="自主研发">自主研发</option>
+                            <option value="外部引进">外部引进</option>
+                            <option value="迭代升级">迭代升级</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>项目等级</label>
@@ -488,7 +427,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>项目开始</label>
+                        <label>周期开始</label>
                         <input type="date" id="pPeriodStart">
                     </div>
                     <div class="form-group">
@@ -509,10 +448,15 @@
                 <div class="form-row full">
                     <div class="form-group">
                         <label>目标</label>
-                        <textarea id="pObjective" rows="2" placeholder="目标：最终输出结果"></textarea>
+                        <textarea id="pObjective" rows="2" placeholder="项目目标描述"></textarea>
                     </div>
                 </div>
-
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label>方案</label>
+                        <textarea id="pPlan" rows="2" placeholder="实施方案描述"></textarea>
+                    </div>
+                </div>
             </div>
             <div class="tab-content" id="tab-stages">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -751,28 +695,33 @@
             </div>
             <div class="form-row full">
                 <div class="form-group">
-                    <label>检测数据</label>
+                    <label style="display:flex;align-items:center;gap:8px;">
+                        检测数据
+                        <span id="ocrStatus" style="font-size:11px;color:#667eea;display:none;">🔍 正在识别中...</span>
+                    </label>
                     <div style="background:#f8f9fa;border:1px solid #e8e8e8;border-radius:8px;padding:14px;">
-                        <div style="margin-bottom:10px;">
-                            <table style="width:100%;border-collapse:collapse;font-size:13px;" id="testDataTable">
-                                <thead>
-                                    <tr style="background:#f0f0f0;">
-                                        <th style="padding:8px 6px;text-align:left;border-bottom:2px solid #ddd;min-width:120px;">检测单号</th>
-                                        <th style="padding:8px 6px;text-align:left;border-bottom:2px solid #ddd;min-width:100px;">规格</th>
-                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">断裂强度<br><span style="font-size:10px;color:#999;font-weight:400;">(cN/dtex)</span></th>
-                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">断裂伸长率<br><span style="font-size:10px;color:#999;font-weight:400;">(%)</span></th>
-                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">沸水收缩率<br><span style="font-size:10px;color:#999;font-weight:400;">(%)</span></th>
-                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">干热收缩率<br><span style="font-size:10px;color:#999;font-weight:400;">(%)</span></th>
-                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:12%;">黄变</th>
-                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:12%;">酚黄</th>
-                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:40px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="testDataBody"></tbody>
-                            </table>
-                            <button onclick="addTestDataRow()" style="margin-top:8px;font-size:12px;color:#667eea;background:none;border:1px dashed #667eea;border-radius:6px;padding:4px 12px;cursor:pointer;">＋ 添加规格行</button>
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:12px;">断裂强度 (cN/dtex)</label>
+                                <input type="text" id="yTensileStrength" placeholder="如 5.2" style="font-size:13px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:12px;">断裂伸长率 (%)</label>
+                                <input type="text" id="yElongation" placeholder="如 25.3" style="font-size:13px;">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:12px;">沸水收缩率 (%)</label>
+                                <input type="text" id="yBoilingShrinkage" placeholder="如 8.5" style="font-size:13px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="font-size:12px;">干热收缩率 (%)</label>
+                                <input type="text" id="yDryHeatShrinkage" placeholder="如 3.2" style="font-size:13px;">
+                            </div>
                         </div>
                     </div>
+                    <div style="font-size:11px;color:#999;margin-top:4px;">💡 上传检测图片可自动识别填充以上数据</div>
                 </div>
             </div>
             <div class="form-row full">
@@ -790,80 +739,10 @@
     </div>
 </div>
 
-<!-- Notification Settings Modal -->
-<div class="modal-overlay" id="notifSettingsModal">
-    <div class="modal" style="width:550px;">
-        <div class="modal-header">
-            <h3>🔔 通知设置</h3>
-            <button class="modal-close" onclick="closeModal('notifSettingsModal')">✕</button>
-        </div>
-        <div class="modal-body">
-            <div class="notif-config-section">
-                <h4>📱 钉钉机器人通知</h4>
-                <div class="notif-config-row">
-                    <label>Webhook</label>
-                    <input type="text" id="ddWebhook" placeholder="https://oapi.dingtalk.com/robot/send?access_token=...">
-                </div>
-                <div class="notif-config-row">
-                    <label>签名密钥</label>
-                    <input type="text" id="ddSecret" placeholder="SEC...（加签模式）留空则不使用签名">
-                </div>
-                <div class="notif-config-row">
-                    <label>安全模式</label>
-                    <select id="ddSecMode">
-                        <option value="sign">加签（推荐）</option>
-                        <option value="keyword">自定义关键词</option>
-                    </select>
-                </div>
-                <div style="display:flex;gap:8px;margin-top:8px;">
-                    <button class="btn btn-outline btn-sm" onclick="testDingTalkNotif()">🧪 测试发送</button>
-                    <button class="btn btn-success btn-sm" onclick="saveNotifSettings()">💾 保存设置</button>
-                    <span class="notif-status disconnected" id="ddStatus">● 未连接</span>
-                </div>
-                <div class="notif-test-result" id="ddTestResult"></div>
-            </div>
-            <div class="notif-config-section">
-                <h4>⏰ 提醒规则</h4>
-                <div class="notif-config-row">
-                    <label>提前提醒</label>
-                    <select id="advanceDays">
-                        <option value="1">到期前 1 天</option>
-                        <option value="2">到期前 2 天</option>
-                        <option value="3" selected>到期前 3 天</option>
-                        <option value="5">到期前 5 天</option>
-                        <option value="7">到期前 7 天</option>
-                    </select>
-                </div>
-                <div class="notif-config-row">
-                    <label>浏览器通知</label>
-                    <select id="browserNotif">
-                        <option value="on">开启</option>
-                        <option value="off">关闭</option>
-                    </select>
-                    <button class="btn btn-outline btn-sm" onclick="requestBrowserNotif()">授权</button>
-                </div>
-                <div style="margin-top:8px;">
-                    <button class="btn btn-warning btn-sm" onclick="sendManualNotif()">📢 立即发送一次提醒</button>
-                    <button class="btn btn-outline btn-sm" onclick="checkAndShowNotifs()">🔍 检查异常</button>
-                </div>
-            </div>
-            <div class="notif-config-section">
-                <h4>📝 最近通知记录</h4>
-                <div class="notif-log" id="notifLog">
-                    <div class="notif-log-item" style="color:#999;text-align:center;">暂无通知记录</div>
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeModal('notifSettingsModal')">关闭</button>
-        </div>
-    </div>
-</div>
-
 <!-- Setup Wizard -->
 <div class="setup-overlay" id="setupWizard" style="display:none;">
     <div class="setup-box">
-        <h3>🔧 数据库升级脚本 (v3.2)</h3>
+        <h3>🔧 数据库升级脚本 (v3.1)</h3>
         <p>本次升级需要执行以下SQL脚本以新增字段。请按以下步骤操作：</p>
         <ol class="steps">
             <li>打开 <a href="https://supabase.com/dashboard/project/vxxkxaxvwknfafehcruj/sql" target="_blank" style="color:#667eea;">Supabase SQL Editor</a></li>
@@ -1014,8 +893,6 @@ function showApp() {
     $('userRole').textContent = currentUser.role === 'manager' ? '管理者' : '执行人';
     if(currentUser.role !== 'manager') {
         $('navUsers').style.display='none';
-        const mobileUsers = $('mobileNavUsers');
-        if (mobileUsers) mobileUsers.style.display='none';
     }
     // Executor can see yarns but can't edit
     if(currentUser.role !== 'manager') {
@@ -1040,9 +917,6 @@ async function loadData() {
 
         milestonesMap = {};
         allMilestones.forEach(m => {
-            // Parse solution JSON into _ext for status calculations
-            try { m._ext = JSON.parse(m.solution || '{}'); } catch(e) { m._ext = {}; }
-            if(!m._ext.ms_status) m._ext.ms_status = '进行中';
             const key = m.project_id + '_' + m.stage_id;
             if(!milestonesMap[key]) milestonesMap[key] = [];
             milestonesMap[key].push(m);
@@ -1062,8 +936,6 @@ async function loadData() {
         }
 
         renderAll();
-        // Auto-check notifications after data loaded
-        setTimeout(() => { updateNotifBadge(); checkAndShowNotifs(); }, 1000);
     } catch(e) {
         console.error('Data load error:', e);
         toast('数据加载失败，请检查网络','error');
@@ -1081,7 +953,7 @@ function calcProjectProgress(projectId) {
             // No milestones - use stage status
             if(s.status === '已完成') totalProgress += 100;
         } else {
-            const completed = ms.filter(m => (m._ext.ms_status==='完成'||m._ext.ms_status==='失败')).length;
+            const completed = ms.filter(m => m.is_completed === true).length;
             totalProgress += Math.round((completed / ms.length) * 100);
         }
     }
@@ -1091,7 +963,7 @@ function calcProjectProgress(projectId) {
 function calcStageAutoStatus(projectId, stageId) {
     const ms = milestonesMap[projectId + '_' + stageId] || [];
     if(ms.length === 0) return null;
-    const allDone = ms.every(m => (m._ext.ms_status==='完成'||m._ext.ms_status==='失败'));
+    const allDone = ms.every(m => m.is_completed === true);
     return allDone ? '已完成' : '进行中';
 }
 
@@ -1115,7 +987,7 @@ function calcProjectStatus(projectId) {
         const ms = milestonesMap[projectId + '_' + s.id] || [];
         if(ms.length > 0) {
             hasAnyMilestone = true;
-            if(!ms.every(m => { var msSt = (m._ext && m._ext.ms_status) || '进行中'; return msSt === '完成' || msSt === '失败'; })) {
+            if(!ms.every(m => m.is_completed === true)) {
                 allMilestonesCompleted = false;
                 break;
             }
@@ -1193,15 +1065,16 @@ function renderAnomalyBoard() {
         }
     }
 
+    // 阶段交期异常：只检查当前有效项目（已删除项目的阶段不显示）
     for(const s of allStages) {
-        // 2. Stage end_date overdue
         if(s.end_date && s.end_date < todayStr && s.status !== '已完成') {
             const proj = allProjects.find(p=>p.id===s.project_id);
+            if(!proj) continue; // 跳过已删除项目的阶段
             anomalies.push({
                 type: 'warning',
                 icon: '⚠️',
                 typeName: '阶段交期异常',
-                title: (proj?proj.name:'?') + ' / ' + (s.name||'未命名阶段'),
+                title: proj.name + ' / ' + (s.name||'未命名阶段'),
                 desc: '阶段截止 '+s.end_date+' 已过，状态: '+s.status
             });
         }
@@ -1271,7 +1144,7 @@ function renderProjectList() {
     let filtered = allProjects.filter(p => {
         if(search && !p.name.toLowerCase().includes(search) && !(p.project_no||'').toLowerCase().includes(search)) return false;
         if(fLevel && p.level !== fLevel) return false;
-        if(fType && !(p.project_type||'').split(',').includes(fType)) return false;
+        if(fType && p.project_type !== fType) return false;
         if(fStatus && p.status !== fStatus) return false;
         return true;
     });
@@ -1334,16 +1207,16 @@ function renderCharts() {
     $('progressChart').innerHTML = pHtml || '<div class="empty-state"><p>暂无数据</p></div>';
 
     // Type chart with completion counts (need7)
-    const types = ['品牌需求','自主研发','里程碑','立项','研发计划'];
+    const types = ['品牌研发','自主研发','外部引进','迭代升级'];
     const typeColors = ['#667eea','#f59e0b','#4caf50','#8b5cf6'];
     let tHtml = '';
-    const maxCount = Math.max(...types.map(t=>allProjects.filter(p=>(p.project_type||'').split(',').includes(t)).length), 1);
+    const maxCount = Math.max(...types.map(t=>allProjects.filter(p=>p.project_type===t).length), 1);
     let totalDone = allProjects.filter(p=>p.status==='已完成').length;
     $('typeChartTitle').innerHTML = '📋 项目类型分布 <span class="total-done">总完成: '+totalDone+'个</span>';
 
     for(let i=0;i<types.length;i++) {
         const count = allProjects.filter(p=>p.project_type===types[i]).length;
-        const doneCount = allProjects.filter(p=>(p.project_type||'').split(',').includes(types[i])&&p.status==='已完成').length;
+        const doneCount = allProjects.filter(p=>p.project_type===types[i]&&p.status==='已完成').length;
         const pct = (count/maxCount*100);
         tHtml += '<div class="bar-row">';
         tHtml += '<div class="bar-label">'+types[i]+'</div>';
@@ -1379,7 +1252,7 @@ function renderUserList() {
 function populateOwnerSelect() {
     let opts = '<option value="">-- 选择负责人 --</option>';
     for(const u of allUsers) {
-        opts += '<option value="'+u.id+'">'+u.name+'</option>';
+        opts += '<option value="'+u.id+'">'+u.name+' ('+( u.role==='manager'?'管理者':'执行人')+')</option>';
     }
     $('pOwner').innerHTML = opts;
     // Follower select (need10)
@@ -1393,21 +1266,11 @@ function populateOwnerSelect() {
 // ============ PAGE SWITCH ============
 function switchPage(page) {
     document.querySelectorAll('.topbar nav a').forEach(a=>a.classList.remove('active'));
-    const navLinks = document.querySelectorAll('.topbar nav a');
-    const pageOrder = ['overview','projects','yarns','users'];
-    const idx = pageOrder.indexOf(page);
-    if (idx >= 0 && navLinks[idx]) navLinks[idx].classList.add('active');
+    event.target.classList.add('active');
     ['overview','projects','yarns','users'].forEach(p=>{
         $('page-'+p).classList.toggle('hidden', p!==page);
     });
-    // Sync mobile nav
-    const mobileItems = document.querySelectorAll('.mobile-nav-item');
-    const mobileMap = ['overview','projects','yarns',null,'users'];
-    mobileItems.forEach((item, i) => {
-        if (mobileMap[i] === page) item.classList.add('active');
-        else if (mobileMap[i] !== null) item.classList.remove('active');
-    });
-    if(page==='overview') { renderStats(); renderAnomalyBoard(); renderCharts(); updateNotifBadge(); }
+    if(page==='overview') { renderStats(); renderAnomalyBoard(); renderCharts(); }
     if(page==='yarns') { loadYarns(); }
 }
 
@@ -1421,19 +1284,6 @@ function switchTab(el, tabId) {
 }
 
 // ============ PROJECT CRUD ============
-
-// Toggle brand name field visibility based on project type
-function toggleBrandName() {
-    var checked = false;
-    document.querySelectorAll('input[name="pType"]').forEach(function(cb){if(cb.value==='品牌需求' && cb.checked) checked=true;});
-    var wrap = document.getElementById('pBrandNameWrap');
-    if(wrap) wrap.style.display = checked ? 'block' : 'none';
-}
-// Add onchange listeners for project type checkboxes
-document.addEventListener('change', function(e) {
-    if(e.target && e.target.name === 'pType') toggleBrandName();
-});
-
 function openProjectModal(id) {
     editingProjectId = id || null;
     $('projectModalTitle').textContent = id ? '编辑项目' : '新建项目';
@@ -1444,13 +1294,7 @@ function openProjectModal(id) {
         if(!p) return;
         $('pProjectNo').value = p.project_no||'';
         $('pName').value = p.name||'';
-        // Set checkboxes from comma-separated project_type
-        var ptArr = (p.project_type||'').split(',').filter(Boolean);
-        document.querySelectorAll('input[name="pType"]').forEach(function(cb){cb.checked = ptArr.indexOf(cb.value)>=0;});
-        // Show brand name if 品牌需求 selected
-        toggleBrandName();
-        // Set brand name from plan field
-        $('pBrandName').value = p.plan||'';
+        $('pType').value = p.project_type||'品牌研发';
         $('pLevel').value = p.level||'B';
         $('pOwner').value = p.creator_id||p.owner_id||'';
         $('pFollower').value = p.follower_id||'';
@@ -1459,6 +1303,7 @@ function openProjectModal(id) {
         $('pDeadline').value = p.deadline||'';
         $('pProgress').value = p.progress||0;
         $('pObjective').value = p.objective||'';
+        $('pPlan').value = p.plan||'';
         $('pClosure').value = p.closure_report||'';
         $('pDataReport').value = p.product_data_report||'';
 
@@ -1480,39 +1325,20 @@ function openProjectModal(id) {
         renderProjectAttachments();
 
         // Load stages
-        tempStages = allStages.filter(s=>s.project_id===id).map(s=>{
-            // Parse solution JSON for stage-level yarn fields
-            var stageExt = {};
-            try { stageExt = JSON.parse(s.solution||'{}'); } catch(e) { stageExt = {}; }
-            return {
-                ...s,
-                plan_desc: stageExt.plan_desc||'',
-                yarn_formula: stageExt.yarn_formula||'',
-                yarn_department: stageExt.yarn_department||'',
-                yarn_time: stageExt.yarn_time||'',
-                yarn_complete_time: stageExt.yarn_complete_time||'',
-                test_no: stageExt.test_no||'',
-                test_est_time: stageExt.test_est_time||'',
-                test_done_time: stageExt.test_done_time||'',
-                test_result: stageExt.test_result||'',
-                sales_no: stageExt.sales_no||'',
-                unqual_info: stageExt.unqual_info||'',
-                attachments: stageExt.attachments||[],
-                milestones: milestonesMap[id+'_'+s.id] ? milestonesMap[id+'_'+s.id].map(m=>({
-                    name: m.name||'', time: m.node_time||'', content: m.node_content||'',
-                    product_info: m.product_info||'', product_data: m.product_data||'',
-                    anomaly: m.anomaly||'', solution: m.solution||'',
-                    is_completed: m.is_completed||false,
-                    attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
-                    _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'进行中',sales_no:o.sales_no||'',ms_sales_no:o.ms_sales_no||'',test_no:o.test_no||'',test_est_time:o.test_est_time||'',test_done_time:o.test_done_time||'',test_result:o.test_result||'',ms_unqual_info:o.ms_unqual_info||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
-                    id: m.id
-                })) : []
-            };
-        });
+        tempStages = allStages.filter(s=>s.project_id===id).map(s=>({
+            ...s,
+            milestones: milestonesMap[id+'_'+s.id] ? milestonesMap[id+'_'+s.id].map(m=>({
+                name: m.name||'', time: m.node_time||'', content: m.node_content||'',
+                product_info: m.product_info||'', product_data: m.product_data||'',
+                anomaly: m.anomaly||'', solution: m.solution||'',
+                is_completed: m.is_completed||false,
+                attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
+                id: m.id
+            })) : []
+        }));
     } else {
-        ['pProjectNo','pName','pObjective','pClosure','pDataReport'].forEach(fid=>{$(fid).value='';});
-        document.querySelectorAll('input[name="pType"]').forEach(function(cb){cb.checked=false;});
-        toggleBrandName();$('pBrandName').value='';$('pLevel').value='B';$('pStatus').value='未开始';
+        ['pProjectNo','pName','pObjective','pPlan','pClosure','pDataReport'].forEach(fid=>{$(fid).value='';});
+        $('pType').value='品牌研发';$('pLevel').value='B';$('pStatus').value='未开始';
         $('pOwner').value='';$('pFollower').value='';
         $('pPeriodStart').value='';$('pDeadline').value='';$('pProgress').value=0;
         $('pDeadline').readOnly = false;
@@ -1604,100 +1430,41 @@ function downloadMsAttachment(stageIdx, mIdx, attIdx) {
     a.click();
 }
 
-// Stage-level attachment handlers
-async function handleStageFileUpload(event, stageIdx) {
-    const files = event.target.files;
-    if(!tempStages[stageIdx].attachments) tempStages[stageIdx].attachments = [];
-    for(const f of files) {
-        const data = await fileToBase64(f);
-        tempStages[stageIdx].attachments.push({name: f.name, type: f.type, data: data});
-    }
-    renderStagesList();
-    event.target.value = '';
-}
-
-function removeStageAttachment(stageIdx, attIdx) {
-    tempStages[stageIdx].attachments.splice(attIdx, 1);
-    renderStagesList();
-}
-
-function downloadStageAttachment(stageIdx, attIdx) {
-    const att = tempStages[stageIdx].attachments[attIdx];
-    if(!att) return;
-    const a = document.createElement('a');
-    a.href = att.data;
-    a.download = att.name;
-    a.click();
-}
-
 // ============ STAGES & MILESTONES (need3/4/12) ============
 function renderStagesList() {
     let html = '';
     const isManager = currentUser && currentUser.role === 'manager';
-    // Auto-calculate all stage statuses before rendering
-    tempStages.forEach((s, idx) => {
-        const milestones = s.milestones || [];
-        if(milestones.length === 0) {
-            s.status = '未开始';
-        } else {
-            const statuses = milestones.map(m => (m._ext && m._ext.ms_status) || '进行中');
-            const allDone = statuses.every(st => st === '完成' || st === '失败');
-            s.status = allDone ? '已完成' : '进行中';
-        }
-    });
     tempStages.forEach((s, idx) => {
         const stageLocked = s.status === '已完成' && !previewMode;
         const bgStyle = previewMode ? 'background:#f5f5f5;color:#666;' : '';
         const lockAttr = previewMode;
         html += '<div class="timeline-item">';
-        
-        // Single grid container for all stage fields (4 columns)
-        html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">';
-        // Row 1: 纱线事业部 | 方案说明(span2) | 状态+按钮
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线事业部</span><select onchange="tempStages['+idx+'].yarn_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' disabled':'')+'">';
-        html += '<option value="">请选择</option>';
-        ['水冷','成东','纺纱'].forEach(function(d){html += '<option value="'+d+'" '+((s.yarn_department===d)?'selected':'')+'>'+d+'</option>';});
-        html += '</select></div>';
-        html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">方案说明</span><input type="text" value="'+(s.plan_desc||'')+'" onchange="tempStages['+idx+'].plan_desc=this.value" placeholder="例如：提高耐磨" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div style="text-align:right;"><span class="field-label" style="font-size:11px;color:#888;">状态</span> <span style="font-size:12px;padding:4px 8px;display:inline-block;min-width:60px;text-align:center;border-radius:4px;'+(s.status==='已完成'?'background:#e8f5e9;color:#4caf50;':s.status==='进行中'?'background:#fff3e0;color:#e67e22;':'background:#f5f5f5;color:#888;')+'">'+s.status+'</span>'+(lockAttr?'':' <button class="btn-add" onclick="addMilestone('+idx+')" style="font-size:11px;padding:2px 8px;margin-left:4px;">+节点</button> <button class="btn-del" onclick="deleteStage('+idx+')" style="font-size:11px;padding:2px 8px;">删除</button>')+'</div>';
-        // Row 2: 纱线名称(span2) | 纱线配方(span2)
-        html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">纱线名称（严格按照系统）</span><input type="text" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="纱线名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">纱线配方</span><input type="text" value="'+(s.yarn_formula||'')+'" onchange="tempStages['+idx+'].yarn_formula=this.value" placeholder="纱线配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        // Row 3: 销售订单号 | 纱线预计完成时间 | 纱线完成时间
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">销售订单号</span><input type="text" value="'+(s.sales_no||'')+'" onchange="tempStages['+idx+'].sales_no=this.value" placeholder="销售订单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div></div>';
-        // Row 4: 检测单号 | 检测预计完成时间 | 检测完成时间
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测单号</span><input type="text" value="'+(s.test_no||'')+'" onchange="tempStages['+idx+'].test_no=this.value" placeholder="检测单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测预计完成时间</span><input type="date" value="'+(s.test_est_time||'')+'" onchange="tempStages['+idx+'].test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测完成时间</span><input type="date" value="'+(s.test_done_time||'')+'" onchange="tempStages['+idx+'].test_done_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        html += '<div></div>';
-        // Row 4b: 检测结果(span2) | 不合格信息(span2)
-        html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">检测结果</span><select onchange="tempStages['+idx+'].test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' disabled':'')+'"><option value="">请选择</option><option value="合格" '+((s.test_result==='合格')?'selected':'')+'>合格</option><option value="不合格" '+((s.test_result==='不合格')?'selected':'')+'>不合格</option><option value="待检测" '+((s.test_result==='待检测')?'selected':'')+'>待检测</option></select></div>';
-        html += '<div style="grid-column:span 2;'+(s.test_result!=='不合格'?' display:none;':'')+'"><span class="field-label" style="font-size:11px;color:#c00;">不合格信息 <span style="color:#f00;">*</span>:</span> <input type="text" value="'+(s.unqual_info||'')+'" onchange="tempStages['+idx+'].unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+bgStyle+'"'+(lockAttr?' readonly':'')+'"></div>';
+        html += '<div class="tl-header">';
+        // need3: editable stage name
+        html += '<input class="stage-name-input" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="输入阶段名称（如: 方案设计）">';
+        html += '<div style="display:flex;gap:6px;">';
+        html += '<button class="btn btn-sm btn-outline" onclick="addMilestone('+idx+')">＋节点</button>';
+        html += '<button class="btn btn-sm btn-danger" onclick="removeStage('+idx+')">删除</button>';
+        html += '</div></div>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">开始</span><input type="date" value="'+(s.start_date||'')+'" onchange="tempStages['+idx+'].start_date=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">结束</span><input type="date" value="'+(s.end_date||'')+'" onchange="tempStages['+idx+'].end_date=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">状态</span><select onchange="tempStages['+idx+'].status=this.value" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+((stageLocked && !isManager)?' disabled':'')+'>';
+        html += '<option '+(s.status==='未开始'?'selected':'')+'>未开始</option>';
+        html += '<option '+(s.status==='进行中'?'selected':'')+'>进行中</option>';
+        html += '<option '+(s.status==='已完成'?'selected':'')+'>已完成</option>';
+        html += '</select></div></div>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">输出内容</span><input type="text" value="'+(s.output||'')+'" onchange="tempStages['+idx+'].output=this.value" placeholder="阶段输出物" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">产品信息</span><input type="text" value="'+(s.product||'')+'" onchange="tempStages['+idx+'].product=this.value" placeholder="输出产品信息" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
         html += '</div>';
-        
-        // Row 5: 备注
-        html += '<div style="margin-bottom:8px;"><span class="field-label" style="font-size:11px;color:#888;">备注</span><input type="text" value="'+(s.anomaly_feedback||'')+'" id="stage_anomaly_'+idx+'" onchange="tempStages['+idx+'].anomaly_feedback=this.value" placeholder="备注信息" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-        
-        // Row 6: 附件
-        html += '<div style="font-size:11px;margin-bottom:8px;"><span style="color:#888;">附件:</span> ';
-        const stageAtts = s.attachments || [];
-        stageAtts.forEach((att, aIdx) => {
-            if(att.type && att.type.startsWith('image/')) {
-                html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+(lockAttr?'':' <span class="remove-att" onclick="removeStageAttachment('+idx+','+aIdx+')"></span>')+'</span>';
-            } else {
-                html += '<span class="attachment-item" onclick="downloadStageAttachment('+idx+','+aIdx+')">📄 '+att.name+(lockAttr?'':' <span class="remove-att" onclick="event.stopPropagation();removeStageAttachment('+idx+','+aIdx+')">✕</span>')+'</span>';
-            }
-        });
-        if(!lockAttr) html += '<label class="upload-btn"> 上传<input type="file" multiple style="display:none;" onchange="handleStageFileUpload(event,'+idx+')"></label>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">产品数据</span><input type="text" value="'+(s.output_product_data||'')+'" onchange="tempStages['+idx+'].output_product_data=this.value" placeholder="阶段产品数据" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+        html += '<div><span class="field-label" style="font-size:11px;color:#888;">异常反馈</span><input type="text" value="'+(s.anomaly_feedback||'')+'" onchange="tempStages['+idx+'].anomaly_feedback=this.value" placeholder="异常问题描述" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
         html += '</div>';
-        
-        // 节点列表
+        html += '<div style="margin-bottom:8px;"><span class="field-label" style="font-size:11px;color:#888;">解决方案</span>';
+        html += '<input type="text" value="'+(s.solution||'')+'" onchange="tempStages['+idx+'].solution=this.value" placeholder="解决方案" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
         html += renderMilestones(idx);
-        
-        // 关闭 timeline-item
         html += '</div>';
     });
     $('stagesList').innerHTML = html || '<div class="empty-state" style="padding:24px;"><p>暂无阶段计划，点击"添加阶段"开始</p></div>';
@@ -1711,49 +1478,47 @@ function renderMilestones(stageIdx) {
     const stageLocked = stage.status === '已完成' && !previewMode;
     let html = '<div class="milestone-sub">';
     milestones.forEach((m, mIdx) => {
-        const msStatus = m._ext && m._ext.ms_status ? m._ext.ms_status : '进行中';
-        const msLocked = (stageLocked) && !previewMode;
+        const isCompleted = m.is_completed === true;
+        const completedClass = isCompleted ? ' completed' : '';
+        const msLocked = (isCompleted || stageLocked) && !previewMode;
         const msCanEdit = msLocked ? isManager : !previewMode;
+        html += '<div class="ms-item'+completedClass+'">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+        html += '<div style="display:flex;align-items:center;gap:4px;">';
+        if(msLocked && isManager) {
+            html += '<span class="ms-complete-btn" onclick="unlockMilestone('+stageIdx+','+mIdx+')" title="管理者: 改为进行中">🔓</span>';
+        } else if(!msLocked && !previewMode) {
+            html += '<span class="ms-complete-btn" onclick="toggleMilestoneComplete('+stageIdx+','+mIdx+')" title="'+(isCompleted?'点击取消完成':'点击标记完成')+'">'+(isCompleted?'✅':'⭕')+'</span>';
+        } else {
+            html += '<span style="font-size:16px;margin-right:6px;">'+(isCompleted?'✅':'⭕')+'</span>';
+        }
+        if(msLocked) html += '<span style="font-size:11px;color:#e65100;margin-right:4px;">🔒</span>';
+        html += '<span class="ms-title">节点: '+(m.name||'未命名')+'</span>';
+        html += '</div>';
+        if(msCanEdit) {
+            html += '<button class="btn btn-sm btn-danger" onclick="removeMilestone('+stageIdx+','+mIdx+')" style="font-size:10px;padding:2px 8px;">删除</button>';
+        }
+        html += '</div>';
         const msRo = msLocked && !isManager;
         const msBg = msRo ? 'background:#f5f5f5;color:#666;' : '';
         const msReadonly = msRo ? ' readonly' : '';
-        var ext = m._ext || {};
-        var nodeType = m.name || '';
-        html += '<div class="ms-item">';
-        // Single grid container for all node fields (2 columns)
-        html += '\u003cdiv style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"\u003e';
-        // Header: 节点+状态 (span2, flex)
-        html += '\u003cdiv style="grid-column:span 2;display:flex;align-items:center;gap:8px;"\u003e\u003cspan class="ms-title" style="font-size:13px;font-weight:600;color:#333;"\u003e节点\u003c/span\u003e\u003cselect onchange="tempStages['+stageIdx+'].milestones['+mIdx+']._ext.ms_status=this.value;autoCalcStageStatus('+stageIdx+');" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;'+msBg+'"'+(msRo?' disabled':'')+'"\u003e\u003coption value="进行中" '+(msStatus==='进行中'?'selected':'')+'\u003e进行中\u003c/option\u003e\u003coption value="完成" '+(msStatus==='完成'?'selected':'')+'\u003e完成\u003c/option\u003e\u003coption value="失败" '+(msStatus==='失败'?'selected':'')+'\u003e失败\u003c/option\u003e\u003c/select\u003e';
-        if(msCanEdit) { html += ' \u003cbutton class="btn btn-sm btn-danger" onclick="removeMilestone('+stageIdx+','+mIdx+');autoCalcStageStatus('+stageIdx+');" style="font-size:11px;padding:2px 8px;margin-left:auto;"\u003e删除\u003c/button\u003e'; }
-        html += '\u003c/div\u003e';
-        // 销售订单号(span2)
-        html += '\u003cdiv style="grid-column:span 2;"\u003e\u003cspan style="font-size:10px;color:#888;"\u003e销售订单号\u003c/span\u003e\u003cinput type="text" value="'+(ext.ms_sales_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.ms_sales_no=this.value" placeholder="销售订单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        // 成品名称 | 成品配方
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e成品名称:\u003c/span\u003e \u003cinput type="text" value="'+(ext.weave_name||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_name=this.value" placeholder="成品名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e成品配方:\u003c/span\u003e \u003cinput type="text" value="'+(ext.weave_formula||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_formula=this.value" placeholder="成品配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        // 织造事业部 | 织造预计完成时间
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造事业部:\u003c/span\u003e \u003cselect onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"\u003e\u003coption value=""\u003e请选择\u003c/option\u003e';
-        ['飞织','经编','梭织','纬编','速织'].forEach(function(d){html += '\u003coption value="'+d+'" '+(ext.weave_department===d?'selected':'')+'\u003e'+d+'\u003c/option\u003e';});
-        html += '\u003c/select\u003e\u003c/div\u003e';
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        // 织造完成时间 | 检测单号
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测单号:\u003c/span\u003e \u003cinput type="text" value="'+(ext.test_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_no=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        // 检测预计完成时间 | 检测完成时间
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_est_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_done_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_done_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        // 检测结果 | 不合格信息
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测结果:\u003c/span\u003e \u003cselect onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"\u003e\u003coption value=""\u003e请选择\u003c/option\u003e\u003coption value="合格" '+(ext.test_result==='合格'?'selected':'')+'\u003e合格\u003c/option\u003e\u003coption value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'\u003e不合格\u003c/option\u003e\u003coption value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'\u003e待检测\u003c/option\u003e\u003c/select\u003e\u003c/div\u003e';
-        html += '\u003cdiv style="'+(ext.test_result!=='不合格'?' display:none;':'')+'"\u003e\u003cspan style="color:#c00;"\u003e不合格信息 \u003cspan style="color:#f00;"\u003e*\u003c/span\u003e:\u003c/span\u003e \u003cinput type="text" value="'+(ext.ms_unqual_info||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.ms_unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        html += '\u003c/div\u003e';
-        html += '<div style="font-size:11px;margin-bottom:4px;"><span style="color:#888;">备注:</span> <input type="text" value="'+(m.anomaly||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].anomaly=this.value" placeholder="备注信息" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
-        // Row: 附件
-        html += '<div style="font-size:11px;">';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;">';
+        html += '<div><span style="color:#888;">时间:</span> <input type="date" value="'+(m.time||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].time=this.value" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div><span style="color:#888;">产品信息:</span> <input type="text" value="'+(m.product_info||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_info=this.value" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '</div>';
+        html += '<div style="margin-top:4px;font-size:11px;"><span style="color:#888;">内容:</span> <input type="text" value="'+(m.content||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].content=this.value" placeholder="节点内容" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px;font-size:11px;">';
+        html += '<div><span style="color:#888;">产品数据:</span> <input type="text" value="'+(m.product_data||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].product_data=this.value" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '<div><span style="color:#888;">异常:</span> <input type="text" value="'+(m.anomaly||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].anomaly=this.value" placeholder="异常反馈" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        html += '</div>';
+        html += '<div style="margin-top:4px;font-size:11px;"><span style="color:#888;">解决方案:</span> <input type="text" value="'+(m.solution||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].solution=this.value" placeholder="解决方案" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
+        // need4: milestone attachments
+        html += '<div style="margin-top:6px;font-size:11px;">';
         html += '<span style="color:#888;">附件:</span> ';
         const atts = m.attachments || [];
         atts.forEach((att, aIdx) => {
             if(att.type && att.type.startsWith('image/')) {
-                html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+(msRo?'':' <span class="remove-att" onclick="removeMilestoneAttachment('+stageIdx+','+mIdx+','+aIdx+')"></span>')+'</span>';
+                html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+(msRo?'':' <span class="remove-att" onclick="removeMilestoneAttachment('+stageIdx+','+mIdx+','+aIdx+')">✕</span>')+'</span>';
             } else {
                 html += '<span class="attachment-item" onclick="downloadMsAttachment('+stageIdx+','+mIdx+','+aIdx+')">📄 '+att.name+(msRo?'':' <span class="remove-att" onclick="event.stopPropagation();removeMilestoneAttachment('+stageIdx+','+mIdx+','+aIdx+')">✕</span>')+'</span>';
             }
@@ -1765,26 +1530,6 @@ function renderMilestones(stageIdx) {
     html += '</div>';
     return html;
 }
-
-// 自动计算阶段状态 based on 节点状态
-function autoCalcStageStatus(stageIdx) {
-    const stage = tempStages[stageIdx];
-    if(!stage) return;
-    const milestones = stage.milestones || [];
-    if(milestones.length === 0) {
-        stage.status = '未开始';
-    } else {
-        const statuses = milestones.map(m => (m._ext && m._ext.ms_status) || '进行中');
-        const allDone = statuses.every(s => s === '完成' || s === '失败');
-        if(allDone) {
-            stage.status = '已完成';
-        } else {
-            stage.status = '进行中';
-        }
-    }
-    renderStagesList();
-}
-
 
 // need12: toggle milestone completion
 function toggleMilestoneComplete(stageIdx, mIdx) {
@@ -1832,28 +1577,16 @@ function unlockStage(stageIdx) {
 }
 
 function addStage() {
-    tempStages.push({name:'新阶段',start_date:'',end_date:'',status:'未开始',output:'',product:'',output_product_data:'',anomaly_feedback:'',solution:'',plan_desc:'',yarn_formula:'',yarn_department:'',yarn_time:'',yarn_complete_time:'',sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',unqual_info:'',attachments:[],milestones:[]});
+    tempStages.push({name:'新阶段',start_date:'',end_date:'',status:'未开始',output:'',product:'',output_product_data:'',anomaly_feedback:'',solution:'',milestones:[]});
     renderStagesList();
 }
 function removeStage(idx) {
     tempStages.splice(idx, 1);
     renderStagesList();
 }
-// Auto-sync milestone product_info & anomaly → stage level
-function syncMilestoneToStage(stageIdx) {
-    const stage = tempStages[stageIdx];
-    if(!stage || !stage.milestones) return;
-    const products = [], anomalies = [];
-    stage.milestones.forEach(m => {
-        if(m.product_info && m.product_info.trim()) products.push(m.name + ': ' + m.product_info.trim());
-        if(m.anomaly && m.anomaly.trim()) anomalies.push(m.name + ': ' + m.anomaly.trim());
-    });
-    stage.product = products.join('\n');
-    stage.anomaly_feedback = anomalies.join('\n');
-}
 function addMilestone(stageIdx) {
     if(!tempStages[stageIdx].milestones) tempStages[stageIdx].milestones = [];
-    tempStages[stageIdx].milestones.push({name:'',time:'',content:'',product_info:'',product_data:'',anomaly:'',solution:'',is_completed:false,attachments:[],_ext:{department:'',ms_status:'进行中',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''}});
+    tempStages[stageIdx].milestones.push({name:'新节点',time:'',content:'',product_info:'',product_data:'',anomaly:'',solution:'',is_completed:false,attachments:[]});
     renderStagesList();
 }
 function removeMilestone(stageIdx, mIdx) {
@@ -1868,7 +1601,7 @@ async function saveProject() {
     const data = {
         project_no: $('pProjectNo').value.trim(),
         name: $('pName').value.trim(),
-        project_type: (function(){var arr=[];document.querySelectorAll('input[name="pType"]:checked').forEach(function(cb){arr.push(cb.value);});return arr.join(',');})(),
+        project_type: $('pType').value,
         level: $('pLevel').value,
         creator_id: $('pOwner').value,
         follower_id: $('pFollower').value || null,
@@ -1877,22 +1610,14 @@ async function saveProject() {
         deadline: $('pDeadline').value,
         progress: autoProgress,
         objective: $('pObjective').value.trim(),
-        plan: $('pBrandName') ? $('pBrandName').value.trim() : '',
+        plan: $('pPlan').value.trim(),
         closure_report: $('pClosure').value.trim(),
         product_data_report: $('pDataReport').value.trim(),
         attachments: JSON.stringify(tempProjectAttachments),
         is_deleted: false
     };
 
-    // Validate required fields (#1)
-    if(!data.name){toast('请填写完整基本信息','error');return;}
-    if(!data.project_no){toast('请填写完整基本信息','error');return;}
-    if(!data.project_type){toast('请填写完整基本信息','error');return;}
-    if(!data.level){toast('请填写完整基本信息','error');return;}
-    if(!data.creator_id){toast('请填写完整基本信息','error');return;}
-    if(!data.deadline){toast('请填写完整基本信息','error');return;}
-    // If 品牌需求 selected, brand name is required
-    if(data.project_type.split(',').indexOf('品牌需求')>=0 && !data.plan){toast('品牌需求项目请填写品牌名称','error');return;}
+    if(!data.name){toast('请填写项目名称','error');return;}
 
     try {
         if(editingProjectId) {
@@ -1903,7 +1628,7 @@ async function saveProject() {
                     status: s.status, output: s.output, product: s.product,
                     output_product_data: s.output_product_data||'',
                     anomaly_feedback: s.anomaly_feedback||'',
-                    solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',sales_no:s.sales_no||'',test_no:s.test_no||'',test_est_time:s.test_est_time||'',test_done_time:s.test_done_time||'',test_result:s.test_result||'',unqual_info:s.unqual_info||'',attachments:s.attachments||[]}),
+                    solution: s.solution||'',
                     is_deleted: false
                 };
                 if(s.id) {
@@ -1932,7 +1657,7 @@ async function saveProject() {
                         status: s.status, output: s.output, product: s.product,
                         output_product_data: s.output_product_data||'',
                         anomaly_feedback: s.anomaly_feedback||'',
-                        solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',sales_no:s.sales_no||'',test_no:s.test_no||'',test_est_time:s.test_est_time||'',test_done_time:s.test_done_time||'',test_result:s.test_result||'',unqual_info:s.unqual_info||'',attachments:s.attachments||[]}),
+                        solution: s.solution||'',
                         is_deleted: false
                     });
                     if(newStage && newStage[0] && s.milestones) {
@@ -1960,10 +1685,7 @@ function calcTempProgress() {
         if(ms.length === 0) {
             if(s.status === '已完成') total += 100;
         } else {
-            const done = ms.filter(m => {
-                var msSt = (m._ext && m._ext.ms_status) || '进行中';
-                return msSt === '完成' || msSt === '失败';
-            }).length;
+            const done = ms.filter(m => m.is_completed === true).length;
             total += Math.round((done / ms.length) * 100);
         }
     }
@@ -1978,6 +1700,7 @@ async function syncMilestones(projectId, stageId, milestones) {
     }
     for(const m of milestones) {
         const msData = {
+            id: m.id || ('ms_' + Date.now() + '_' + Math.random().toString(36).substr(2,6)),
             project_id: projectId,
             stage_id: stageId,
             name: m.name || '',
@@ -1986,7 +1709,7 @@ async function syncMilestones(projectId, stageId, milestones) {
             product_info: m.product_info || '',
             product_data: m.product_data || '',
             anomaly: m.anomaly || '',
-            solution: (function(){var e=m._ext||{};return JSON.stringify({department:e.department||'',ms_status:e.ms_status||'',sales_no:e.sales_no||'',ms_sales_no:e.ms_sales_no||'',test_no:e.test_no||'',test_est_time:e.test_est_time||'',test_done_time:e.test_done_time||'',test_result:e.test_result||'',ms_unqual_info:e.ms_unqual_info||'',complete_time:e.complete_time||'',weave_name:e.weave_name||'',weave_formula:e.weave_formula||'',weave_department:e.weave_department||'',weave_time:e.weave_time||'',weave_complete_time:e.weave_complete_time||''});})(),
+            solution: m.solution || '',
             is_completed: m.is_completed || false,
             attachments: JSON.stringify(m.attachments || []),
             is_deleted: false
@@ -2008,13 +1731,7 @@ function previewProject(id) {
 
     $('pProjectNo').value = p.project_no||'';
     $('pName').value = p.name||'';
-    // Set checkboxes from comma-separated project_type
-        var ptArr = (p.project_type||'').split(',').filter(Boolean);
-        document.querySelectorAll('input[name="pType"]').forEach(function(cb){cb.checked = ptArr.indexOf(cb.value)>=0;});
-        // Show brand name if 品牌需求 selected
-        toggleBrandName();
-        // Set brand name from plan field
-        $('pBrandName').value = p.plan||'';
+    $('pType').value = p.project_type||'品牌研发';
     $('pLevel').value = p.level||'B';
     $('pOwner').value = p.creator_id||p.owner_id||'';
     $('pFollower').value = p.follower_id||'';
@@ -2023,6 +1740,7 @@ function previewProject(id) {
     $('pDeadline').value = p.deadline||'';
     $('pProgress').value = p.progress||0;
     $('pObjective').value = p.objective||'';
+    $('pPlan').value = p.plan||'';
     $('pClosure').value = p.closure_report||'';
     $('pDataReport').value = p.product_data_report||'';
 
@@ -2031,33 +1749,17 @@ function previewProject(id) {
     renderProjectAttachments();
 
     // Load stages
-    tempStages = allStages.filter(s=>s.project_id===id).map(s=>{
-        var stageExt = {};
-        try { stageExt = JSON.parse(s.solution||'{}'); } catch(e) {}
-        return {
+    tempStages = allStages.filter(s=>s.project_id===id).map(s=>({
         ...s,
-        plan_desc: stageExt.plan_desc||'',
-                yarn_formula: stageExt.yarn_formula||'',
-        yarn_department: stageExt.yarn_department||'',
-        yarn_time: stageExt.yarn_time||'',
-        yarn_complete_time: stageExt.yarn_complete_time||'',
-        test_no: stageExt.test_no||'',
-        test_est_time: stageExt.test_est_time||'',
-        test_done_time: stageExt.test_done_time||'',
-        test_result: stageExt.test_result||'',
-        sales_no: stageExt.sales_no||'',
-        unqual_info: stageExt.unqual_info||'',
-        attachments: stageExt.attachments||[],
         milestones: milestonesMap[id+'_'+s.id] ? milestonesMap[id+'_'+s.id].map(m=>({
             name: m.name||'', time: m.node_time||'', content: m.node_content||'',
             product_info: m.product_info||'', product_data: m.product_data||'',
             anomaly: m.anomaly||'', solution: m.solution||'',
             is_completed: m.is_completed||false,
             attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
-            _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'进行中',sales_no:o.sales_no||'',ms_sales_no:o.ms_sales_no||'',test_no:o.test_no||'',test_est_time:o.test_est_time||'',test_done_time:o.test_done_time||'',test_result:o.test_result||'',ms_unqual_info:o.ms_unqual_info||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
             id: m.id
         })) : []
-    };});
+    }));
 
     renderStagesList();
     $('projectModal').classList.add('active');
@@ -2263,7 +1965,7 @@ function renderYarnList() {
 
     const isManager = currentUser.role === 'manager';
     let html = '<table class="data-table"><thead><tr>';
-    html += '<th><input type="checkbox" onchange="toggleYarnSelectAll()" id="yarnSelectAllCb"></th><th>纱线名称</th><th>供应商</th><th>规格</th><th>建议品类</th><th>验证品类</th><th>适用产品</th><th>起订量</th><th>温度/颜色限制</th><th>检测数据</th><th>状态</th><th>操作</th>';
+    html += '<th>纱线名称</th><th>供应商</th><th>规格</th><th>建议品类</th><th>验证品类</th><th>适用产品</th><th>起订量</th><th>温度/颜色限制</th><th>检测数据</th><th>状态</th><th>操作</th>';
     html += '</tr></thead><tbody>';
     for(const y of filtered) {
         let specs = [];
@@ -2289,7 +1991,6 @@ function renderYarnList() {
         const limits = [y.temp_limit, y.color_limit].filter(Boolean).join(' / ') || '-';
 
         html += '<tr>';
-        html += '<td><input type="checkbox" class="yarn-row-cb" data-id="'+y.id+'" onchange="toggleYarnSelect(\''+y.id+'\')" '+(selectedYarnIds.has(y.id)?'checked':'')+'></td>';
         html += '<td><div class="project-name"><div class="icon">🧶</div><div>'+(y.name||'未命名')+'</div></div></td>';
         html += '<td style="font-size:13px">'+(y.supplier||'-')+'</td>';
         html += '<td style="font-size:12px;color:#666">'+(specText || '-')+'</td>';
@@ -2298,33 +1999,13 @@ function renderYarnList() {
         html += '<td style="font-size:12px">'+applicableText+'</td>';
         html += '<td style="font-size:13px">'+(y.moq||'-')+'</td>';
         html += '<td style="font-size:12px;color:#666">'+limits+'</td>';
-        // Test data column - from test_data JSON
-        let testText = '<span style="color:#ccc;font-size:12px;">-</span>';
-        try {
-            const td = JSON.parse(y.test_data || '[]');
-            if(Array.isArray(td) && td.length > 0) {
-                testText = td.map(r => {
-                    let parts = [];
-                    if(r.reportNo) parts.push('<b style="color:#667eea;">['+escHtml(r.reportNo)+']</b>');
-                    if(r.spec) parts.push('<b>'+escHtml(r.spec)+'</b>');
-                    if(r.tensile) parts.push('强度:'+r.tensile);
-                    if(r.elongation) parts.push('伸长:'+r.elongation+'%');
-                    if(r.boiling) parts.push('沸水:'+r.boiling+'%');
-                    if(r.dryHeat) parts.push('干热:'+r.dryHeat+'%');
-                    if(r.yellowing) parts.push('黄变:'+r.yellowing);
-                    if(r.phenolicYellowing) parts.push('酚黄:'+r.phenolicYellowing);
-                    return '<span style="display:block;font-size:11px;line-height:1.6;color:#555;">'+parts.join(' | ')+'</span>';
-                }).join('');
-            }
-        } catch(e) {
-            // Fallback to legacy fields
-            const testData2 = [];
-            if(y.tensile_strength) testData2.push('强度:'+y.tensile_strength);
-            if(y.elongation) testData2.push('伸长:'+y.elongation+'%');
-            if(y.boiling_shrinkage) testData2.push('沸水:'+y.boiling_shrinkage+'%');
-            if(y.dry_heat_shrinkage) testData2.push('干热:'+y.dry_heat_shrinkage+'%');
-            if(testData2.length > 0) testText = testData2.map(t => '<span style="display:block;font-size:11px;line-height:1.6;color:#555;">'+t+'</span>').join('');
-        }
+        // Test data column
+        const testData = [];
+        if(y.tensile_strength) testData.push('强度:'+y.tensile_strength);
+        if(y.elongation) testData.push('伸长:'+y.elongation+'%');
+        if(y.boiling_shrinkage) testData.push('沸水:'+y.boiling_shrinkage+'%');
+        if(y.dry_heat_shrinkage) testData.push('干热:'+y.dry_heat_shrinkage+'%');
+        const testText = testData.length > 0 ? testData.map(t => '<span style="display:block;font-size:11px;line-height:1.6;color:#555;">'+t+'</span>').join('') : '<span style="color:#ccc;font-size:12px;">-</span>';
         html += '<td style="font-size:12px;padding:4px 8px;">'+testText+'</td>';
         const statusMap = {'可推广':'#4caf50','验证中':'#ff9800','未验证':'#999'};
         const st = y.status || '未验证';
@@ -2343,7 +2024,7 @@ function renderYarnList() {
 
 function exportYarnData() {
     if(allYarns.length === 0) { alert('暂无纱线数据可导出'); return; }
-    let csv = '\uFEFF纱线名称,供应商,规格,建议品类,验证品类,适用产品,起订量,温度限制,颜色限制,检测数据(规格|强度|伸长|沸水|干热),状态\n';
+    let csv = '\uFEFF纱线名称,供应商,规格,建议品类,验证品类,适用产品,起订量,温度限制,颜色限制,断裂强度(cN/dtex),断裂伸长率(%),沸水收缩率(%),干热收缩率(%),状态\n';
     for(const y of allYarns) {
         let specs = [];
         try { specs = JSON.parse(y.specs || '[]'); } catch(e) { specs = []; }
@@ -2351,17 +2032,7 @@ function exportYarnData() {
         const suggested = (function(){ try{ return JSON.parse(y.suggested_categories||'[]'); }catch(e){return [];} })();
         const verified = (function(){ try{ return JSON.parse(y.verified_categories||'[]'); }catch(e){return [];} })();
         const applicable = (function(){ try{ return JSON.parse(y.applicable_products||'[]'); }catch(e){return [];} })();
-        // Test data from JSON
-        let testCsv = '';
-        try {
-            const td = JSON.parse(y.test_data || '[]');
-            if(Array.isArray(td) && td.length > 0) {
-                testCsv = td.map(r => [r.spec||'', r.tensile||'', r.elongation||'', r.boiling||'', r.dryHeat||''].join('|')).join('; ');
-            }
-        } catch(e) {
-            testCsv = [y.tensile_strength||'', y.elongation||'', y.boiling_shrinkage||'', y.dry_heat_shrinkage||''].join('|');
-        }
-        csv += '"'+(y.name||'')+'","'+(y.supplier||'')+'","'+specText+'","'+suggested.join('/')+'","'+verified.join('/')+'","'+applicable.join('/')+'","'+(y.moq||'')+'","'+(y.temp_limit||'')+'","'+(y.color_limit||'')+'","'+testCsv+'","'+(y.status||'未验证')+'"\n';
+        csv += '"'+(y.name||'')+'","'+(y.supplier||'')+'","'+specText+'","'+suggested.join('/')+'","'+verified.join('/')+'","'+applicable.join('/')+'","'+(y.moq||'')+'","'+(y.temp_limit||'')+'","'+(y.color_limit||'')+'","'+(y.tensile_strength||'')+'","'+(y.elongation||'')+'","'+(y.boiling_shrinkage||'')+'","'+(y.dry_heat_shrinkage||'')+'","'+(y.status||'未验证')+'"\n';
     }
     const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
     const url = URL.createObjectURL(blob);
@@ -2370,133 +2041,6 @@ function exportYarnData() {
     a.download = '纱线信息_' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
     URL.revokeObjectURL(url);
-}
-
-// === 改动1: 纱线导入功能 ===
-function importYarnData() {
-    var inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = '.csv,.xlsx';
-    inp.onchange = async function(e) {
-        var file = e.target.files[0];
-        if(!file) return;
-        var ext = file.name.split('.').pop().toLowerCase();
-        try {
-            var rows = [];
-            if(ext === 'csv') {
-                var text = await new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=rej;r.readAsText(file,'utf-8');});
-                // Remove BOM if present
-                if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-                var lines = text.split(/\r?\n/).filter(function(l){return l.trim();});
-                if(lines.length < 2) { toast('CSV文件为空','error'); return; }
-                var headers = lines[0].split(',').map(function(h){return h.trim().replace(/^"|"$/g,'');});
-                for(var i=1;i<lines.length;i++){
-                    var vals = lines[i].match(/("([^"]*(?:""[^"]*)*)"|([^,]*))/g);
-                    if(!vals) continue;
-                    vals = vals.map(function(v){return v.replace(/^"|"$/g,'').replace(/""/g,'"');});
-                    var obj = {};
-                    headers.forEach(function(h,idx){obj[h] = vals[idx] || '';});
-                    rows.push(obj);
-                }
-            } else if(ext === 'xlsx') {
-                toast('xlsx导入暂不支持，请使用csv格式','error');
-                return;
-            } else {
-                toast('不支持的文件格式','error'); return;
-            }
-            if(rows.length === 0) { toast('未解析到数据','error'); return; }
-            var count = 0;
-            for(var ri=0;ri<rows.length;ri++){
-                var r = rows[ri];
-                var data = {
-                    name: r['纱线名称'] || r['name'] || '',
-                    supplier: r['供应商'] || r['supplier'] || '',
-                    specs: r['规格'] || r['specs'] || '[]',
-                    suggested_categories: r['建议品类'] || r['suggested_categories'] || '[]',
-                    verified_categories: r['验证品类'] || r['verified_categories'] || '[]',
-                    applicable_products: r['适用产品'] || r['applicable_products'] || '[]',
-                    moq: r['起订量'] || r['moq'] || '',
-                    temp_limit: r['温度限制'] || r['temp_limit'] || '',
-                    color_limit: r['颜色限制'] || r['color_limit'] || '',
-                    tensile_strength: r['强度'] || r['tensile_strength'] || '',
-                    elongation: r['伸长'] || r['elongation'] || '',
-                    boiling_shrinkage: r['沸水'] || r['boiling_shrinkage'] || '',
-                    dry_heat_shrinkage: r['干热'] || r['dry_heat_shrinkage'] || '',
-                    test_data: r['检测数据'] || r['test_data'] || '[]',
-                    status: r['状态'] || r['status'] || '未验证',
-                    introduction: r['简介'] || r['introduction'] || '',
-                    features: r['特点'] || r['features'] || '',
-                    is_deleted: false
-                };
-                // Fix JSON fields: wrap in array brackets if not already
-                ['specs','suggested_categories','verified_categories','applicable_products','test_data'].forEach(function(k){
-                    var v = data[k];
-                    if(v && v.indexOf('[') !== 0) {
-                        // If comma-separated, wrap as array
-                        var items = v.split(/[;/]/).map(function(s){return s.trim();}).filter(Boolean);
-                        if(k === 'specs') {
-                            data[k] = JSON.stringify(items.map(function(s){return {type:'',value:s};}));
-                        } else if(k === 'test_data') {
-                            data[k] = '[]';
-                        } else {
-                            data[k] = JSON.stringify(items);
-                        }
-                    }
-                });
-                if(!data.name) continue;
-                try {
-                    await sbInsert('yarns', data);
-                    count++;
-                } catch(e) { console.warn('Import row error:', e); }
-            }
-            toast('成功导入 '+count+' 条纱线数据','success');
-            await loadYarns();
-        } catch(e) {
-            console.error('Import error:', e);
-            toast('导入失败: '+e.message,'error');
-        }
-    };
-    inp.click();
-}
-
-// === 改动2: 纱线批量删除 ===
-var selectedYarnIds = new Set();
-function toggleYarnSelect(id) {
-    if(selectedYarnIds.has(id)) selectedYarnIds.delete(id);
-    else selectedYarnIds.add(id);
-    updateBatchDeleteBtn();
-}
-function toggleYarnSelectAll() {
-    var cbs = document.querySelectorAll('.yarn-row-cb');
-    var allChecked = true;
-    cbs.forEach(function(cb){if(!cb.checked){allChecked=false;}});
-    cbs.forEach(function(cb){
-        cb.checked = !allChecked;
-        var id = cb.getAttribute('data-id');
-        if(!allChecked) selectedYarnIds.add(id);
-        else selectedYarnIds.delete(id);
-    });
-    updateBatchDeleteBtn();
-}
-function updateBatchDeleteBtn() {
-    var btn = document.getElementById('btnBatchDeleteYarn');
-    if(btn) btn.style.display = selectedYarnIds.size > 0 ? 'inline-flex' : 'none';
-}
-async function batchDeleteYarns() {
-    if(selectedYarnIds.size === 0) return;
-    if(!confirm('确定删除选中的 '+selectedYarnIds.size+' 条纱线记录？')) return;
-    try {
-        for(var id of selectedYarnIds) {
-            await sbUpdate('yarns', id, {is_deleted: true});
-        }
-        selectedYarnIds.clear();
-        updateBatchDeleteBtn();
-        toast('批量删除成功','success');
-        await loadYarns();
-    } catch(e) {
-        console.error('Batch delete error:', e);
-        toast('批量删除失败: '+e.message,'error');
-    }
 }
 
 function openYarnModal(id) {
@@ -2518,31 +2062,10 @@ function openYarnModal(id) {
         $('yColorLimit').value = y.color_limit||'';
         $('yMoq').value = y.moq||'';
         $('yStatus').value = y.status||'未验证';
-        // Load test data from JSON
-        try {
-            tempTestData = JSON.parse(y.test_data || '[]');
-            if(!Array.isArray(tempTestData)) tempTestData = [];
-            // Migrate old flat fields to table format
-            if(tempTestData.length === 0 && (y.tensile_strength || y.elongation || y.boiling_shrinkage || y.dry_heat_shrinkage)) {
-                tempTestData.push({
-                    reportNo: '',
-                    spec: '',
-                    tensile: y.tensile_strength || '',
-                    elongation: y.elongation || '',
-                    boiling: y.boiling_shrinkage || '',
-                    dryHeat: y.dry_heat_shrinkage || '',
-                    yellowing: '',
-                    phenolicYellowing: ''
-                });
-            }
-            // Ensure all rows have the new fields
-            tempTestData.forEach(row => {
-                if(!row.reportNo) row.reportNo = '';
-                if(!row.yellowing) row.yellowing = '';
-                if(!row.phenolicYellowing) row.phenolicYellowing = '';
-            });
-        } catch(e) { tempTestData = []; }
-        renderTestData();
+        $('yTensileStrength').value = y.tensile_strength||'';
+        $('yElongation').value = y.elongation||'';
+        $('yBoilingShrinkage').value = y.boiling_shrinkage||'';
+        $('yDryHeatShrinkage').value = y.dry_heat_shrinkage||'';
         try {
             tempYarnSpecs = JSON.parse(y.specs || '[]');
             // Migrate old string-only specs to {type, value} objects
@@ -2559,13 +2082,11 @@ function openYarnModal(id) {
         document.querySelectorAll('#ySuggestedCategories input[type=checkbox]').forEach(cb => { cb.checked = suggested.includes(cb.value); });
         document.querySelectorAll('#yApplicableProducts input[type=checkbox]').forEach(cb => { cb.checked = applicable.includes(cb.value); });
     } else {
-        ['yName','ySupplier','yIntroduction','yFeatures','yTempLimit','yColorLimit','yMoq'].forEach(id=>{$(id).value='';});
+        ['yName','ySupplier','yIntroduction','yFeatures','yTempLimit','yColorLimit','yMoq','yTensileStrength','yElongation','yBoilingShrinkage','yDryHeatShrinkage'].forEach(id=>{$(id).value='';});
         $('yStatus').value = '未验证';
         document.querySelectorAll('#yVerifiedCategories input[type=checkbox], #ySuggestedCategories input[type=checkbox], #yApplicableProducts input[type=checkbox]').forEach(cb => { cb.checked = false; });
         tempYarnSpecs = [];
-        tempTestData = [];
         tempYarnAttachments = [];
-        renderTestData();
     }
     renderYarnSpecs();
     renderYarnAttachments();
@@ -2623,75 +2144,137 @@ function removeYarnSpec(idx) {
     renderYarnSpecs();
 }
 
-// Test data table functions
-let tempTestData = [];
-
-function addTestDataRow() {
-    tempTestData.push({reportNo: '', spec: '', tensile: '', elongation: '', boiling: '', dryHeat: '', yellowing: '', phenolicYellowing: ''});
-    renderTestData();
-}
-
-function removeTestDataRow(idx) {
-    tempTestData.splice(idx, 1);
-    renderTestData();
-}
-
-function renderTestData() {
-    const tbody = $('testDataBody');
-    if(!tbody) return;
-    let html = '';
-    tempTestData.forEach((row, idx) => {
-        html += '<tr style="border-bottom:1px solid #eee;">';
-        html += '<td style="padding:6px;"><input type="text" value="'+escHtml(row.reportNo)+'" placeholder="检测单号" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;" oninput="tempTestData['+idx+'].reportNo=this.value"></td>';
-        html += '<td style="padding:6px;"><input type="text" value="'+escHtml(row.spec)+'" placeholder="如 150D/48F" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;" oninput="tempTestData['+idx+'].spec=this.value"></td>';
-        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.tensile)+'" placeholder="5.6" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].tensile=this.value"></td>';
-        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.elongation)+'" placeholder="21.8" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].elongation=this.value"></td>';
-        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.boiling)+'" placeholder="2.0" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].boiling=this.value"></td>';
-        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.dryHeat)+'" placeholder="5.4" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].dryHeat=this.value"></td>';
-        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.yellowing)+'" placeholder="4.5" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].yellowing=this.value"></td>';
-        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.phenolicYellowing)+'" placeholder="4.5" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempTestData['+idx+'].phenolicYellowing=this.value"></td>';
-        html += '<td style="padding:6px;text-align:center;"><button onclick="removeTestDataRow('+idx+')" title="删除此行" style="font-size:14px;color:#e74c3c;background:none;border:none;cursor:pointer;padding:2px 4px;">✕</button></td>';
-        html += '</tr>';
-    });
-    tbody.innerHTML = html;
-}
-
-function escHtml(s) {
-    if(!s) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// Legacy field accessors (for backward compatibility)
-function getYarnTestField(field) {
-    // Read from the last non-empty row in tempTestData
-    if(tempTestData.length === 0) return '';
-    const map = {yTensileStrength:'tensile', yElongation:'elongation', yBoilingShrinkage:'boiling', yDryHeatShrinkage:'dryHeat', yYellowing:'yellowing', yPhenolicYellowing:'phenolicYellowing', yReportNo:'reportNo'};
-    const key = map[field];
-    if(!key) return '';
-    for(let i = tempTestData.length-1; i >= 0; i--) {
-        if(tempTestData[i][key] && tempTestData[i][key].trim()) return tempTestData[i][key].trim();
-    }
-    return '';
-}
-
-function setYarnTestField(field, val) {
-    const map = {yTensileStrength:'tensile', yElongation:'elongation', yBoilingShrinkage:'boiling', yDryHeatShrinkage:'dryHeat', yYellowing:'yellowing', yPhenolicYellowing:'phenolicYellowing', yReportNo:'reportNo'};
-    const key = map[field];
-    if(!key) return;
-    // Fill the first row, or create one
-    if(tempTestData.length === 0) { tempTestData.push({reportNo:'', spec:'', tensile:'', elongation:'', boiling:'', dryHeat:'', yellowing:'', phenolicYellowing:''}); }
-    tempTestData[0][key] = val;
-    renderTestData();
-}
-
 async function handleYarnFileUpload(event) {
     const files = event.target.files;
+    let hasImage = false;
     for(const f of files) {
         const data = await fileToBase64(f);
         tempYarnAttachments.push({name: f.name, type: f.type, data: data});
+        // Run OCR on image files to detect test data
+        if(f.type.startsWith('image/')) {
+            hasImage = true;
+            runOCR(data, f.name);
+        }
     }
     renderYarnAttachments();
     event.target.value = '';
+}
+
+async function runOCR(imageData, fileName) {
+    const statusEl = $('ocrStatus');
+    if(statusEl) { statusEl.style.display = 'inline'; statusEl.textContent = '🔍 正在识别「' + fileName + '」...'; }
+    try {
+        const result = await Tesseract.recognize(imageData, 'chi_sim+eng', {
+            logger: m => {
+                if(statusEl && m.status === 'recognizing text') {
+                    statusEl.textContent = '🔍 识别中... ' + Math.round(m.progress * 100) + '%';
+                }
+            }
+        });
+        const text = result.data.text;
+        console.log('[OCR] 识别结果:', text);
+        parseAndFillTestData(text);
+        if(statusEl) { statusEl.textContent = '✅ 识别完成'; setTimeout(() => { statusEl.style.display = 'none'; }, 3000); }
+    } catch(e) {
+        console.error('[OCR] 识别失败:', e);
+        if(statusEl) { statusEl.textContent = '❌ 识别失败: ' + e.message; setTimeout(() => { statusEl.style.display = 'none'; }, 5000); }
+    }
+}
+
+function parseAndFillTestData(text) {
+    console.log('[OCR] Raw text length:', text.length);
+    console.log('[OCR] Raw text:', text.substring(0, 3000));
+
+    const normalized = text.replace(/\s+/g, ' ').replace(/[:：]/g, ':').replace(/\|/g, ' ');
+    const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const found = {};
+
+    // Each metric: Chinese keywords, English keywords, and the target field
+    // The report table has columns: A B C D E Average — we ONLY want the Average column
+    const metrics = [
+        { label: '断裂强度', field: 'yTensileStrength', cn: ['断裂强度','断裂强力','拉伸强度','抗拉强度'], en: ['Yarn Tensile','tensile strength','break strength','tenacity'], range: [0.5, 50] },
+        { label: '断裂伸长率', field: 'yElongation', cn: ['断裂伸长率','断裂伸长','伸长率'], en: ['Yarn Extensibility','elongation','extensibility'], range: [1, 200] },
+        { label: '沸水收缩率', field: 'yBoilingShrinkage', cn: ['沸水收缩率','沸水收缩','沸水缩率'], en: ['Boiling Water Shrinkage','boiling shrinkage','boiling water'], range: [0.1, 30] },
+        { label: '干热收缩率', field: 'yDryHeatShrinkage', cn: ['干热收缩率','干热收缩','干热缩率'], en: ['Thermal Shrinkage','dry heat shrinkage','thermal shrinkage','dry heat'], range: [0.1, 30] }
+    ];
+
+    for(const m of metrics) {
+        if(found[m.label]) continue;
+        const allKeywords = [...m.cn, ...m.en];
+
+        // Strategy 1: Line-by-line — find the line containing the keyword,
+        // then extract numbers. The Average is the LAST number in valid range
+        // on that line (columns are ordered A,B,C,D,E,Average left-to-right).
+        for(const line of lines) {
+            const hasKw = allKeywords.some(kw => line.toLowerCase().includes(kw.toLowerCase()));
+            if(!hasKw) continue;
+
+            const allNums = line.match(/\d+\.?\d*/g);
+            if(!allNums || allNums.length === 0) continue;
+
+            // Filter: keep only numbers in the valid range, skip method codes (>100 integer)
+            const numsInRange = [];
+            for(const s of allNums) {
+                const n = parseFloat(s);
+                if(isNaN(n)) continue;
+                if(n < m.range[0] || n > m.range[1]) continue;
+                if(Number.isInteger(n) && n > 100) continue; // skip codes like 1008
+                numsInRange.push({ val: s, num: n });
+            }
+            if(numsInRange.length === 0) continue;
+
+            // Take the LAST number in valid range — this is the Average column
+            // (A-E values come before Average in left-to-right reading order)
+            const target = numsInRange[numsInRange.length - 1];
+            found[m.label] = target.val;
+            const el = $(m.field);
+            if(el && !el.value.trim()) {
+                el.value = target.val;
+                el.style.background = '#e8f5e9';
+                setTimeout(() => { el.style.background = ''; }, 3000);
+            }
+            console.log('[OCR] ' + m.label + '=' + target.val + ' (last valid number on keyword line, total ' + numsInRange.length + ' numbers found)');
+            break;
+        }
+
+        // Strategy 2: If line-by-line failed, try window search
+        // Find keyword position in full text, then look ahead for numbers
+        if(!found[m.label]) {
+            for(const kw of allKeywords) {
+                const kwIdx = normalized.toLowerCase().indexOf(kw.toLowerCase());
+                if(kwIdx < 0) continue;
+                // Look at next 500 characters
+                const window = normalized.substring(kwIdx, kwIdx + 500);
+                const allNums = window.match(/\d+\.?\d*/g);
+                if(!allNums) continue;
+                const numsInRange = [];
+                for(const s of allNums) {
+                    const n = parseFloat(s);
+                    if(isNaN(n) || n < m.range[0] || n > m.range[1]) continue;
+                    if(Number.isInteger(n) && n > 100) continue;
+                    numsInRange.push({ val: s, num: n });
+                }
+                if(numsInRange.length === 0) continue;
+                const target = numsInRange[numsInRange.length - 1];
+                found[m.label] = target.val;
+                const el = $(m.field);
+                if(el && !el.value.trim()) {
+                    el.value = target.val;
+                    el.style.background = '#e8f5e9';
+                    setTimeout(() => { el.style.background = ''; }, 3000);
+                }
+                console.log('[OCR] ' + m.label + '=' + target.val + ' (window search)');
+                break;
+            }
+        }
+    }
+
+    const keys = Object.keys(found);
+    if(keys.length > 0) {
+        toast(' 自动识别到: ' + keys.map(k => k + '=' + found[k]).join(', '), 'success');
+    } else {
+        toast('未在图片中识别到检测数据，请手动填写', 'info');
+    }
 }
 
 function renderYarnAttachments() {
@@ -2747,12 +2330,10 @@ async function saveYarn() {
         color_limit: $('yColorLimit').value.trim(),
         moq: $('yMoq').value.trim(),
         status: $('yStatus').value,
-        test_data: JSON.stringify(tempTestData.filter(r => r.reportNo.trim() || r.spec.trim() || r.tensile.trim() || r.elongation.trim() || r.boiling.trim() || r.dryHeat.trim() || r.yellowing.trim() || r.phenolicYellowing.trim())),
-        // Legacy fields: store from first row for backward compatibility
-        tensile_strength: (tempTestData[0] && tempTestData[0].tensile) || '',
-        elongation: (tempTestData[0] && tempTestData[0].elongation) || '',
-        boiling_shrinkage: (tempTestData[0] && tempTestData[0].boiling) || '',
-        dry_heat_shrinkage: (tempTestData[0] && tempTestData[0].dryHeat) || ''
+        tensile_strength: $('yTensileStrength').value.trim(),
+        elongation: $('yElongation').value.trim(),
+        boiling_shrinkage: $('yBoilingShrinkage').value.trim(),
+        dry_heat_shrinkage: $('yDryHeatShrinkage').value.trim()
     };
     // attachments will be added after column is confirmed to exist
 
@@ -2808,7 +2389,7 @@ function exportAllData() {
 
     // need2: stages with project names
     csv += '\n\n阶段计划数据\n';
-    csv += '项目名称,项目单号,阶段名称,开始日期,结束日期,状态,输出内容,产品信息,产品数据,备注,解决方案\n';
+    csv += '项目名称,项目单号,阶段名称,开始日期,结束日期,状态,输出内容,产品信息,产品数据,异常反馈,解决方案\n';
     for(const s of allStages) {
         const proj = allProjects.find(p=>p.id===s.project_id);
         csv += [
@@ -2979,22 +2560,12 @@ CREATE TABLE IF NOT EXISTS public.yarns (
     temp_limit TEXT,
     color_limit TEXT,
     moq TEXT,
-    status TEXT DEFAULT '未验证',
-    test_data TEXT DEFAULT '[]',
-    tensile_strength TEXT DEFAULT '',
-    elongation TEXT DEFAULT '',
-    boiling_shrinkage TEXT DEFAULT '',
-    dry_heat_shrinkage TEXT DEFAULT '',
-    attachments TEXT DEFAULT '[]',
     is_deleted BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 GRANT ALL ON public.yarns TO anon, authenticated, service_role;
 
--- 5. 已有表增加 test_data 列
-ALTER TABLE public.yarns ADD COLUMN IF NOT EXISTS test_data TEXT DEFAULT '[]';
-
--- 6. 权限
+-- 4. 权限
 GRANT ALL ON public.milestones TO anon, authenticated, service_role;
 GRANT ALL ON public.projects TO anon, authenticated, service_role;
 
@@ -3085,315 +2656,6 @@ async function submitChangePwd() {
         errEl.textContent = '网络错误，请检查连接';
         errEl.style.display = 'block';
     }
-}
-
-// ============ NOTIFICATION SYSTEM ============
-const NOTIF_STORAGE_KEY = 'rd_board_notif_settings';
-const NOTIF_LOG_KEY = 'rd_board_notif_log';
-const NOTIF_SENT_KEY = 'rd_board_notif_sent';
-
-function getNotifSettings() {
-    try { return JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY)) || {}; } catch(e) { return {}; }
-}
-function saveNotifSettingsLocal(settings) {
-    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(settings));
-}
-
-function openNotifSettings() {
-    const s = getNotifSettings();
-    $('ddWebhook').value = s.webhook || '';
-    $('ddSecret').value = s.secret || '';
-    $('ddSecMode').value = s.secMode || 'sign';
-    $('advanceDays').value = s.advanceDays || '3';
-    $('browserNotif').value = s.browserNotif || 'on';
-    updateDdStatus();
-    renderNotifLog();
-    $('notifSettingsModal').classList.add('active');
-}
-
-function updateDdStatus() {
-    const s = getNotifSettings();
-    const el = $('ddStatus');
-    if (s.webhook) {
-        el.className = 'notif-status connected';
-        el.textContent = '● 已配置';
-    } else {
-        el.className = 'notif-status disconnected';
-        el.textContent = '● 未连接';
-    }
-}
-
-function saveNotifSettings() {
-    const settings = {
-        webhook: $('ddWebhook').value.trim(),
-        secret: $('ddSecret').value.trim(),
-        secMode: $('ddSecMode').value,
-        advanceDays: parseInt($('advanceDays').value) || 3,
-        browserNotif: $('browserNotif').value
-    };
-    saveNotifSettingsLocal(settings);
-    updateDdStatus();
-    toast('通知设置已保存', 'success');
-    addNotifLog('info', '通知设置已更新');
-}
-
-async function signDingTalk(secret) {
-    const timestamp = Date.now().toString();
-    const stringToSign = timestamp + '\n' + secret;
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(secret);
-    const msgData = encoder.encode(stringToSign);
-    const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-    const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
-    const signBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
-    return { timestamp, sign: encodeURIComponent(signBase64) };
-}
-
-async function sendDingTalkMessage(content, atMobiles) {
-    const s = getNotifSettings();
-    if (!s.webhook) { toast('请先配置钉钉 Webhook', 'error'); return false; }
-    let url = s.webhook;
-    if (s.secMode === 'sign' && s.secret) {
-        const { timestamp, sign } = await signDingTalk(s.secret);
-        url += '&timestamp=' + timestamp + '&sign=' + sign;
-    }
-    const body = { msgtype: 'text', text: { content: content } };
-    if (atMobiles && atMobiles.length > 0) {
-        body.at = { atMobiles: atMobiles, isAtAll: false };
-    } else {
-        body.at = { isAtAll: true };
-    }
-    try {
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-        const data = await res.json();
-        return data.errcode === 0;
-    } catch(e) {
-        console.error('DingTalk send error:', e);
-        return false;
-    }
-}
-
-// 手机号映射（用于@具体执行人）
-const PHONE_MAP = {
-    'E001': '18065387313',   // 曾庆霖
-    'E002': '13295005002',   // 王松霞
-    'E003': '18850496381',   // 蔡诗茵
-    'E004': '18787805042',   // 张德瑞
-    'E005': '17705067705',   // 郑懋
-    'M001': '15106017794',   // 林煌伟
-    'M003': '18050880096',   // 谢振菲
-    'M004': '18350888826'    // 陈真真
-};
-
-function getAnomalies() {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const s = getNotifSettings();
-    const advanceDays = s.advanceDays || 3;
-    const futureDate = new Date(today.getTime() + advanceDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    const anomalies = [];
-
-    // Overdue projects
-    for (const p of allProjects) {
-        if (p.deadline && p.deadline < todayStr && p.status !== '已完成') {
-            anomalies.push({ type: 'overdue', title: p.name || '未命名项目', desc: '交期 ' + p.deadline + ' 已过，当前状态: ' + p.status, userId: p.owner_id });
-        }
-    }
-    // Upcoming deadlines
-    for (const p of allProjects) {
-        if (p.deadline && p.deadline >= todayStr && p.deadline <= futureDate && p.status !== '已完成') {
-            const daysLeft = Math.ceil((new Date(p.deadline) - today) / (1000 * 60 * 60 * 24));
-            anomalies.push({ type: 'upcoming', title: p.name || '未命名项目', desc: '交期 ' + p.deadline + ' 还剩 ' + daysLeft + ' 天', userId: p.owner_id });
-        }
-    }
-    // Overdue stages
-    for (const st of allStages) {
-        if (st.end_date && st.end_date < todayStr && st.status !== '已完成') {
-            const proj = allProjects.find(p => p.id === st.project_id);
-            anomalies.push({ type: 'stage_overdue', title: (proj ? proj.name : '?') + ' / ' + (st.name || '未命名阶段'), desc: '阶段截止 ' + st.end_date + ' 已过', userId: proj ? proj.owner_id : null });
-        }
-    }
-    // Progress stale
-    for (const p of allProjects) {
-        if ((p.progress || 0) > 0 && p.status !== '已完成') {
-            const projStages = allStages.filter(s => s.project_id === p.id);
-            let hasRecent = false;
-            for (const s of projStages) {
-                if (s.start_date && s.start_date >= sevenDaysAgo) { hasRecent = true; break; }
-                if (s.end_date && s.end_date >= sevenDaysAgo) { hasRecent = true; break; }
-                const ms = milestonesMap[p.id + '_' + s.id] || [];
-                for (const m of ms) {
-                    if (m.node_time && m.node_time >= sevenDaysAgo) { hasRecent = true; break; }
-                    if (m.created_at && m.created_at.split('T')[0] >= sevenDaysAgo) { hasRecent = true; break; }
-                }
-                if (hasRecent) break;
-            }
-            if (!hasRecent) {
-                anomalies.push({ type: 'info', title: p.name || '未命名项目', desc: '进度 ' + p.progress + '% 但最近7天无更新', userId: p.owner_id });
-            }
-        }
-    }
-    return anomalies;
-}
-
-function getNotifLog() {
-    try { return JSON.parse(localStorage.getItem(NOTIF_LOG_KEY)) || []; } catch(e) { return []; }
-}
-function addNotifLog(type, text) {
-    const log = getNotifLog();
-    log.unshift({ time: new Date().toLocaleString(), type, text });
-    if (log.length > 50) log.length = 50;
-    localStorage.setItem(NOTIF_LOG_KEY, JSON.stringify(log));
-    renderNotifLog();
-}
-function renderNotifLog() {
-    const log = getNotifLog();
-    const el = $('notifLog');
-    if (!el) return;
-    if (log.length === 0) { el.innerHTML = '<div class="notif-log-item" style="color:#999;text-align:center;">暂无通知记录</div>'; return; }
-    el.innerHTML = log.map(item =>
-        '<div class="notif-log-item"><span class="notif-log-time">' + item.time + '</span><span class="notif-log-type ' + item.type + '">' + ({overdue:'逾期',upcoming:'即将到期',info:'信息',success:'成功',error:'失败'}[item.type]||item.type) + '</span>' + item.text + '</div>'
-    ).join('');
-}
-
-function updateNotifBadge() {
-    const anomalies = getAnomalies();
-    const badge = $('notifBadge');
-    if (badge) {
-        badge.textContent = anomalies.length > 0 ? anomalies.length : '';
-    }
-}
-
-function checkAndShowNotifs() {
-    const anomalies = getAnomalies();
-    updateNotifBadge();
-    if (anomalies.length === 0) {
-        toast('当前无异常项 ✅', 'success');
-        addNotifLog('info', '检查完毕，无异常');
-        return;
-    }
-    // Browser notification
-    const s = getNotifSettings();
-    if (s.browserNotif === 'on' && Notification.permission === 'granted') {
-        const critical = anomalies.filter(a => a.type === 'overdue');
-        if (critical.length > 0) {
-            new Notification('🚨 项目异常提醒', {
-                body: critical.length + ' 个项目/阶段已逾期，请查看详情',
-                icon: '🔬'
-            });
-        }
-    }
-    toast('发现 ' + anomalies.length + ' 项异常', 'warning');
-    addNotifLog('info', '检查发现 ' + anomalies.length + ' 项异常');
-}
-
-async function sendManualNotif() {
-    const s = getNotifSettings();
-    if (!s.webhook) { toast('请先配置钉钉 Webhook', 'error'); return; }
-    const anomalies = getAnomalies();
-    if (anomalies.length === 0) {
-        toast('当前无异常需要提醒', 'info');
-        addNotifLog('info', '手动发送：无异常');
-        return;
-    }
-    // 收集负责人手机号
-    const atMobiles = new Set();
-    anomalies.forEach(a => { if (a.userId && PHONE_MAP[a.userId]) atMobiles.add(PHONE_MAP[a.userId]); });
-    let msg = '🔔 交期提醒：当前有 ' + anomalies.length + ' 项异常\n\n';
-    anomalies.slice(0, 10).forEach((a, i) => {
-        const tag = a.type === 'overdue' ? '🚨' : a.type === 'upcoming' ? '⏰' : '📋';
-        msg += (i + 1) + '. ' + tag + ' ' + a.title + '\n   ' + a.desc + '\n';
-    });
-    if (anomalies.length > 10) msg += '\n... 还有 ' + (anomalies.length - 10) + ' 项';
-    // 在消息内容中加入@手机号
-    if (atMobiles.size > 0) { msg += '\n\n' + Array.from(atMobiles).map(p => '@' + p).join(' '); }
-    msg += '\n\n——材料研发项目看板';
-
-    const ok = await sendDingTalkMessage(msg, Array.from(atMobiles));
-    if (ok) {
-        toast('钉钉通知已发送 ✅', 'success');
-        addNotifLog('success', '手动发送通知，共 ' + anomalies.length + ' 项异常');
-    } else {
-        toast('钉钉通知发送失败 ❌', 'error');
-        addNotifLog('error', '手动发送失败');
-    }
-}
-
-async function testDingTalkNotif() {
-    const s = getNotifSettings();
-    const webhook = $('ddWebhook').value.trim();
-    const secret = $('ddSecret').value.trim();
-    const secMode = $('ddSecMode').value;
-    if (!webhook) { toast('请填写 Webhook 地址', 'error'); return; }
-
-    // Temporarily save for test
-    saveNotifSettingsLocal({ webhook, secret, secMode, advanceDays: parseInt($('advanceDays').value) || 3, browserNotif: $('browserNotif').value });
-
-    const resultEl = $('ddTestResult');
-    resultEl.className = 'notif-test-result';
-    resultEl.textContent = '正在发送...';
-    resultEl.style.display = 'block';
-
-    let url = webhook;
-    if (secMode === 'sign' && secret) {
-        try {
-            const { timestamp, sign } = await signDingTalk(secret);
-            url += '&timestamp=' + timestamp + '&sign=' + sign;
-        } catch(e) {
-            resultEl.className = 'notif-test-result error';
-            resultEl.textContent = '签名计算失败: ' + e.message;
-            return;
-        }
-    }
-
-    try {
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ msgtype: 'text', text: { content: '🔔 交期提醒：材料研发项目看板 - 通知测试\n\n如果您收到此消息，说明钉钉通知配置成功！' } })
-        });
-        const data = await res.json();
-        if (data.errcode === 0) {
-            resultEl.className = 'notif-test-result success';
-            resultEl.textContent = '✅ 发送成功！请检查钉钉群是否收到消息。';
-            addNotifLog('success', '测试发送成功');
-        } else {
-            resultEl.className = 'notif-test-result error';
-            resultEl.textContent = '❌ 发送失败: ' + (data.errmsg || '未知错误');
-            addNotifLog('error', '测试发送失败: ' + (data.errmsg || ''));
-        }
-    } catch(e) {
-        resultEl.className = 'notif-test-result error';
-        resultEl.textContent = '❌ 网络错误: ' + e.message;
-        addNotifLog('error', '测试发送网络错误');
-    }
-}
-
-function requestBrowserNotif() {
-    if (!('Notification' in window)) {
-        toast('当前浏览器不支持通知', 'error');
-        return;
-    }
-    Notification.requestPermission().then(perm => {
-        if (perm === 'granted') {
-            toast('浏览器通知已授权 ✅', 'success');
-            new Notification('🔔 通知已开启', { body: '材料研发项目看板通知已启用' });
-        } else {
-            toast('浏览器通知被拒绝', 'error');
-        }
-    });
-}
-
-// ============ MOBILE NAV ============
-function updateMobileNav(el) {
-    document.querySelectorAll('.mobile-nav-item').forEach(item => item.classList.remove('active'));
-    el.classList.add('active');
 }
 
 // ============ INIT ============
