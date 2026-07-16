@@ -3213,11 +3213,12 @@ function getAnomalies() {
             anomalies.push({ type: 'upcoming', title: p.name || '未命名项目', desc: '交期 ' + p.deadline + ' 还剩 ' + daysLeft + ' 天', userId: p.owner_id });
         }
     }
-    // Overdue stages
+    // Overdue stages (only active projects)
     for (const st of allStages) {
         if (st.end_date && st.end_date < todayStr && st.status !== '已完成') {
             const proj = allProjects.find(p => p.id === st.project_id);
-            anomalies.push({ type: 'stage_overdue', title: (proj ? proj.name : '?') + ' / ' + (st.name || '未命名阶段'), desc: '阶段截止 ' + st.end_date + ' 已过', userId: proj ? proj.owner_id : null });
+            if (!proj) continue;
+            anomalies.push({ type: 'stage_overdue', title: proj.name + ' / ' + (st.name || '未命名阶段'), desc: '阶段截止 ' + st.end_date + ' 已过', userId: proj.owner_id });
         }
     }
     // Progress stale
