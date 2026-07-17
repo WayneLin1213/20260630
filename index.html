@@ -1749,7 +1749,7 @@ function toggleStageTestSkip(idx, checked, checkboxEl) {
     var grid = checkboxEl.closest('[style*="grid-template-columns"]');
     if (!grid) return;
     var kids = grid.children;
-    for (var i = 3; i < kids.length; i++) {
+    for (var i = 9; i < kids.length; i++) {
         kids[i].style.display = checked ? 'none' : '';
     }
     var ri = document.getElementById('stskip_r_' + idx);
