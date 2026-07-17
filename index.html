@@ -1605,7 +1605,7 @@ function openProjectModal(id) {
                 yarn_complete_time: stageExt.yarn_complete_time||'',
                 test_no: stageExt.test_no||'',
                 test_est_time: stageExt.test_est_time||'',
-                test_done_time: stageExt.test_done_time||'',
+                test_done_time: stageExt.test_done_time||'',test_skip: !!stageExt.test_skip,test_skip_reason: stageExt.test_skip_reason||'',
                 test_result: stageExt.test_result||'',
                 sales_no: stageExt.sales_no||'',
                 unqual_info: stageExt.unqual_info||'',
@@ -1617,7 +1617,7 @@ function openProjectModal(id) {
                     anomaly: m.anomaly||'', solution: m.solution||'',
                     is_completed: m.is_completed||false,
                     attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
-                    _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'进行中',sales_no:o.sales_no||'',ms_sales_no:o.ms_sales_no||'',test_no:o.test_no||'',test_est_time:o.test_est_time||'',test_done_time:o.test_done_time||'',test_result:o.test_result||'',ms_unqual_info:o.ms_unqual_info||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
+                    _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'进行中',sales_no:o.sales_no||'',ms_sales_no:o.ms_sales_no||'',test_no:o.test_no||'',test_est_time:o.test_est_time||'',test_done_time:o.test_done_time||'',test_result:o.test_result||'',ms_unqual_info:o.ms_unqual_info||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||'',test_skip:!!o.test_skip,test_skip_reason:o.test_skip_reason||''};}catch(e){return {department:'',ms_status:'',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:'',test_skip:false,test_skip_reason:''};}})(),
                     id: m.id
                 })) : []
             };
@@ -1758,7 +1758,7 @@ function renderStagesList() {
             // 研发验证模式: 无节点看完成时间，有节点看节点状态
             if(milestones.length === 0) {
                 var yarnDone = s.yarn_complete_time && s.yarn_complete_time.trim();
-                var testDone = s.test_done_time && s.test_done_time.trim();
+                var testDone = s.test_skip ? true : (s.test_done_time && s.test_done_time.trim());
                 s.status = (yarnDone && testDone) ? '已完成' : (yarnDone || testDone || s.yarn_time || s.name) ? '进行中' : '未开始';
             } else {
                 const statuses = milestones.map(m => (m._ext && m._ext.ms_status) || '进行中');
@@ -1799,15 +1799,16 @@ function renderStagesList() {
             html += '<div><span class="field-label" style="font-size:11px;color:#888;">销售订单号</span><input type="text" value="'+(s.sales_no||'')+'" onchange="tempStages['+idx+'].sales_no=this.value" placeholder="销售订单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
             html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
             html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-            html += '<div></div>';
+            var _stageTestSkip = !!s.test_skip;
+            html += '<div style="display:flex;align-items:center;gap:4px;"><label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap;"><input type="checkbox" '+(s.test_skip?'checked':'')+' onchange="tempStages['+idx+'].test_skip=this.checked;tempStages['+idx+'].test_skip_reason=tempStages['+idx+'].test_skip_reason||"";renderStagesList();" style="cursor:pointer;"'+(lockAttr?' disabled':'')+'>不送检</label>'+(s.test_skip?'<input type="text" value="'+(s.test_skip_reason||'')+'" onchange="tempStages['+idx+'].test_skip_reason=this.value" placeholder="不送检理由" style="font-size:10px;padding:2px 4px;border:1px solid #f99;border-radius:3px;flex:1;min-width:80px;background:#fff5f5;'+bgStyle+'"'+(lockAttr?' readonly':'')+'>':'')+'</div>';
             // Row 4: 检测单号 | 检测预计完成时间 | 检测完成时间
-            html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测单号</span><input type="text" value="'+(s.test_no||'')+'" onchange="tempStages['+idx+'].test_no=this.value" placeholder="检测单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-            html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测预计完成时间</span><input type="date" value="'+(s.test_est_time||'')+'" onchange="tempStages['+idx+'].test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-            html += '<div><span class="field-label" style="font-size:11px;color:#888;">检测完成时间</span><input type="date" value="'+(s.test_done_time||'')+'" onchange="tempStages['+idx+'].test_done_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+            html += '<div'+(_stageTestSkip?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#888;">检测单号</span><input type="text" value="'+(s.test_no||'')+'" onchange="tempStages['+idx+'].test_no=this.value" placeholder="检测单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+            html += '<div'+(_stageTestSkip?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#888;">检测预计完成时间</span><input type="date" value="'+(s.test_est_time||'')+'" onchange="tempStages['+idx+'].test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+            html += '<div'+(_stageTestSkip?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#888;">检测完成时间</span><input type="date" value="'+(s.test_done_time||'')+'" onchange="tempStages['+idx+'].test_done_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
             html += '<div></div>';
             // Row 4b: 检测结果(span2) | 不合格信息(span2)
-            html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">检测结果</span><select onchange="tempStages['+idx+'].test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' disabled':'')+'"><option value="">请选择</option><option value="合格" '+((s.test_result==='合格')?'selected':'')+'>合格</option><option value="不合格" '+((s.test_result==='不合格')?'selected':'')+'>不合格</option><option value="待检测" '+((s.test_result==='待检测')?'selected':'')+'>待检测</option></select></div>';
-            html += '<div style="grid-column:span 2;'+(s.test_result!=='不合格'?' display:none;':'')+'"><span class="field-label" style="font-size:11px;color:#c00;">不合格信息 <span style="color:#f00;">*</span>:</span> <input type="text" value="'+(s.unqual_info||'')+'" onchange="tempStages['+idx+'].unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+bgStyle+'"'+(lockAttr?' readonly':'')+'"></div>';
+            html += '<div style="grid-column:span 2;'+(_stageTestSkip?' display:none;':'')+'"><span class="field-label" style="font-size:11px;color:#888;">检测结果</span><select onchange="tempStages['+idx+'].test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' disabled':'')+'"><option value="">请选择</option><option value="合格" '+((s.test_result==='合格')?'selected':'')+'>合格</option><option value="不合格" '+((s.test_result==='不合格')?'selected':'')+'>不合格</option><option value="待检测" '+((s.test_result==='待检测')?'selected':'')+'>待检测</option></select></div>';
+            html += '<div style="grid-column:span 2;'+(_stageTestSkip||s.test_result!=='不合格'?' display:none;':'')+'"><span class="field-label" style="font-size:11px;color:#c00;">不合格信息 <span style="color:#f00;">*</span>:</span> <input type="text" value="'+(s.unqual_info||'')+'" onchange="tempStages['+idx+'].unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+bgStyle+'"'+(lockAttr?' readonly':'')+'"></div>';
             html += '</div>';
         } else {
             // ===== 数据资料模式: 简化布局 =====
@@ -1861,7 +1862,7 @@ function renderMilestones(stageIdx) {
         // Auto-calculate milestone status based on weave_complete_time and test_done_time
         var _ext = m._ext || {};
         var _weaveDone = _ext.weave_complete_time && _ext.weave_complete_time.trim();
-        var _testDone = _ext.test_done_time && _ext.test_done_time.trim();
+        var _testDone = _ext.test_skip ? true : (_ext.test_done_time && _ext.test_done_time.trim());
         if(_weaveDone && _testDone) { m._ext.ms_status = '完成'; } else if(!m._ext.ms_status || m._ext.ms_status === '进行中' || m._ext.ms_status === '完成') { m._ext.ms_status = (_weaveDone && _testDone) ? '完成' : '进行中'; }
         const msStatus = m._ext && m._ext.ms_status ? m._ext.ms_status : '进行中';
         const msLocked = (stageLocked) && !previewMode;
@@ -1890,13 +1891,15 @@ function renderMilestones(stageIdx) {
         html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
         // 织造完成时间 | 检测单号
         html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value;autoCalcMilestoneStatus('+stageIdx+','+mIdx+');" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测单号:\u003c/span\u003e \u003cinput type="text" value="'+(ext.test_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_no=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
+        var _msTestSkip = !!ext.test_skip;
+        html += '<div style="display:flex;align-items:center;gap:4px;"><label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap;"><input type="checkbox" '+(ext.test_skip?'checked':'')+' onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_skip=this.checked;autoCalcMilestoneStatus('+stageIdx+','+mIdx+');" style="cursor:pointer;"'+(msRo?' disabled':'')+'>不送检</label>'+(ext.test_skip?'<input type="text" value="'+(ext.test_skip_reason||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_skip_reason=this.value" placeholder="不送检理由" style="font-size:10px;padding:2px 4px;border:1px solid #f99;border-radius:3px;flex:1;min-width:60px;background:#fff5f5;'+msBg+'"'+msReadonly+'>':'')+'</div>';
+        html += '<div'+(_msTestSkip?' style="display:none;"':'')+'><span style="color:#888;">检测单号:</span> <input type="text" value="'+(ext.test_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_no=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"></div>';
         // 检测预计完成时间 | 检测完成时间
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_est_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_done_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_done_time=this.value;autoCalcMilestoneStatus('+stageIdx+','+mIdx+');" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
+        html += '\u003cdiv'+(_msTestSkip?' style="display:none;"':'')+'\u003e\u003cspan style="color:#888;"\u003e检测预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_est_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
+        html += '\u003cdiv'+(_msTestSkip?' style="display:none;"':'')+'\u003e\u003cspan style="color:#888;"\u003e检测完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_done_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_done_time=this.value;autoCalcMilestoneStatus('+stageIdx+','+mIdx+');" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
         // 检测结果 | 不合格信息
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测结果:\u003c/span\u003e \u003cselect onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"\u003e\u003coption value=""\u003e请选择\u003c/option\u003e\u003coption value="合格" '+(ext.test_result==='合格'?'selected':'')+'\u003e合格\u003c/option\u003e\u003coption value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'\u003e不合格\u003c/option\u003e\u003coption value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'\u003e待检测\u003c/option\u003e\u003c/select\u003e\u003c/div\u003e';
-        html += '\u003cdiv style="'+(ext.test_result!=='不合格'?' display:none;':'')+'"\u003e\u003cspan style="color:#c00;"\u003e不合格信息 \u003cspan style="color:#f00;"\u003e*\u003c/span\u003e:\u003c/span\u003e \u003cinput type="text" value="'+(ext.ms_unqual_info||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.ms_unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
+        html += '\u003cdiv'+(_msTestSkip?' style="display:none;"':'')+'\u003e\u003cspan style="color:#888;"\u003e检测结果:\u003c/span\u003e \u003cselect onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"\u003e\u003coption value=""\u003e请选择\u003c/option\u003e\u003coption value="合格" '+(ext.test_result==='合格'?'selected':'')+'\u003e合格\u003c/option\u003e\u003coption value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'\u003e不合格\u003c/option\u003e\u003coption value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'\u003e待检测\u003c/option\u003e\u003c/select\u003e\u003c/div\u003e';
+        html += '\u003cdiv style="'+(_msTestSkip||ext.test_result!=='不合格'?' display:none;':'')+'"\u003e\u003cspan style="color:#c00;"\u003e不合格信息 \u003cspan style="color:#f00;"\u003e*\u003c/span\u003e:\u003c/span\u003e \u003cinput type="text" value="'+(ext.ms_unqual_info||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.ms_unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
         html += '\u003c/div\u003e';
         html += '<div style="font-size:11px;margin-bottom:4px;"><span style="color:#888;">备注:</span> <input type="text" value="'+(m.anomaly||'')+'" onchange="tempStages['+stageIdx+'].milestones['+mIdx+'].anomaly=this.value" placeholder="备注信息" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'></div>';
         // Row: 附件
@@ -1924,7 +1927,7 @@ function autoCalcMilestoneStatus(stageIdx, mIdx) {
     if(!m) return;
     if(!m._ext) m._ext = {};
     var weaveDone = m._ext.weave_complete_time && m._ext.weave_complete_time.trim();
-    var testDone = m._ext.test_done_time && m._ext.test_done_time.trim();
+    var testDone = m._ext.test_skip ? true : (m._ext.test_done_time && m._ext.test_done_time.trim());
     m._ext.ms_status = (weaveDone && testDone) ? '完成' : '进行中';
     autoCalcStageStatus(stageIdx);
 }
@@ -1994,7 +1997,7 @@ function unlockStage(stageIdx) {
 }
 
 function addStage() {
-    tempStages.push({name:'新阶段',start_date:'',end_date:'',status:'未开始',output:'',product:'',output_product_data:'',anomaly_feedback:'',solution:'',stage_type:'研发验证',plan_desc:'',yarn_formula:'',yarn_department:'',yarn_time:'',yarn_complete_time:'',sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',unqual_info:'',attachments:[],milestones:[]});
+    tempStages.push({name:'新阶段',start_date:'',end_date:'',status:'未开始',output:'',product:'',output_product_data:'',anomaly_feedback:'',solution:'',stage_type:'研发验证',plan_desc:'',yarn_formula:'',yarn_department:'',yarn_time:'',yarn_complete_time:'',sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',unqual_info:'',test_skip:false,test_skip_reason:'',attachments:[],milestones:[]});
     renderStagesList();
 }
 function removeStage(idx) {
@@ -2015,7 +2018,7 @@ function syncMilestoneToStage(stageIdx) {
 }
 function addMilestone(stageIdx) {
     if(!tempStages[stageIdx].milestones) tempStages[stageIdx].milestones = [];
-    tempStages[stageIdx].milestones.push({name:'',time:'',content:'',product_info:'',product_data:'',anomaly:'',solution:'',is_completed:false,attachments:[],_ext:{department:'',ms_status:'进行中',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''}});
+    tempStages[stageIdx].milestones.push({name:'',time:'',content:'',product_info:'',product_data:'',anomaly:'',solution:'',is_completed:false,attachments:[],_ext:{department:'',ms_status:'进行中',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:'',test_skip:false,test_skip_reason:''}});
     renderStagesList();
 }
 function removeMilestone(stageIdx, mIdx) {
@@ -2065,7 +2068,7 @@ async function saveProject() {
                     status: s.status, output: s.output, product: s.product,
                     output_product_data: s.output_product_data||'',
                     anomaly_feedback: s.anomaly_feedback||'',
-                    solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',sales_no:s.sales_no||'',test_no:s.test_no||'',test_est_time:s.test_est_time||'',test_done_time:s.test_done_time||'',test_result:s.test_result||'',unqual_info:s.unqual_info||'',attachments:s.attachments||[],stage_type:s.stage_type||'研发验证'}),
+                    solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',sales_no:s.sales_no||'',test_no:s.test_no||'',test_est_time:s.test_est_time||'',test_done_time:s.test_done_time||'',test_result:s.test_result||'',unqual_info:s.unqual_info||'',test_skip:!!s.test_skip,test_skip_reason:s.test_skip_reason||'',attachments:s.attachments||[],stage_type:s.stage_type||'研发验证'}),
                     is_deleted: false
                 };
                 if(s.id) {
@@ -2094,7 +2097,7 @@ async function saveProject() {
                         status: s.status, output: s.output, product: s.product,
                         output_product_data: s.output_product_data||'',
                         anomaly_feedback: s.anomaly_feedback||'',
-                        solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',sales_no:s.sales_no||'',test_no:s.test_no||'',test_est_time:s.test_est_time||'',test_done_time:s.test_done_time||'',test_result:s.test_result||'',unqual_info:s.unqual_info||'',attachments:s.attachments||[],stage_type:s.stage_type||'研发验证'}),
+                        solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',sales_no:s.sales_no||'',test_no:s.test_no||'',test_est_time:s.test_est_time||'',test_done_time:s.test_done_time||'',test_result:s.test_result||'',unqual_info:s.unqual_info||'',test_skip:!!s.test_skip,test_skip_reason:s.test_skip_reason||'',attachments:s.attachments||[],stage_type:s.stage_type||'研发验证'}),
                         is_deleted: false
                     });
                     if(newStage && newStage[0] && s.milestones) {
@@ -2148,7 +2151,7 @@ async function syncMilestones(projectId, stageId, milestones) {
             product_info: m.product_info || '',
             product_data: m.product_data || '',
             anomaly: m.anomaly || '',
-            solution: (function(){var e=m._ext||{};return JSON.stringify({department:e.department||'',ms_status:e.ms_status||'',sales_no:e.sales_no||'',ms_sales_no:e.ms_sales_no||'',test_no:e.test_no||'',test_est_time:e.test_est_time||'',test_done_time:e.test_done_time||'',test_result:e.test_result||'',ms_unqual_info:e.ms_unqual_info||'',complete_time:e.complete_time||'',weave_name:e.weave_name||'',weave_formula:e.weave_formula||'',weave_department:e.weave_department||'',weave_time:e.weave_time||'',weave_complete_time:e.weave_complete_time||''});})(),
+            solution: (function(){var e=m._ext||{};return JSON.stringify({department:e.department||'',ms_status:e.ms_status||'',sales_no:e.sales_no||'',ms_sales_no:e.ms_sales_no||'',test_no:e.test_no||'',test_est_time:e.test_est_time||'',test_done_time:e.test_done_time||'',test_result:e.test_result||'',ms_unqual_info:e.ms_unqual_info||'',complete_time:e.complete_time||'',weave_name:e.weave_name||'',weave_formula:e.weave_formula||'',weave_department:e.weave_department||'',weave_time:e.weave_time||'',weave_complete_time:e.weave_complete_time||'',test_skip:!!e.test_skip,test_skip_reason:e.test_skip_reason||''});})(),
             is_completed: m.is_completed || false,
             attachments: JSON.stringify(m.attachments || []),
             is_deleted: false
@@ -2205,7 +2208,7 @@ function previewProject(id) {
         yarn_complete_time: stageExt.yarn_complete_time||'',
         test_no: stageExt.test_no||'',
         test_est_time: stageExt.test_est_time||'',
-        test_done_time: stageExt.test_done_time||'',
+        test_done_time: stageExt.test_done_time||'',test_skip: !!stageExt.test_skip,test_skip_reason: stageExt.test_skip_reason||'',
         test_result: stageExt.test_result||'',
         sales_no: stageExt.sales_no||'',
         unqual_info: stageExt.unqual_info||'',
@@ -2217,7 +2220,7 @@ function previewProject(id) {
             anomaly: m.anomaly||'', solution: m.solution||'',
             is_completed: m.is_completed||false,
             attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
-            _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'进行中',sales_no:o.sales_no||'',ms_sales_no:o.ms_sales_no||'',test_no:o.test_no||'',test_est_time:o.test_est_time||'',test_done_time:o.test_done_time||'',test_result:o.test_result||'',ms_unqual_info:o.ms_unqual_info||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||''};}catch(e){return {department:'',ms_status:'',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:''};}})(),
+            _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'进行中',sales_no:o.sales_no||'',ms_sales_no:o.ms_sales_no||'',test_no:o.test_no||'',test_est_time:o.test_est_time||'',test_done_time:o.test_done_time||'',test_result:o.test_result||'',ms_unqual_info:o.ms_unqual_info||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||'',test_skip:!!o.test_skip,test_skip_reason:o.test_skip_reason||''};}catch(e){return {department:'',ms_status:'',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:'',test_skip:false,test_skip_reason:''};}})(),
             id: m.id
         })) : []
     };});
