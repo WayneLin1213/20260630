@@ -1755,9 +1755,11 @@ function renderStagesList() {
             // 数据资料模式: 状态根据完成时间自动判断
             s.status = (s.yarn_complete_time && s.yarn_complete_time.trim()) ? '已完成' : '进行中';
         } else {
-            // 研发验证模式: 原有逻辑
+            // 研发验证模式: 无节点看完成时间，有节点看节点状态
             if(milestones.length === 0) {
-                s.status = '未开始';
+                var yarnDone = s.yarn_complete_time && s.yarn_complete_time.trim();
+                var testDone = s.test_done_time && s.test_done_time.trim();
+                s.status = (yarnDone && testDone) ? '已完成' : (yarnDone || testDone || s.yarn_time || s.name) ? '进行中' : '未开始';
             } else {
                 const statuses = milestones.map(m => (m._ext && m._ext.ms_status) || '进行中');
                 const allDone = statuses.every(st => st === '完成' || st === '失败');
