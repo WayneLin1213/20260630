@@ -3077,7 +3077,7 @@ function openMaterialModal(id) {
         ['mSpec_material','mSpec_viscosity','mSpec_color_hue','mSpec_melting_point','mSpec_hardness','mSpec_tensile_modulus','mSpec_density'].forEach(fid=>{$(fid).value='';});
         renderMatAttachments();
     }
-    openModal('matModal');
+    $('matModal').classList.add('active');
 }
 
 function previewMaterial(id) {
