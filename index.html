@@ -1772,14 +1772,14 @@ function renderStagesList() {
         const lockAttr = previewMode;
         html += '<div class="timeline-item">';
         
-        // Single grid container for all stage fields (4 columns)
-        html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">';
-        
-        // === 项目类型 selector (always shown) ===
-        html += '<div><span class="field-label" style="font-size:11px;color:#888;">项目类型</span><select onchange="tempStages['+idx+'].stage_type=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' disabled':'')+'">';
+        // === 项目类型 selector (outside grid, full width row) ===
+        html += '<div style="margin-bottom:8px;"><span class="field-label" style="font-size:11px;color:#888;">项目类型</span><select onchange="tempStages['+idx+'].stage_type=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:120px;'+bgStyle+'"'+(lockAttr?' disabled':'')+'">';
         html += '<option value="研发验证" '+(st==='研发验证'?'selected':'')+'>研发验证</option>';
         html += '<option value="数据资料" '+(st==='数据资料'?'selected':'')+'>数据资料</option>';
         html += '</select></div>';
+        
+        // Single grid container for all stage fields (4 columns)
+        html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">';
         
         if(st === '研发验证') {
             // ===== 研发验证模式: 原有布局 =====
