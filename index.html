@@ -1744,6 +1744,31 @@ function downloadStageAttachment(stageIdx, attIdx) {
 }
 
 // ============ STAGES & MILESTONES (need3/4/12) ============
+function toggleStageTestSkip(idx, checked, checkboxEl) {
+    tempStages[idx].test_skip = checked;
+    var grid = checkboxEl.closest('[style*="grid-template-columns"]');
+    if (!grid) return;
+    var kids = grid.children;
+    for (var i = 3; i < kids.length; i++) {
+        kids[i].style.display = checked ? 'none' : '';
+    }
+    var ri = document.getElementById('stskip_r_' + idx);
+    if (checked) {
+        if (!ri) {
+            ri = document.createElement('input');
+            ri.type = 'text';
+            ri.id = 'stskip_r_' + idx;
+            ri.placeholder = '不送检理由';
+            ri.style.cssText = 'font-size:10px;padding:2px 4px;border:1px solid #f99;border-radius:3px;flex:1;min-width:80px;background:#fff5f5;';
+            ri.onchange = function() { tempStages[idx].test_skip_reason = this.value; };
+            checkboxEl.parentNode.appendChild(ri);
+        } else {
+            ri.style.display = '';
+        }
+    } else {
+        if (ri) ri.style.display = 'none';
+    }
+}
 function renderStagesList() {
     let html = '';
     const isManager = currentUser && currentUser.role === 'manager';
@@ -1800,7 +1825,7 @@ function renderStagesList() {
             html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
             html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
             var _stageTestSkip = !!s.test_skip;
-            html += '<div style="display:flex;align-items:center;gap:4px;"><label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap;"><input type="checkbox" '+(s.test_skip?'checked':'')+' onchange="tempStages['+idx+'].test_skip=this.checked;tempStages['+idx+'].test_skip_reason=tempStages['+idx+'].test_skip_reason||"";renderStagesList();" style="cursor:pointer;"'+(lockAttr?' disabled':'')+'>不送检</label>'+(s.test_skip?'<input type="text" value="'+(s.test_skip_reason||'')+'" onchange="tempStages['+idx+'].test_skip_reason=this.value" placeholder="不送检理由" style="font-size:10px;padding:2px 4px;border:1px solid #f99;border-radius:3px;flex:1;min-width:80px;background:#fff5f5;'+bgStyle+'"'+(lockAttr?' readonly':'')+'>':'')+'</div>';
+            html += '<div style="display:flex;align-items:center;gap:4px;"><label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap;"><input type="checkbox" '+(s.test_skip?'checked':'')+' onchange="toggleStageTestSkip('+idx+',this.checked,this);" style="cursor:pointer;"'+(lockAttr?' disabled':'')+'>不送检</label>'+(s.test_skip?'<input type="text" value="'+(s.test_skip_reason||'')+'" onchange="tempStages['+idx+'].test_skip_reason=this.value" id="stskip_r_'+idx+'" placeholder="不送检理由" style="font-size:10px;padding:2px 4px;border:1px solid #f99;border-radius:3px;flex:1;min-width:80px;background:#fff5f5;'+bgStyle+'"'+(lockAttr?' readonly':'')+'>':'')+'</div>';
             // Row 4: 检测单号 | 检测预计完成时间 | 检测完成时间
             html += '<div'+(_stageTestSkip?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#888;">检测单号</span><input type="text" value="'+(s.test_no||'')+'" onchange="tempStages['+idx+'].test_no=this.value" placeholder="检测单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
             html += '<div'+(_stageTestSkip?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#888;">检测预计完成时间</span><input type="date" value="'+(s.test_est_time||'')+'" onchange="tempStages['+idx+'].test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
