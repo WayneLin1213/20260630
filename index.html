@@ -287,6 +287,7 @@
             <a class="active" onclick="switchPage('overview')">项目总览</a>
             <a onclick="switchPage('projects')">项目列表</a>
             <a onclick="switchPage('yarns')" id="navYarns">纱线信息</a>
+            <a onclick="switchPage('materials')" id="navMaterials">原料信息</a>
             <a onclick="switchPage('users')" id="navUsers">用户管理</a>
         </nav>
         <div class="user-area">
@@ -306,6 +307,7 @@
             <div class="mobile-nav-item active" onclick="switchPage('overview');updateMobileNav(this)"><span class="nav-icon">🏠</span><span class="nav-label">总览</span></div>
             <div class="mobile-nav-item" onclick="switchPage('projects');updateMobileNav(this)"><span class="nav-icon">📋</span><span class="nav-label">项目</span></div>
             <div class="mobile-nav-item" onclick="switchPage('yarns');updateMobileNav(this)"><span class="nav-icon">🧶</span><span class="nav-label">纱线</span></div>
+            <div class="mobile-nav-item" onclick="switchPage('materials');updateMobileNav(this)"><span class="nav-icon">🧪</span><span class="nav-label">原料</span></div>
             <div class="mobile-nav-item" onclick="openNotifSettings();updateMobileNav(this)"><span class="nav-icon">🔔</span><span class="nav-label">通知</span></div>
             <div class="mobile-nav-item" onclick="switchPage('users');updateMobileNav(this)" id="mobileNavUsers"><span class="nav-icon">👤</span><span class="nav-label">用户</span></div>
         </div>
@@ -405,6 +407,46 @@
                     </div>
                 </div>
                 <div id="yarnTableWrap"></div>
+            </div>
+        </div>
+
+        <!-- Materials Page -->
+        <div id="page-materials" class="hidden">
+            <div class="section">
+                <div class="section-header">
+                    <h3>原料信息 <span style="font-size:10px;color:#ccc;font-weight:normal;">v0717</span></h3>
+                    <div class="filters">
+                        <input type="text" id="matSearchInput" placeholder="🔍 搜索原料名称/供应商..." oninput="renderMaterialList()">
+                        <select id="matFilterCategory" onchange="renderMaterialList()">
+                            <option value="">全部品类</option>
+                            <option value="经编">经编</option>
+                            <option value="飞织">飞织</option>
+                            <option value="梭织">梭织</option>
+                            <option value="圆机">圆机</option>
+                            <option value="速织">速织</option>
+                        </select>
+                        <select id="matFilterForm" onchange="renderMaterialList()">
+                            <option value="">全部形态</option>
+                            <option value="POY">POY</option>
+                            <option value="FDY">FDY</option>
+                            <option value="DTY">DTY</option>
+                            <option value="ATY">ATY</option>
+                            <option value="SCY">SCY</option>
+                        </select>
+                        <select id="matFilterVerified" onchange="renderMaterialList()">
+                            <option value="">全部验证</option>
+                            <option value="经编">经编</option>
+                            <option value="飞织">飞织</option>
+                            <option value="梭织">梭织</option>
+                            <option value="圆机">圆机</option>
+                            <option value="速织">速织</option>
+                        </select>
+                        <button class="btn btn-outline" onclick="exportMaterialData()">📥 导出表格</button>
+                        <button class="btn btn-danger" id="btnBatchDeleteMat" style="display:none;" onclick="batchDeleteMaterials()">🗑️ 批量删除</button>
+                        <button class="btn btn-primary" id="btnNewMaterial" onclick="openMaterialModal()">＋ 新增原料</button>
+                    </div>
+                </div>
+                <div id="materialTableWrap"></div>
             </div>
         </div>
 
@@ -790,6 +832,139 @@
     </div>
 </div>
 
+<!-- Material Modal -->
+<div class="modal-overlay" id="matModal">
+    <div class="modal" style="width:700px;">
+        <div class="modal-header">
+            <h3 id="matModalTitle">新增原料</h3>
+            <button class="modal-close" onclick="closeModal('matModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>原料名称 *</label>
+                    <input type="text" id="mName" placeholder="原料名称">
+                </div>
+                <div class="form-group">
+                    <label>供应商</label>
+                    <input type="text" id="mSupplier" placeholder="供应商">
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>规格信息</label>
+                    <div id="mSpecsList"></div>
+                    <button class="btn btn-sm btn-outline" onclick="addMaterialSpec()" style="margin-top:6px;">＋ 添加规格</button>
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>原料介绍</label>
+                    <textarea id="mIntroduction" rows="2" placeholder="原料介绍"></textarea>
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>原料特点</label>
+                    <textarea id="mFeatures" rows="2" placeholder="原料特点"></textarea>
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>已验证品类</label>
+                    <div id="mVerifiedCategories" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="经编"> 经编</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="飞织"> 飞织</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="梭织"> 梭织</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="圆机"> 圆机</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="速织"> 速织</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>建议品类</label>
+                    <div id="mSuggestedCategories" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="经编"> 经编</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="飞织"> 飞织</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="梭织"> 梭织</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="圆机"> 圆机</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="速织"> 速织</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>适用产品</label>
+                    <div id="mApplicableProducts" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="鞋材"> 鞋材</label>
+                        <label style="font-size:13px;font-weight:400;display:flex;align-items:center;gap:4px;"><input type="checkbox" value="服装"> 服装</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>温度限制</label>
+                    <input type="text" id="mTempLimit" placeholder="温度限制">
+                </div>
+                <div class="form-group">
+                    <label>颜色限制</label>
+                    <input type="text" id="mColorLimit" placeholder="颜色限制">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>起订量</label>
+                    <input type="text" id="mMoq" placeholder="起订量">
+                </div>
+                <div class="form-group">
+                    <label>状态</label>
+                    <select id="mStatus" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+                        <option value="未验证">未验证</option>
+                        <option value="验证中">验证中</option>
+                        <option value="可推广">可推广</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>检测数据</label>
+                    <div style="background:#f8f9fa;border:1px solid #e8e8e8;border-radius:8px;padding:14px;">
+                        <div style="margin-bottom:10px;">
+                            <table style="width:100%;border-collapse:collapse;font-size:13px;" id="matTestDataTable">
+                                <thead>
+                                    <tr style="background:#f0f0f0;">
+                                        <th style="padding:8px 6px;text-align:left;border-bottom:2px solid #ddd;min-width:120px;">检测单号</th>
+                                        <th style="padding:8px 6px;text-align:left;border-bottom:2px solid #ddd;min-width:100px;">规格</th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">断裂强度<br><span style="font-size:10px;color:#999;font-weight:400;">(cN/dtex)</span></th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">断裂伸长率<br><span style="font-size:10px;color:#999;font-weight:400;">(%)</span></th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">沸水收缩率<br><span style="font-size:10px;color:#999;font-weight:400;">(%)</span></th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:15%;">干热收缩率<br><span style="font-size:10px;color:#999;font-weight:400;">(%)</span></th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:12%;">黄变</th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:12%;">酚黄</th>
+                                        <th style="padding:8px 6px;text-align:center;border-bottom:2px solid #ddd;width:40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="matTestDataBody"></tbody>
+                            </table>
+                            <button onclick="addMatTestData()" style="margin-top:8px;font-size:12px;color:#667eea;background:none;border:1px dashed #667eea;border-radius:6px;padding:4px 12px;cursor:pointer;">＋ 添加规格行</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>附件上传</label>
+                    <input type="file" id="mFileUpload" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleMaterialFileUpload(event)" style="padding:6px 0;">
+                    <div id="matAttachments" style="margin-top:8px;font-size:12px;color:#999;">暂无附件</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('matModal')">取消</button>
+            <button class="btn btn-primary" onclick="saveMaterial()">保存</button>
+        </div>
+    </div>
+</div>
+
 <!-- Notification Settings Modal -->
 <div class="modal-overlay" id="notifSettingsModal">
     <div class="modal" style="width:550px;">
@@ -1019,6 +1194,7 @@ function showApp() {
     }
     // Executor can see yarns but can't edit
     if(currentUser.role !== 'manager') {
+        $('btnNewProject') && ($('btnNewProject').style.display='none');
         $('btnNewYarn') && ($('btnNewYarn').style.display='none');
     }
     loadData();
@@ -1141,6 +1317,7 @@ function renderAll() {
     renderCharts();
     populateOwnerSelect();
     loadYarns();
+    loadMaterials();
 }
 
 // ============ STATS ============
@@ -1395,21 +1572,22 @@ function populateOwnerSelect() {
 function switchPage(page) {
     document.querySelectorAll('.topbar nav a').forEach(a=>a.classList.remove('active'));
     const navLinks = document.querySelectorAll('.topbar nav a');
-    const pageOrder = ['overview','projects','yarns','users'];
+    const pageOrder = ['overview','projects','yarns','materials','users'];
     const idx = pageOrder.indexOf(page);
     if (idx >= 0 && navLinks[idx]) navLinks[idx].classList.add('active');
-    ['overview','projects','yarns','users'].forEach(p=>{
+    ['overview','projects','yarns','materials','users'].forEach(p=>{
         $('page-'+p).classList.toggle('hidden', p!==page);
     });
     // Sync mobile nav
     const mobileItems = document.querySelectorAll('.mobile-nav-item');
-    const mobileMap = ['overview','projects','yarns',null,'users'];
+    const mobileMap = ['overview','projects','yarns','materials',null,'users'];
     mobileItems.forEach((item, i) => {
         if (mobileMap[i] === page) item.classList.add('active');
         else if (mobileMap[i] !== null) item.classList.remove('active');
     });
     if(page==='overview') { renderStats(); renderAnomalyBoard(); renderCharts(); updateNotifBadge(); }
     if(page==='yarns') { loadYarns(); }
+    if(page==='materials') { loadMaterials(); }
 }
 
 // ============ TAB SWITCH ============
@@ -2784,6 +2962,463 @@ async function deleteYarn(id) {
         await sbUpdate('yarns', id, {is_deleted: true});
         toast('纱线已删除','success');
         await loadYarns();
+    } catch(e) {
+        toast('删除失败','error');
+    }
+}
+
+// ============ MATERIALS (原料信息) ============
+let allMaterials = [];
+let editingMaterialId = null;
+let tempMatSpecs = [];
+let tempMatAttachments = [];
+let tempMatTestData = [];
+var selectedMaterialIds = new Set();
+
+async function loadMaterials() {
+    try {
+        let materials = await sbGet('materials', '');
+        if(materials && materials.length > 0) {
+            allMaterials = materials.filter(function(m) { return m.is_deleted !== true; });
+        } else {
+            allMaterials = [];
+        }
+        console.log('[loadMaterials] loaded', allMaterials.length, 'materials from', (materials||[]).length, 'total rows');
+        renderMaterialList();
+    } catch(e) {
+        console.error('Materials load error:', e);
+        allMaterials = [];
+        renderMaterialList();
+    }
+}
+
+function renderMaterialList() {
+    var searchEl = $('matSearchInput');
+    var fCatEl = $('matFilterCategory');
+    var fFormEl = $('matFilterForm');
+    var fVerEl = $('matFilterVerified');
+    if(!searchEl) return;
+    const search = (searchEl.value||'').toLowerCase();
+    const fCat = fCatEl ? fCatEl.value : '';
+    const fForm = fFormEl ? fFormEl.value : '';
+    const fVerified = fVerEl ? fVerEl.value : '';
+
+    let filtered = allMaterials.filter(m => {
+        if(search) {
+            const name = (m.name||'').toLowerCase();
+            const supplier = (m.supplier||'').toLowerCase();
+            if(!name.includes(search) && !supplier.includes(search)) return false;
+        }
+        if(fCat) {
+            let suggested = [];
+            try { suggested = JSON.parse(m.suggested_categories||'[]'); } catch(e) { suggested = []; }
+            if(!suggested.includes(fCat)) return false;
+        }
+        if(fForm) {
+            let specs = [];
+            try { specs = JSON.parse(m.specs||'[]'); } catch(e) { specs = []; }
+            const hasForm = specs.some(s => {
+                if(typeof s === 'object' && s !== null) return s.type === fForm;
+                return false;
+            });
+            if(!hasForm) return false;
+        }
+        if(fVerified) {
+            let verified = [];
+            try { verified = JSON.parse(m.verified_categories||'[]'); } catch(e) { verified = []; }
+            if(!verified.includes(fVerified)) return false;
+        }
+        return true;
+    });
+
+    if(filtered.length === 0) {
+        $('materialTableWrap').innerHTML = '<div class="empty-state"><div class="icon">🧪</div><p>暂无原料数据</p></div>';
+        return;
+    }
+
+    const isManager = currentUser.role === 'manager';
+    let html = '<table class="data-table"><thead><tr>';
+    html += '<th><input type="checkbox" onchange="toggleMaterialSelectAll()" id="matSelectAllCb"></th><th>原料名称</th><th>供应商</th><th>规格</th><th>建议品类</th><th>验证品类</th><th>适用产品</th><th>起订量</th><th>温度/颜色限制</th><th>检测数据</th><th>状态</th><th>操作</th>';
+    html += '</tr></thead><tbody>';
+    for(const m of filtered) {
+        let specs = [];
+        try { specs = JSON.parse(m.specs || '[]'); } catch(e) { specs = []; }
+        const specText = specs.map(s => {
+            if(typeof s === 'object' && s !== null) {
+                return '<span style="display:block;margin-bottom:2px;">'+(s.type ? s.type + ' ' : '') + (s.value || '')+'</span>';
+            }
+            return '<span style="display:block;margin-bottom:2px;">'+(s||'')+'</span>';
+        }).filter(s => s.trim()).join('');
+        const suggested = (function(){ try{ return JSON.parse(m.suggested_categories||'[]'); }catch(e){return [];} })();
+        const verified = (function(){ try{ return JSON.parse(m.verified_categories||'[]'); }catch(e){return [];} })();
+        const applicable = (function(){ try{ return JSON.parse(m.applicable_products||'[]'); }catch(e){return [];} })();
+
+        const catBadgeColors = {'\u7ecf\u7f16':'#667eea','\u98de\u7ec7':'#f59e0b','\u68ad\u7ec7':'#4caf50','\u5706\u673a':'#9c27b0','\u901f\u7ec7':'#ff5722'};
+        let sugBadges = suggested.map(c => '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;background:'+(catBadgeColors[c]||'#999')+';margin:1px;">'+c+'</span>').join('');
+        if(!sugBadges) sugBadges = '<span style="color:#999;font-size:12px">-</span>';
+        let verBadges = verified.map(c => '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;background:'+(catBadgeColors[c]||'#999')+';margin:1px;">'+c+'</span>').join('');
+        if(!verBadges) verBadges = '<span style="color:#999;font-size:12px">-</span>';
+
+        const applicableText = applicable.length > 0 ? applicable.join(', ') : '-';
+        const limits = [m.temp_limit, m.color_limit].filter(Boolean).join(' / ') || '-';
+
+        html += '<tr>';
+        html += '<td><input type="checkbox" class="mat-row-cb" data-id="'+m.id+'" onchange="toggleMaterialSelect(\''+m.id+'\')" '+(selectedMaterialIds.has(m.id)?'checked':'')+'></td>';
+        html += '<td><div class="project-name"><div class="icon">🧪</div><div>'+(m.name||'未命名')+'</div></div></td>';
+        html += '<td style="font-size:13px">'+(m.supplier||'-')+'</td>';
+        html += '<td style="font-size:12px;color:#666">'+(specText || '-')+'</td>';
+        html += '<td>'+sugBadges+'</td>';
+        html += '<td>'+verBadges+'</td>';
+        html += '<td style="font-size:12px">'+applicableText+'</td>';
+        html += '<td style="font-size:13px">'+(m.moq||'-')+'</td>';
+        html += '<td style="font-size:12px;color:#666">'+limits+'</td>';
+        let testText = '<span style="color:#ccc;font-size:12px;">-</span>';
+        try {
+            const td = JSON.parse(m.test_data || '[]');
+            if(Array.isArray(td) && td.length > 0) {
+                testText = td.map(r => {
+                    let parts = [];
+                    if(r.reportNo) parts.push('<b style="color:#667eea;">['+escHtml(r.reportNo)+']</b>');
+                    if(r.spec) parts.push('<b>'+escHtml(r.spec)+'</b>');
+                    if(r.tensile) parts.push('强度:'+r.tensile);
+                    if(r.elongation) parts.push('伸长:'+r.elongation+'%');
+                    if(r.boiling) parts.push('沸水:'+r.boiling+'%');
+                    if(r.dryHeat) parts.push('干热:'+r.dryHeat+'%');
+                    if(r.yellowing) parts.push('黄变:'+r.yellowing);
+                    if(r.phenolicYellowing) parts.push('酚黄:'+r.phenolicYellowing);
+                    return '<span style="display:block;font-size:11px;line-height:1.6;color:#555;">'+parts.join(' | ')+'</span>';
+                }).join('');
+            }
+        } catch(e) {
+            const testData2 = [];
+            if(m.tensile_strength) testData2.push('强度:'+m.tensile_strength);
+            if(m.elongation) testData2.push('伸长:'+m.elongation+'%');
+            if(m.boiling_shrinkage) testData2.push('沸水:'+m.boiling_shrinkage+'%');
+            if(m.dry_heat_shrinkage) testData2.push('干热:'+m.dry_heat_shrinkage+'%');
+            if(testData2.length > 0) testText = testData2.map(t => '<span style="display:block;font-size:11px;line-height:1.6;color:#555;">'+t+'</span>').join('');
+        }
+        html += '<td style="font-size:12px;padding:4px 8px;">'+testText+'</td>';
+        const statusMap = {'\u53ef\u63a8\u5e7f':'#4caf50','\u9a8c\u8bc1\u4e2d':'#ff9800','\u672a\u9a8c\u8bc1':'#999'};
+        const st = m.status || '未验证';
+        html += '<td><span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:12px;color:#fff;background:'+(statusMap[st]||'#999')+';">'+st+'</span></td>';
+        html += '<td><div class="action-btns">';
+        html += '<button onclick="previewMaterial(\''+m.id+'\')" title="查看详情">👁️</button>';
+        if(isManager) {
+            html += '<button onclick="editMaterial(\''+m.id+'\')" title="编辑">✏️</button>';
+            html += '<button class="del" onclick="deleteMaterial(\''+m.id+'\')" title="删除">🗑️</button>';
+        }
+        html += '</div></td></tr>';
+    }
+    html += '</tbody></table>';
+    $('materialTableWrap').innerHTML = html;
+}
+
+function exportMaterialData() {
+    if(allMaterials.length === 0) { alert('暂无原料数据可导出'); return; }
+    let csv = '\uFEFF原料名称,供应商,规格,建议品类,验证品类,适用产品,起订量,温度限制,颜色限制,检测数据(规格|强度|伸长|沸水|干热),状态\n';
+    for(const m of allMaterials) {
+        let specs = [];
+        try { specs = JSON.parse(m.specs || '[]'); } catch(e) { specs = []; }
+        const specText = specs.map(s => typeof s === 'object' && s !== null ? (s.type ? s.type + ' ' : '') + (s.value || '') : (s||'')).filter(s => s.trim()).join('; ');
+        const suggested = (function(){ try{ return JSON.parse(m.suggested_categories||'[]'); }catch(e){return [];} })();
+        const verified = (function(){ try{ return JSON.parse(m.verified_categories||'[]'); }catch(e){return [];} })();
+        const applicable = (function(){ try{ return JSON.parse(m.applicable_products||'[]'); }catch(e){return [];} })();
+        let testCsv = '';
+        try {
+            const td = JSON.parse(m.test_data || '[]');
+            if(Array.isArray(td) && td.length > 0) {
+                testCsv = td.map(r => [r.spec||'', r.tensile||'', r.elongation||'', r.boiling||'', r.dryHeat||''].join('|')).join('; ');
+            }
+        } catch(e) {
+            testCsv = [m.tensile_strength||'', m.elongation||'', m.boiling_shrinkage||'', m.dry_heat_shrinkage||''].join('|');
+        }
+        csv += '"'+(m.name||'')+'","'+(m.supplier||'')+'","'+specText+'","'+suggested.join('/')+'","'+verified.join('/')+'","'+applicable.join('/')+'","'+(m.moq||'')+'","'+(m.temp_limit||'')+'","'+(m.color_limit||'')+'","'+testCsv+'","'+(m.status||'未验证')+'"\n';
+    }
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '原料信息_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function toggleMaterialSelect(id) {
+    if(selectedMaterialIds.has(id)) selectedMaterialIds.delete(id);
+    else selectedMaterialIds.add(id);
+    var btn = document.getElementById('btnBatchDeleteMat');
+    if(btn) btn.style.display = selectedMaterialIds.size > 0 ? 'inline-flex' : 'none';
+}
+
+function toggleMaterialSelectAll() {
+    var cbs = document.querySelectorAll('.mat-row-cb');
+    var allChecked = true;
+    cbs.forEach(function(cb){if(!cb.checked){allChecked=false;}});
+    cbs.forEach(function(cb){
+        cb.checked = !allChecked;
+        var id = cb.getAttribute('data-id');
+        if(!allChecked) selectedMaterialIds.add(id);
+        else selectedMaterialIds.delete(id);
+    });
+    var btn = document.getElementById('btnBatchDeleteMat');
+    if(btn) btn.style.display = selectedMaterialIds.size > 0 ? 'inline-flex' : 'none';
+}
+
+async function batchDeleteMaterials() {
+    if(selectedMaterialIds.size === 0) return;
+    if(!confirm('确定删除选中的 '+selectedMaterialIds.size+' 条原料记录？')) return;
+    try {
+        for(var id of selectedMaterialIds) {
+            await sbUpdate('materials', id, {is_deleted: true});
+        }
+        selectedMaterialIds.clear();
+        var btn = document.getElementById('btnBatchDeleteMat');
+        if(btn) btn.style.display = 'none';
+        toast('批量删除成功','success');
+        await loadMaterials();
+    } catch(e) {
+        console.error('Batch delete error:', e);
+        toast('批量删除失败: '+e.message,'error');
+    }
+}
+
+function openMaterialModal(id) {
+    editingMaterialId = id || null;
+    tempMatSpecs = [];
+    tempMatAttachments = [];
+    tempMatTestData = [];
+    $('matModalTitle').textContent = id ? '编辑原料' : '新增原料';
+
+    if(id) {
+        const m = allMaterials.find(x=>x.id===id);
+        if(!m) return;
+        $('mName').value = m.name||'';
+        $('mSupplier').value = m.supplier||'';
+        $('mIntroduction').value = m.introduction||'';
+        $('mFeatures').value = m.features||'';
+        const verified = (function(){try{return JSON.parse(m.verified_categories||'[]');}catch(e){return [];}})();
+        document.querySelectorAll('#mVerifiedCategories input[type=checkbox]').forEach(cb => { cb.checked = verified.includes(cb.value); });
+        $('mTempLimit').value = m.temp_limit||'';
+        $('mColorLimit').value = m.color_limit||'';
+        $('mMoq').value = m.moq||'';
+        $('mStatus').value = m.status||'未验证';
+        try {
+            tempMatTestData = JSON.parse(m.test_data || '[]');
+            if(!Array.isArray(tempMatTestData)) tempMatTestData = [];
+            if(tempMatTestData.length === 0 && (m.tensile_strength || m.elongation || m.boiling_shrinkage || m.dry_heat_shrinkage)) {
+                tempMatTestData.push({reportNo:'', spec:'', tensile:m.tensile_strength||'', elongation:m.elongation||'', boiling:m.boiling_shrinkage||'', dryHeat:m.dry_heat_shrinkage||'', yellowing:'', phenolicYellowing:''});
+            }
+            tempMatTestData.forEach(row => {
+                if(!row.reportNo) row.reportNo = '';
+                if(!row.yellowing) row.yellowing = '';
+                if(!row.phenolicYellowing) row.phenolicYellowing = '';
+            });
+        } catch(e) { tempMatTestData = []; }
+        renderMatTestData();
+        try {
+            tempMatSpecs = JSON.parse(m.specs || '[]');
+            tempMatSpecs = tempMatSpecs.map(s => {
+                if(typeof s === 'string') return {type: '', value: s};
+                return s;
+            });
+        } catch(e) { tempMatSpecs = []; }
+        try { tempMatAttachments = JSON.parse(m.attachments || '[]'); } catch(e) { tempMatAttachments = []; }
+        const suggested = (function(){try{return JSON.parse(m.suggested_categories||'[]');}catch(e){return [];}})();
+        const applicable = (function(){try{return JSON.parse(m.applicable_products||'[]');}catch(e){return [];}})();
+        document.querySelectorAll('#mSuggestedCategories input[type=checkbox]').forEach(cb => { cb.checked = suggested.includes(cb.value); });
+        document.querySelectorAll('#mApplicableProducts input[type=checkbox]').forEach(cb => { cb.checked = applicable.includes(cb.value); });
+    } else {
+        ['mName','mSupplier','mIntroduction','mFeatures','mTempLimit','mColorLimit','mMoq'].forEach(id=>{$(id).value='';});
+        $('mStatus').value = '未验证';
+        document.querySelectorAll('#mVerifiedCategories input[type=checkbox], #mSuggestedCategories input[type=checkbox], #mApplicableProducts input[type=checkbox]').forEach(cb => { cb.checked = false; });
+        tempMatSpecs = [];
+        tempMatTestData = [];
+        tempMatAttachments = [];
+        renderMatTestData();
+    }
+    renderMaterialSpecs();
+    renderMatAttachments();
+    $('matModal').classList.add('active');
+}
+
+function previewMaterial(id) {
+    openMaterialModal(id);
+    setTimeout(function(){
+        const modal = $('matModal');
+        modal.querySelectorAll('input:not([type="checkbox"]), textarea').forEach(el => {
+            el.readOnly = true;
+            el.style.background = '#f5f5f5';
+        });
+        const stSel = modal.querySelector('#mStatus');
+        if(stSel) { stSel.disabled = true; stSel.style.background = '#f5f5f5'; }
+        modal.querySelectorAll('button').forEach(btn => {
+            if(btn.textContent.includes('添加') || btn.textContent.includes('删除规格') || btn.textContent === '保存') {
+                btn.style.display = 'none';
+            }
+        });
+        modal.querySelectorAll('.mat-spec-item button').forEach(btn => btn.style.display = 'none');
+        modal.querySelectorAll('#mFileUpload').forEach(el => el.style.display = 'none');
+        modal.querySelectorAll('.remove-att').forEach(el => el.style.display = 'none');
+    }, 100);
+}
+
+function renderMaterialSpecs() {
+    var specOptions = ['POY','FDY','DTY','ATY','SCY'];
+    let html = '';
+    tempMatSpecs.forEach((spec, idx) => {
+        const specType = (typeof spec === 'object' && spec !== null) ? (spec.type || '') : '';
+        const specVal = (typeof spec === 'object' && spec !== null) ? (spec.value || '') : (typeof spec === 'string' ? spec : '');
+        html += '<div class="mat-spec-item">';
+        html += '<select data-idx="'+idx+'" onchange="tempMatSpecs['+idx+'].type=this.value">';
+        html += '<option value="">-- 选择形态 --</option>';
+        specOptions.forEach(function(opt) {
+            html += '<option value="'+opt+'"'+(specType===opt?' selected':'')+'>'+opt+'</option>';
+        });
+        html += '</select>';
+        html += '<input type="text" value="'+specVal+'" onchange="tempMatSpecs['+idx+'].value=this.value" placeholder="如 75D/36F">';
+        html += '<button onclick="removeMaterialSpec('+idx+')" title="删除">✕</button>';
+        html += '</div>';
+    });
+    $('mSpecsList').innerHTML = html;
+}
+
+function addMaterialSpec() {
+    tempMatSpecs.push({type:'', value:''});
+    renderMaterialSpecs();
+}
+
+function removeMaterialSpec(idx) {
+    tempMatSpecs.splice(idx, 1);
+    renderMaterialSpecs();
+}
+
+function renderMatTestData() {
+    const tbody = $('matTestDataBody');
+    if(!tbody) return;
+    let html = '';
+    tempMatTestData.forEach((row, idx) => {
+        html += '<tr style="border-bottom:1px solid #eee;">';
+        html += '<td style="padding:6px;"><input type="text" value="'+escHtml(row.reportNo)+'" placeholder="检测单号" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;" oninput="tempMatTestData['+idx+'].reportNo=this.value"></td>';
+        html += '<td style="padding:6px;"><input type="text" value="'+escHtml(row.spec)+'" placeholder="如 150D/48F" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;" oninput="tempMatTestData['+idx+'].spec=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.tensile)+'" placeholder="5.6" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempMatTestData['+idx+'].tensile=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.elongation)+'" placeholder="21.8" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempMatTestData['+idx+'].elongation=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.boiling)+'" placeholder="2.0" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempMatTestData['+idx+'].boiling=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.dryHeat)+'" placeholder="5.4" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempMatTestData['+idx+'].dryHeat=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.yellowing)+'" placeholder="4.5" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempMatTestData['+idx+'].yellowing=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><input type="text" value="'+escHtml(row.phenolicYellowing)+'" placeholder="4.5" style="width:90%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;text-align:center;box-sizing:border-box;" oninput="tempMatTestData['+idx+'].phenolicYellowing=this.value"></td>';
+        html += '<td style="padding:6px;text-align:center;"><button onclick="removeMatTestData('+idx+')" title="删除此行" style="font-size:14px;color:#e74c3c;background:none;border:none;cursor:pointer;padding:2px 4px;">✕</button></td>';
+        html += '</tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+function addMatTestData() {
+    tempMatTestData.push({reportNo: '', spec: '', tensile: '', elongation: '', boiling: '', dryHeat: '', yellowing: '', phenolicYellowing: ''});
+    renderMatTestData();
+}
+
+function removeMatTestData(idx) {
+    tempMatTestData.splice(idx, 1);
+    renderMatTestData();
+}
+
+async function handleMaterialFileUpload(event) {
+    const files = event.target.files;
+    for(const f of files) {
+        const data = await fileToBase64(f);
+        tempMatAttachments.push({name: f.name, type: f.type, data: data});
+    }
+    renderMatAttachments();
+    event.target.value = '';
+}
+
+function renderMatAttachments() {
+    let html = '';
+    tempMatAttachments.forEach((att, idx) => {
+        if(att.type && att.type.startsWith('image/')) {
+            html += '<span class="attachment-item"><img src="'+att.data+'" title="'+att.name+'"> '+att.name+' <span class="remove-att" onclick="removeMatAttachment('+idx+')">✕</span></span>';
+        } else {
+            html += '<span class="attachment-item" onclick="downloadMatAtt('+idx+')">📄 '+att.name+' <span class="remove-att" onclick="event.stopPropagation();removeMatAttachment('+idx+')">✕</span></span>';
+        }
+    });
+    $('matAttachments').innerHTML = html || '<span style="font-size:12px;color:#999;">暂无附件</span>';
+}
+
+function removeMatAttachment(idx) {
+    tempMatAttachments.splice(idx, 1);
+    renderMatAttachments();
+}
+
+function downloadMatAtt(idx) {
+    const att = tempMatAttachments[idx];
+    if(!att) return;
+    const a = document.createElement('a');
+    a.href = att.data;
+    a.download = att.name;
+    a.click();
+}
+
+async function saveMaterial() {
+    const name = $('mName').value.trim();
+    if(!name) { toast('请填写原料名称','error'); return; }
+
+    const suggested = [];
+    document.querySelectorAll('#mSuggestedCategories input[type=checkbox]:checked').forEach(cb => suggested.push(cb.value));
+    const applicable = [];
+    document.querySelectorAll('#mApplicableProducts input[type=checkbox]:checked').forEach(cb => applicable.push(cb.value));
+    const verified = [];
+    document.querySelectorAll('#mVerifiedCategories input[type=checkbox]:checked').forEach(cb => verified.push(cb.value));
+
+    const data = {
+        name: name,
+        supplier: $('mSupplier').value.trim(),
+        specs: JSON.stringify(tempMatSpecs.filter(s => {
+            if(typeof s === 'object' && s !== null) return s.value.trim();
+            return s && s.trim();
+        })),
+        introduction: $('mIntroduction').value.trim(),
+        features: $('mFeatures').value.trim(),
+        verified_categories: JSON.stringify(verified),
+        suggested_categories: JSON.stringify(suggested),
+        applicable_products: JSON.stringify(applicable),
+        temp_limit: $('mTempLimit').value.trim(),
+        color_limit: $('mColorLimit').value.trim(),
+        moq: $('mMoq').value.trim(),
+        status: $('mStatus').value,
+        test_data: JSON.stringify(tempMatTestData.filter(r => r.reportNo.trim() || r.spec.trim() || r.tensile.trim() || r.elongation.trim() || r.boiling.trim() || r.dryHeat.trim() || r.yellowing.trim() || r.phenolicYellowing.trim())),
+        tensile_strength: (tempMatTestData[0] && tempMatTestData[0].tensile) || '',
+        elongation: (tempMatTestData[0] && tempMatTestData[0].elongation) || '',
+        boiling_shrinkage: (tempMatTestData[0] && tempMatTestData[0].boiling) || '',
+        dry_heat_shrinkage: (tempMatTestData[0] && tempMatTestData[0].dryHeat) || ''
+    };
+
+    try {
+        let result;
+        if(editingMaterialId) {
+            result = await sbUpdate('materials', editingMaterialId, data);
+            if(!result) throw new Error('Update failed');
+            toast('原料更新成功','success');
+        } else {
+            result = await sbInsert('materials', data);
+            if(!result) throw new Error('Insert failed');
+            toast('原料创建成功','success');
+        }
+        closeModal('matModal');
+        await loadMaterials();
+    } catch(e) {
+        console.error('saveMaterial error:', e);
+        toast('保存失败: ' + (e.message || '请检查控制台'),'error');
+    }
+}
+
+function editMaterial(id) { openMaterialModal(id); }
+
+async function deleteMaterial(id) {
+    if(!confirm('确定删除该原料？')) return;
+    try {
+        await sbUpdate('materials', id, {is_deleted: true});
+        toast('原料已删除','success');
+        await loadMaterials();
     } catch(e) {
         toast('删除失败','error');
     }
