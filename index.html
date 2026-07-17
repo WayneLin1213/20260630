@@ -1856,6 +1856,11 @@ function renderMilestones(stageIdx) {
     const stageLocked = stage.status === '已完成' && !previewMode;
     let html = '<div class="milestone-sub">';
     milestones.forEach((m, mIdx) => {
+        // Auto-calculate milestone status based on weave_complete_time and test_done_time
+        var _ext = m._ext || {};
+        var _weaveDone = _ext.weave_complete_time && _ext.weave_complete_time.trim();
+        var _testDone = _ext.test_done_time && _ext.test_done_time.trim();
+        if(_weaveDone && _testDone) { m._ext.ms_status = '完成'; } else if(!m._ext.ms_status || m._ext.ms_status === '进行中' || m._ext.ms_status === '完成') { m._ext.ms_status = (_weaveDone && _testDone) ? '完成' : '进行中'; }
         const msStatus = m._ext && m._ext.ms_status ? m._ext.ms_status : '进行中';
         const msLocked = (stageLocked) && !previewMode;
         const msCanEdit = msLocked ? isManager : !previewMode;
@@ -1882,11 +1887,11 @@ function renderMilestones(stageIdx) {
         html += '\u003c/select\u003e\u003c/div\u003e';
         html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
         // 织造完成时间 | 检测单号
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
+        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value;autoCalcMilestoneStatus('+stageIdx+','+mIdx+');" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
         html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测单号:\u003c/span\u003e \u003cinput type="text" value="'+(ext.test_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_no=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
         // 检测预计完成时间 | 检测完成时间
         html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_est_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_done_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_done_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
+        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_done_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_done_time=this.value;autoCalcMilestoneStatus('+stageIdx+','+mIdx+');" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
         // 检测结果 | 不合格信息
         html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e检测结果:\u003c/span\u003e \u003cselect onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"\u003e\u003coption value=""\u003e请选择\u003c/option\u003e\u003coption value="合格" '+(ext.test_result==='合格'?'selected':'')+'\u003e合格\u003c/option\u003e\u003coption value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'\u003e不合格\u003c/option\u003e\u003coption value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'\u003e待检测\u003c/option\u003e\u003c/select\u003e\u003c/div\u003e';
         html += '\u003cdiv style="'+(ext.test_result!=='不合格'?' display:none;':'')+'"\u003e\u003cspan style="color:#c00;"\u003e不合格信息 \u003cspan style="color:#f00;"\u003e*\u003c/span\u003e:\u003c/span\u003e \u003cinput type="text" value="'+(ext.ms_unqual_info||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.ms_unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
@@ -1912,6 +1917,16 @@ function renderMilestones(stageIdx) {
 }
 
 // 自动计算阶段状态 based on 节点状态
+function autoCalcMilestoneStatus(stageIdx, mIdx) {
+    var m = tempStages[stageIdx].milestones[mIdx];
+    if(!m) return;
+    if(!m._ext) m._ext = {};
+    var weaveDone = m._ext.weave_complete_time && m._ext.weave_complete_time.trim();
+    var testDone = m._ext.test_done_time && m._ext.test_done_time.trim();
+    m._ext.ms_status = (weaveDone && testDone) ? '完成' : '进行中';
+    autoCalcStageStatus(stageIdx);
+}
+
 function autoCalcStageStatus(stageIdx) {
     const stage = tempStages[stageIdx];
     if(!stage) return;
