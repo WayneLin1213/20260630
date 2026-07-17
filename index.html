@@ -1098,7 +1098,7 @@ async function sbInsert(table, data) {
     try {
         // Auto-generate id if not provided (DB lacks default id)
         if(!data.id) {
-            const prefixMap = {projects:'p',yarns:'y',stages:'st',milestones:'ms',users:'u'};
+            const prefixMap = {projects:'p',yarns:'y',stages:'st',milestones:'ms',users:'u',materials:'m'};
             data.id = genId(prefixMap[table] || table);
         }
         const res = await fetch(`${SB_URL}/rest/v1/${table}`, {
