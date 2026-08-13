@@ -2131,6 +2131,8 @@ async function saveProject() {
                     }
                 }
                 toast('项目创建成功','success');
+                // 新建项目后钉钉提醒执行人 & 协作方
+                notifyProjectCreated(data).catch(function(e){ console.warn('新建项目通知发送失败:', e); });
             }
         }
         closeModal('projectModal');
@@ -3660,6 +3662,36 @@ async function sendDingTalkMessage(content, atMobiles) {
         console.error('DingTalk send error:', e);
         return false;
     }
+}
+
+// 新建项目后钉钉提醒执行人 & 协作方
+async function notifyProjectCreated(data) {
+    const s = getNotifSettings();
+    if (!s.webhook) return; // 未配置钉钉则静默跳过
+    const typeMap = { '品牌需求':'品牌研发','自主研发':'自主研发','外部引进':'外部引进','迭代升级':'迭代升级' };
+    const types = (data.project_type||'').split(',').map(function(t){return typeMap[t]||t;}).filter(Boolean).join('、');
+    const levelMap = { 'S':'S级(重点)','A':'A级','B':'B级','C':'C级' };
+    const owner = allUsers.find(function(u){return u.id === (data.creator_id||data.owner_id);});
+    const follower = data.follower_id ? allUsers.find(function(u){return u.id === data.follower_id;}) : null;
+    const ownerName = owner ? owner.name : (data.creator_id||'未指定');
+    const atMobiles = [];
+    if(PHONE_MAP[data.creator_id||data.owner_id]) atMobiles.push(PHONE_MAP[data.creator_id||data.owner_id]);
+    if(data.follower_id && PHONE_MAP[data.follower_id] && atMobiles.indexOf(PHONE_MAP[data.follower_id])<0) atMobiles.push(PHONE_MAP[data.follower_id]);
+    let msg = '🆕 新项目已创建\n\n';
+    msg += '📌 项目名称：' + (data.name||'未命名') + '\n';
+    msg += '🔢 项目编号：' + (data.project_no||'-') + '\n';
+    if(types) msg += '📂 项目类型：' + types + '\n';
+    if(data.level) msg += '⭐ 项目评级：' + (levelMap[data.level]||data.level) + '\n';
+    msg += '👤 执行人：' + ownerName + '\n';
+    if(follower) msg += '🤝 协作方：' + follower.name + '\n';
+    if(data.period_start || data.deadline) msg += '📅 研发周期：' + (data.period_start||'-') + ' ~ ' + (data.deadline||'-') + '\n';
+    if(data.objective) msg += '🎯 项目目标：' + data.objective + '\n';
+    msg += '\n请执行人及时登录看板查看并推进相关工作。\n';
+    if(atMobiles.length){ msg += '\n' + atMobiles.map(function(p){return '@'+p;}).join(' '); }
+    msg += '\n\n查看看板: https://waynelin1213.github.io/20260630/';
+    const ok = await sendDingTalkMessage(msg, atMobiles);
+    if(ok) addNotifLog('success', '新项目「'+(data.name||'未命名')+'」创建通知已发送');
+    else addNotifLog('error', '新项目创建通知发送失败');
 }
 
 // 手机号映射（用于@具体执行人）
