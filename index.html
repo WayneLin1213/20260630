@@ -1408,7 +1408,7 @@ function renderProjectList() {
         const prog = p.progress || 0;
         const progColor = getProgressColor(prog);
         const periodStr = p.period_start && p.deadline ? p.period_start+' — '+p.deadline : (p.period_start || p.deadline || '-');
-        const canEdit = currentUser.role==='manager' || currentUser.id===p.creator_id;
+        const canEdit = currentUser.role==='manager' || currentUser.id===p.creator_id || currentUser.id===p.follower_id;
 
         html += '<tr>';
         html += '<td><div class="project-name"><div class="icon">📁</div><div>'+( p.name||'未命名')+'<br><span style="font-size:11px;color:#999;font-weight:400">'+(p.project_no||'')+'</span></div></div></td>';
@@ -1574,16 +1574,10 @@ function openProjectModal(id) {
         $('pClosure').value = p.closure_report||'';
         $('pDataReport').value = p.product_data_report||'';
 
-        // need9: deadline permission control
-        if(currentUser.role==='executor' && p.deadline) {
-            $('pDeadline').readOnly = true;
-            $('pDeadline').style.background = '#f5f5f5';
-            $('deadlineHint').style.display = 'block';
-        } else {
-            $('pDeadline').readOnly = false;
-            $('pDeadline').style.background = '';
-            $('deadlineHint').style.display = 'none';
-        }
+        // need9: deadline permission control - 执行人也可编辑交期（作为负责人/协作方）
+        $('pDeadline').readOnly = false;
+        $('pDeadline').style.background = '';
+        $('deadlineHint').style.display = 'none';
 
         // Load attachments (need5)
         try {
