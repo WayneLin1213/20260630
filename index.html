@@ -10,7 +10,8 @@
     <title>材料研发项目看板</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f5;color:#333;min-height:100vh;}
+        *{font-family:'Microsoft YaHei','微软雅黑',sans-serif !important;}
+        body{font-family:'Microsoft YaHei','微软雅黑',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;background:#f0f2f5;color:#333;min-height:100vh;}
         /* Login */
         .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);}
         .login-box{background:#fff;border-radius:16px;padding:48px 40px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,.15);}
@@ -170,7 +171,7 @@
         .setup-box{background:#fff;border-radius:16px;padding:32px;width:560px;max-height:80vh;overflow-y:auto;}
         .setup-box h3{font-size:18px;margin-bottom:12px;color:#1a1a2e;}
         .setup-box p{font-size:13px;color:#666;margin-bottom:16px;line-height:1.6;}
-        .setup-box .sql-block{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;font-family:'Fira Code',monospace;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre;margin-bottom:16px;max-height:300px;overflow-y:auto;}
+        .setup-box .sql-block{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;font-family:'Microsoft YaHei','微软雅黑',monospace;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre;margin-bottom:16px;max-height:300px;overflow-y:auto;}
         .setup-box .steps{margin-bottom:20px;}
         .setup-box .steps li{font-size:13px;color:#555;margin-bottom:8px;line-height:1.5;}
         /* Action buttons in table */
@@ -520,7 +521,6 @@
                     <div class="form-group">
                         <label>交期/截止</label>
                         <input type="date" id="pDeadline">
-                        <div class="readonly-hint" id="deadlineHint">⚠ 执行人不可修改交期，请联系管理者修改</div>
                     </div>
                 </div>
                 <div class="form-row">
@@ -1574,10 +1574,9 @@ function openProjectModal(id) {
         $('pClosure').value = p.closure_report||'';
         $('pDataReport').value = p.product_data_report||'';
 
-        // need9: deadline permission control - 执行人也可编辑交期（作为负责人/协作方）
+        // need9: 执行人也可编辑交期（作为负责人/协作方）
         $('pDeadline').readOnly = false;
         $('pDeadline').style.background = '';
-        $('deadlineHint').style.display = 'none';
 
         // Load attachments (need5)
         try {
@@ -1624,7 +1623,6 @@ function openProjectModal(id) {
         $('pPeriodStart').value='';$('pDeadline').value='';$('pProgress').value=0;
         $('pDeadline').readOnly = false;
         $('pDeadline').style.background = '';
-        $('deadlineHint').style.display = 'none';
         tempStages = [];
         tempProjectAttachments = [];
         renderProjectAttachments();
