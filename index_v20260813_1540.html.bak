@@ -10,8 +10,7 @@
     <title>材料研发项目看板</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
-        *{font-family:'Microsoft YaHei','微软雅黑',sans-serif !important;}
-        body{font-family:'Microsoft YaHei','微软雅黑',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;background:#f0f2f5;color:#333;min-height:100vh;}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f5;color:#333;min-height:100vh;}
         /* Login */
         .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);}
         .login-box{background:#fff;border-radius:16px;padding:48px 40px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,.15);}
@@ -171,7 +170,7 @@
         .setup-box{background:#fff;border-radius:16px;padding:32px;width:560px;max-height:80vh;overflow-y:auto;}
         .setup-box h3{font-size:18px;margin-bottom:12px;color:#1a1a2e;}
         .setup-box p{font-size:13px;color:#666;margin-bottom:16px;line-height:1.6;}
-        .setup-box .sql-block{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;font-family:'Microsoft YaHei','微软雅黑',monospace;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre;margin-bottom:16px;max-height:300px;overflow-y:auto;}
+        .setup-box .sql-block{background:#1e1e2e;color:#a6e3a1;padding:16px;border-radius:8px;font-family:'Fira Code',monospace;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre;margin-bottom:16px;max-height:300px;overflow-y:auto;}
         .setup-box .steps{margin-bottom:20px;}
         .setup-box .steps li{font-size:13px;color:#555;margin-bottom:8px;line-height:1.5;}
         /* Action buttons in table */
@@ -521,6 +520,7 @@
                     <div class="form-group">
                         <label>交期/截止</label>
                         <input type="date" id="pDeadline">
+                        <div class="readonly-hint" id="deadlineHint">⚠ 执行人不可修改交期，请联系管理者修改</div>
                     </div>
                 </div>
                 <div class="form-row">
@@ -1408,7 +1408,7 @@ function renderProjectList() {
         const prog = p.progress || 0;
         const progColor = getProgressColor(prog);
         const periodStr = p.period_start && p.deadline ? p.period_start+' — '+p.deadline : (p.period_start || p.deadline || '-');
-        const canEdit = currentUser.role==='manager' || currentUser.id===p.creator_id || currentUser.id===p.follower_id;
+        const canEdit = currentUser.role==='manager' || currentUser.id===p.creator_id;
 
         html += '<tr>';
         html += '<td><div class="project-name"><div class="icon">📁</div><div>'+( p.name||'未命名')+'<br><span style="font-size:11px;color:#999;font-weight:400">'+(p.project_no||'')+'</span></div></div></td>';
@@ -1574,9 +1574,16 @@ function openProjectModal(id) {
         $('pClosure').value = p.closure_report||'';
         $('pDataReport').value = p.product_data_report||'';
 
-        // need9: 执行人也可编辑交期（作为负责人/协作方）
-        $('pDeadline').readOnly = false;
-        $('pDeadline').style.background = '';
+        // need9: deadline permission control
+        if(currentUser.role==='executor' && p.deadline) {
+            $('pDeadline').readOnly = true;
+            $('pDeadline').style.background = '#f5f5f5';
+            $('deadlineHint').style.display = 'block';
+        } else {
+            $('pDeadline').readOnly = false;
+            $('pDeadline').style.background = '';
+            $('deadlineHint').style.display = 'none';
+        }
 
         // Load attachments (need5)
         try {
@@ -1623,6 +1630,7 @@ function openProjectModal(id) {
         $('pPeriodStart').value='';$('pDeadline').value='';$('pProgress').value=0;
         $('pDeadline').readOnly = false;
         $('pDeadline').style.background = '';
+        $('deadlineHint').style.display = 'none';
         tempStages = [];
         tempProjectAttachments = [];
         renderProjectAttachments();
@@ -2123,8 +2131,6 @@ async function saveProject() {
                     }
                 }
                 toast('项目创建成功','success');
-                // 新建项目后钉钉提醒执行人 & 协作方
-                notifyProjectCreated(data).catch(function(e){ console.warn('新建项目通知发送失败:', e); });
             }
         }
         closeModal('projectModal');
@@ -3654,36 +3660,6 @@ async function sendDingTalkMessage(content, atMobiles) {
         console.error('DingTalk send error:', e);
         return false;
     }
-}
-
-// 新建项目后钉钉提醒执行人 & 协作方
-async function notifyProjectCreated(data) {
-    const s = getNotifSettings();
-    if (!s.webhook) return; // 未配置钉钉则静默跳过
-    const typeMap = { '品牌需求':'品牌研发','自主研发':'自主研发','外部引进':'外部引进','迭代升级':'迭代升级' };
-    const types = (data.project_type||'').split(',').map(function(t){return typeMap[t]||t;}).filter(Boolean).join('、');
-    const levelMap = { 'S':'S级(重点)','A':'A级','B':'B级','C':'C级' };
-    const owner = allUsers.find(function(u){return u.id === (data.creator_id||data.owner_id);});
-    const follower = data.follower_id ? allUsers.find(function(u){return u.id === data.follower_id;}) : null;
-    const ownerName = owner ? owner.name : (data.creator_id||'未指定');
-    const atMobiles = [];
-    if(PHONE_MAP[data.creator_id||data.owner_id]) atMobiles.push(PHONE_MAP[data.creator_id||data.owner_id]);
-    if(data.follower_id && PHONE_MAP[data.follower_id] && atMobiles.indexOf(PHONE_MAP[data.follower_id])<0) atMobiles.push(PHONE_MAP[data.follower_id]);
-    let msg = '🆕 新项目已创建（交期通知）\n\n';
-    msg += '📌 项目名称：' + (data.name||'未命名') + '\n';
-    msg += '🔢 项目编号：' + (data.project_no||'-') + '\n';
-    if(types) msg += '📂 项目类型：' + types + '\n';
-    if(data.level) msg += '⭐ 项目评级：' + (levelMap[data.level]||data.level) + '\n';
-    msg += '👤 执行人：' + ownerName + '\n';
-    if(follower) msg += '🤝 协作方：' + follower.name + '\n';
-    if(data.period_start || data.deadline) msg += '📅 研发交期：' + (data.period_start||'-') + ' ~ ' + (data.deadline||'-') + '\n';
-    if(data.objective) msg += '🎯 项目目标：' + data.objective + '\n';
-    msg += '\n请执行人及时登录看板查看，按交期推进相关工作。\n';
-    if(atMobiles.length){ msg += '\n' + atMobiles.map(function(p){return '@'+p;}).join(' '); }
-    msg += '\n\n查看看板: https://waynelin1213.github.io/20260630/';
-    const ok = await sendDingTalkMessage(msg, atMobiles);
-    if(ok) addNotifLog('success', '新项目「'+(data.name||'未命名')+'」创建通知已发送');
-    else addNotifLog('error', '新项目创建通知发送失败');
 }
 
 // 手机号映射（用于@具体执行人）
