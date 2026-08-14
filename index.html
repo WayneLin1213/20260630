@@ -3570,9 +3570,18 @@ async function submitChangePwd() {
 const NOTIF_STORAGE_KEY = 'rd_board_notif_settings';
 const NOTIF_LOG_KEY = 'rd_board_notif_log';
 const NOTIF_SENT_KEY = 'rd_board_notif_sent';
-
+const DEFAULT_DINGTALK = {
+    webhook: 'https://oapi.dingtalk.com/robot/send?access_token=86220d685a21b6b2d4286888c566dd20e4c69c85ff98db45cdf53283eeb598f8',
+    secret: 'SECa9f4b94c79b6d6cea3953528869132e38ddf8ee756fa5588bd10428a9758bad8',
+    secMode: 'sign',
+    advanceDays: 3,
+    browserNotif: 'on'
+};
 function getNotifSettings() {
-    try { return JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY)) || {}; } catch(e) { return {}; }
+    try {
+        var saved = JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY)) || {};
+        return { webhook: DEFAULT_DINGTALK.webhook, secret: DEFAULT_DINGTALK.secret, secMode: DEFAULT_DINGTALK.secMode, advanceDays: DEFAULT_DINGTALK.advanceDays, browserNotif: DEFAULT_DINGTALK.browserNotif };
+    } catch(e) { return { webhook: DEFAULT_DINGTALK.webhook, secret: DEFAULT_DINGTALK.secret, secMode: DEFAULT_DINGTALK.secMode, advanceDays: 3, browserNotif: 'on' }; }
 }
 function saveNotifSettingsLocal(settings) {
     localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(settings));
@@ -3667,17 +3676,19 @@ async function notifyProjectCreated(data) {
     const follower = data.follower_id ? allUsers.find(function(u){return u.id === data.follower_id;}) : null;
     const ownerName = owner ? owner.name : (data.creator_id||'未指定');
     const atMobiles = [];
-    if(PHONE_MAP[data.creator_id||data.owner_id]) atMobiles.push(PHONE_MAP[data.creator_id||data.owner_id]);
+    // 优先提醒跟进人(follower)，没有跟进人时提醒执行人
+    var notifyUserId = data.follower_id || data.creator_id || data.owner_id;
+    if(PHONE_MAP[notifyUserId]) atMobiles.push(PHONE_MAP[notifyUserId]);
     let msg = '🆕 新项目已创建（交期通知）\n\n';
     msg += '📌 项目名称：' + (data.name||'未命名') + '\n';
     msg += '🔢 项目编号：' + (data.project_no||'-') + '\n';
     if(types) msg += '📂 项目类型：' + types + '\n';
     if(data.level) msg += '⭐ 项目评级：' + (levelMap[data.level]||data.level) + '\n';
     msg += '👤 执行人：' + ownerName + '\n';
-    if(follower) msg += '🤝 协作方：' + follower.name + '\n';
+    if(follower) msg += '🔔 跟进人：' + follower.name + '\n';
     if(data.period_start || data.deadline) msg += '📅 研发交期：' + (data.period_start||'-') + ' ~ ' + (data.deadline||'-') + '\n';
     if(data.objective) msg += '🎯 项目目标：' + data.objective + '\n';
-    msg += '\n请执行人及时登录看板查看，按交期推进相关工作。\n';
+    msg += '\n请跟进人及时登录看板查看，按交期推进相关工作。\n';
     if(atMobiles.length){ msg += '\n' + atMobiles.map(function(p){return '@'+p;}).join(' '); }
     msg += '\n\n查看看板: https://waynelin1213.github.io/20260630/';
     const ok = await sendDingTalkMessage(msg, atMobiles);
