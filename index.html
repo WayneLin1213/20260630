@@ -3668,7 +3668,6 @@ async function notifyProjectCreated(data) {
     const ownerName = owner ? owner.name : (data.creator_id||'未指定');
     const atMobiles = [];
     if(PHONE_MAP[data.creator_id||data.owner_id]) atMobiles.push(PHONE_MAP[data.creator_id||data.owner_id]);
-    if(data.follower_id && PHONE_MAP[data.follower_id] && atMobiles.indexOf(PHONE_MAP[data.follower_id])<0) atMobiles.push(PHONE_MAP[data.follower_id]);
     let msg = '🆕 新项目已创建（交期通知）\n\n';
     msg += '📌 项目名称：' + (data.name||'未命名') + '\n';
     msg += '🔢 项目编号：' + (data.project_no||'-') + '\n';
