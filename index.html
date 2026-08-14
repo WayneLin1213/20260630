@@ -3712,25 +3712,31 @@ async function signDingTalk(secret) {
 async function sendDingTalkMessage(content, atMobiles) {
     const s = getNotifSettings();
     if (!s.webhook) { toast('请先配置钉钉 Webhook', 'error'); return false; }
-    let url = s.webhook;
-    if (s.secMode === 'sign' && s.secret) {
-        const { timestamp, sign } = await signDingTalk(s.secret);
-        url += '&timestamp=' + timestamp + '&sign=' + sign;
-    }
-    const body = { msgtype: 'text', text: { content: content } };
-    if (atMobiles && atMobiles.length > 0) {
-        body.at = { atMobiles: atMobiles, isAtAll: false };
-    } else {
-        body.at = { isAtAll: true };
-    }
     try {
-        const res = await fetch(url, {
+        // 通过 Supabase RPC 调用数据库 pg_net 转发，彻底解决浏览器CORS跨域问题
+        const rpcBody = {
+            p_webhook: s.webhook,
+            p_secret: s.secret || '',
+            p_content: content,
+            p_at_mobiles: (atMobiles && atMobiles.length > 0) ? atMobiles : []
+        };
+        const res = await fetch(SB_URL + '/rest/v1/rpc/send_dingtalk_msg', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': SB_KEY,
+                'Authorization': 'Bearer ' + SB_KEY
+            },
+            body: JSON.stringify(rpcBody)
         });
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error('DingTalk RPC error:', res.status, errText);
+            return false;
+        }
+        // pg_net 异步发送，返回 request_id（数字）即表示已成功提交
         const data = await res.json();
-        return data.errcode === 0;
+        return typeof data === 'number' && data > 0;
     } catch(e) {
         console.error('DingTalk send error:', e);
         return false;
