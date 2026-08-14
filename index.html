@@ -999,6 +999,7 @@ let allUsers = [];
 let allStages = [];
 let editingProjectId = null;
 let tempStages = [];
+let originalStageIds = [];
 let milestonesMap = {};
 let tempProjectAttachments = [];
 
@@ -1585,6 +1586,7 @@ function openProjectModal(id) {
         renderProjectAttachments();
 
         // Load stages
+        originalStageIds = allStages.filter(s=>s.project_id===id).map(s=>s.id);
         tempStages = allStages.filter(s=>s.project_id===id).map(s=>{
             // Parse solution JSON for stage-level yarn fields
             var stageExt = {};
@@ -1808,7 +1810,7 @@ function renderStagesList() {
             ['水冷','成东','纺纱','外购纱线'].forEach(function(d){html += '<option value="'+d+'" '+((s.yarn_department===d)?'selected':'')+'>'+d+'</option>';});
             html += '</select></div>';
             html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">方案说明</span><input type="text" value="'+(s.plan_desc||'')+'" onchange="tempStages['+idx+'].plan_desc=this.value" placeholder="例如：提高耐磨" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-            html += '<div style="text-align:right;"><span class="field-label" style="font-size:11px;color:#888;">状态</span> <span style="font-size:12px;padding:4px 8px;display:inline-block;min-width:60px;text-align:center;border-radius:4px;'+(s.status==='已完成'?'background:#e8f5e9;color:#4caf50;':s.status==='进行中'?'background:#fff3e0;color:#e67e22;':'background:#f5f5f5;color:#888;')+'">'+s.status+'</span>'+(lockAttr?'':' <button class="btn-add" onclick="addMilestone('+idx+')" style="font-size:11px;padding:2px 8px;margin-left:4px;">+节点</button> <button class="btn-del" onclick="deleteStage('+idx+')" style="font-size:11px;padding:2px 8px;">删除</button>')+'</div>';
+            html += '<div style="text-align:right;"><span class="field-label" style="font-size:11px;color:#888;">状态</span> <span style="font-size:12px;padding:4px 8px;display:inline-block;min-width:60px;text-align:center;border-radius:4px;'+(s.status==='已完成'?'background:#e8f5e9;color:#4caf50;':s.status==='进行中'?'background:#fff3e0;color:#e67e22;':'background:#f5f5f5;color:#888;')+'">'+s.status+'</span>'+(lockAttr?'':' <button class="btn-add" onclick="addMilestone('+idx+')" style="font-size:11px;padding:2px 8px;margin-left:4px;">+节点</button> <button class="btn-del" onclick="removeStage('+idx+')" style="font-size:11px;padding:2px 8px;">删除</button>')+'</div>';
             // Row 2: 纱线名称(span2) | 纱线配方(span2)
             html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">纱线名称（严格按照系统）</span><input type="text" value="'+(s.name||'')+'" onchange="tempStages['+idx+'].name=this.value" placeholder="纱线名称" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
             html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">纱线配方</span><input type="text" value="'+(s.yarn_formula||'')+'" onchange="tempStages['+idx+'].yarn_formula=this.value" placeholder="纱线配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
@@ -1831,7 +1833,7 @@ function renderStagesList() {
             // ===== 数据资料模式: 简化布局 =====
             // Row 1: 项目说明(span2) | 状态+删除
             html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">项目说明</span><input type="text" value="'+(s.plan_desc||'')+'" onchange="tempStages['+idx+'].plan_desc=this.value" placeholder="项目说明" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-            html += '<div style="text-align:right;"><span class="field-label" style="font-size:11px;color:#888;">状态</span> <span style="font-size:12px;padding:4px 8px;display:inline-block;min-width:60px;text-align:center;border-radius:4px;'+(s.status==='已完成'?'background:#e8f5e9;color:#4caf50;':'background:#fff3e0;color:#e67e22;')+'">'+s.status+'</span>'+(lockAttr?'':' <button class="btn-del" onclick="deleteStage('+idx+')" style="font-size:11px;padding:2px 8px;margin-left:8px;">删除</button>')+'</div>';
+            html += '<div style="text-align:right;"><span class="field-label" style="font-size:11px;color:#888;">状态</span> <span style="font-size:12px;padding:4px 8px;display:inline-block;min-width:60px;text-align:center;border-radius:4px;'+(s.status==='已完成'?'background:#e8f5e9;color:#4caf50;':'background:#fff3e0;color:#e67e22;')+'">'+s.status+'</span>'+(lockAttr?'':' <button class="btn-del" onclick="removeStage('+idx+')" style="font-size:11px;padding:2px 8px;margin-left:8px;">删除</button>')+'</div>';
             html += '<div></div>';
             // Row 2: 预计完成时间 | 完成时间
             html += '<div><span class="field-label" style="font-size:11px;color:#888;">预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value;tempStages['+idx+']._autoStatus=true;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
@@ -2079,6 +2081,13 @@ async function saveProject() {
     try {
         if(editingProjectId) {
             await sbUpdate('projects', editingProjectId, data);
+            // Soft-delete stages that were removed in the editor
+            const keptStageIds = tempStages.filter(s=>s.id).map(s=>s.id);
+            for(const oldId of originalStageIds) {
+                if(keptStageIds.indexOf(oldId) < 0) {
+                    await sbUpdate('stages', oldId, { is_deleted: true });
+                }
+            }
             for(const s of tempStages) {
                 const stageData = {
                     name: s.name, start_date: s.start_date, end_date: s.end_date,
@@ -2215,6 +2224,7 @@ function previewProject(id) {
     renderProjectAttachments();
 
     // Load stages
+    originalStageIds = [];
     tempStages = allStages.filter(s=>s.project_id===id).map(s=>{
         var stageExt = {};
         try { stageExt = JSON.parse(s.solution||'{}'); } catch(e) {}
