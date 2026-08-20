@@ -3356,10 +3356,13 @@ async function deleteMaterial(id) {
     }
 }
 
-// ============ EXPORT (need2: CSV with project names) ============
+// ============ EXPORT (CSV with BOM, parsed solution fields) ============
+function _csvCell(v){ if(v===null||v===undefined) v=''; return '"'+String(v).replace(/"/g,'""')+'"'; }
+function _parseJSON(s){ try{return JSON.parse(s||'{}');}catch(e){return {};} }
 function exportAllData() {
     let csv = '\uFEFF';
-    csv += '项目单号,项目名称,项目类型,项目等级,状态,负责人,跟进人,周期开始,交期,进度(%),目标,方案,数据单号,结案书,产品数据报告\n';
+    // Sheet 1: 项目
+    csv += '项目单号,项目名称,项目类型,项目等级,状态,负责人,跟进人,周期开始,交期,进度(%),目标,方案,结案书,产品数据报告\n';
     for(const p of allProjects) {
         const owner = allUsers.find(u=>u.id===(p.creator_id||p.owner_id));
         const follower = allUsers.find(u=>u.id===p.follower_id);
@@ -3367,45 +3370,53 @@ function exportAllData() {
             p.project_no||'', p.name||'', p.project_type||'', p.level||'',
             p.status||'', owner?owner.name:'', follower?follower.name:'',
             p.period_start||'', p.deadline||'',
-            p.progress||0, (p.objective||'').replace(/"/g,'""'),
-            (p.plan||'').replace(/"/g,'""'), p.data_no||'',
-            (p.closure_report||'').replace(/"/g,'""'),
-            (p.product_data_report||'').replace(/"/g,'""')
-        ].map(v=>'"'+v+'"').join(',') + '\n';
+            p.progress||0, p.objective||'', p.plan||'',
+            p.closure_report||'', p.product_data_report||''
+        ].map(_csvCell).join(',') + '\n';
     }
 
-    // need2: stages with project names
+    // Sheet 2: 阶段计划（解析 solution JSON 为独立列）
     csv += '\n\n阶段计划数据\n';
-    csv += '项目名称,项目单号,阶段名称,开始日期,结束日期,状态,输出内容,产品信息,产品数据,备注,解决方案\n';
+    csv += '项目名称,项目单号,项目类型,阶段名称,状态,纱线事业部,方案说明,纱线名称,纱线配方,销售订单号,纱线预计完成,纱线完成时间,是否不送检,不送检理由,检测单号,检测预计完成,检测完成时间,检测结果,不合格信息,备注\n';
     for(const s of allStages) {
         const proj = allProjects.find(p=>p.id===s.project_id);
+        const ext = _parseJSON(s.solution);
         csv += [
-            proj?proj.name:'', proj?proj.project_no:'', s.name||'', s.start_date||'', s.end_date||'',
-            s.status||'', (s.output||'').replace(/"/g,'""'),
-            (s.product||'').replace(/"/g,'""'),
-            (s.output_product_data||'').replace(/"/g,'""'),
-            (s.anomaly_feedback||'').replace(/"/g,'""'),
-            (s.solution||'').replace(/"/g,'""')
-        ].map(v=>'"'+v+'"').join(',') + '\n';
+            proj?proj.name:'', proj?proj.project_no:'', ext.stage_type||'研发验证',
+            // 研发验证模式: s.name 是纱线名称，无独立阶段名；数据资料模式: s.name 作阶段名
+            (ext.stage_type==='数据资料'?(s.name||''):''), s.status||'',
+            ext.yarn_department||'', ext.plan_desc||'',
+            (ext.stage_type!=='数据资料'?(s.name||''):''),
+            ext.yarn_formula||'', ext.sales_no||'',
+            ext.yarn_time||'', ext.yarn_complete_time||'',
+            ext.test_skip?'是':'否', ext.test_skip_reason||'',
+            ext.test_no||'', ext.test_est_time||'', ext.test_done_time||'',
+            ext.test_result||'', ext.unqual_info||'',
+            s.anomaly_feedback||''
+        ].map(_csvCell).join(',') + '\n';
     }
 
-    // Also export milestones
+    // Sheet 3: 节点（解析 solution JSON）
     csv += '\n\n节点数据\n';
-    csv += '项目名称,阶段名称,节点名称,时间,内容,产品信息,产品数据,异常,解决方案,完成状态\n';
+    csv += '项目名称,阶段名称,节点名称,节点状态,销售订单号,成品名称,成品配方,织造事业部,织造预计完成,织造完成时间,是否不送检,不送检理由,检测单号,检测预计完成,检测完成时间,检测结果,不合格信息,备注\n';
     for(const key of Object.keys(milestonesMap)) {
         const ms = milestonesMap[key];
         for(const m of ms) {
             const proj = allProjects.find(p=>p.id===m.project_id);
             const stage = allStages.find(s=>s.id===m.stage_id);
+            const ext = _parseJSON(m.solution);
             csv += [
-                proj?proj.name:'', stage?stage.name:'', m.name||'', m.node_time||'',
-                (m.node_content||'').replace(/"/g,'""'),
-                (m.product_info||'').replace(/"/g,'""'),
-                (m.product_data||'').replace(/"/g,'""'),
-                (m.anomaly||'').replace(/"/g,'""'),
-                (m.solution||'').replace(/"/g,'""'),
-                m.is_completed?'已完成':'未完成'
-            ].map(v=>'"'+v+'"').join(',') + '\n';
+                proj?proj.name:'', stage?stage.name:'', m.name||'',
+                ext.ms_status||(m.is_completed?'已完成':'进行中'),
+                ext.ms_sales_no||ext.sales_no||'',
+                ext.weave_name||'', ext.weave_formula||'',
+                ext.weave_department||ext.department||'',
+                ext.weave_time||'', ext.weave_complete_time||'',
+                ext.test_skip?'是':'否', ext.test_skip_reason||'',
+                ext.test_no||'', ext.test_est_time||'', ext.test_done_time||'',
+                ext.test_result||'', ext.ms_unqual_info||'',
+                m.anomaly||''
+            ].map(_csvCell).join(',') + '\n';
         }
     }
 
