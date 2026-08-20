@@ -362,6 +362,7 @@
                             <option value="已逾期">已逾期</option>
                         </select>
                         <button class="btn btn-outline" onclick="exportAllData()">📥 导出表格</button>
+                        <button class="btn btn-outline" onclick="exportZipWithAttachments()">📦 导出含附件</button>
                         <button class="btn btn-warning" onclick="openWeeklyReportModal()">📋 导出周报</button>
                         <button class="btn btn-primary" id="btnNewProject" onclick="openProjectModal()">＋ 新建项目</button>
                     </div>
@@ -3359,31 +3360,42 @@ async function deleteMaterial(id) {
 // ============ EXPORT (CSV with BOM, parsed solution fields) ============
 function _csvCell(v){ if(v===null||v===undefined) v=''; return '"'+String(v).replace(/"/g,'""')+'"'; }
 function _parseJSON(s){ try{return JSON.parse(s||'{}');}catch(e){return {};} }
-function exportAllData() {
+function _safeName(s){ return String(s||'').replace(/[\\/:*?"<>|\r\n\t]/g,'_').replace(/\s+/g,' ').trim().slice(0,80)||'未命名'; }
+function _attList(atts, prefix){
+    if(!atts||!atts.length) return '';
+    return atts.map(function(a,idx){
+        var ext = (a.name||'').split('.').pop();
+        return prefix+'/'+(idx+1)+'_'+_safeName((a.name||'').replace(/\.[^.]+$/,''))+(ext?'.'+ext:'');
+    }).join(' | ');
+}
+function _buildCsv(){
     let csv = '\uFEFF';
-    // Sheet 1: 项目
-    csv += '项目单号,项目名称,项目类型,项目等级,状态,负责人,跟进人,周期开始,交期,进度(%),目标,方案,结案书,产品数据报告\n';
+    // Sheet 1: 项目 (增加附件列)
+    csv += '项目单号,项目名称,项目类型,项目等级,状态,负责人,跟进人,周期开始,交期,进度(%),目标,方案,结案书,产品数据报告,附件\n';
     for(const p of allProjects) {
         const owner = allUsers.find(u=>u.id===(p.creator_id||p.owner_id));
         const follower = allUsers.find(u=>u.id===p.follower_id);
+        var pAtts = []; try{pAtts=JSON.parse(p.attachments||'[]');}catch(e){}
         csv += [
             p.project_no||'', p.name||'', p.project_type||'', p.level||'',
             p.status||'', owner?owner.name:'', follower?follower.name:'',
             p.period_start||'', p.deadline||'',
             p.progress||0, p.objective||'', p.plan||'',
-            p.closure_report||'', p.product_data_report||''
+            p.closure_report||'', p.product_data_report||'',
+            _attList(pAtts,'项目附件/'+_safeName(p.project_no||p.name))
         ].map(_csvCell).join(',') + '\n';
     }
 
-    // Sheet 2: 阶段计划（解析 solution JSON 为独立列）
+    // Sheet 2: 阶段计划
     csv += '\n\n阶段计划数据\n';
-    csv += '项目名称,项目单号,项目类型,阶段名称,状态,纱线事业部,方案说明,纱线名称,纱线配方,销售订单号,纱线预计完成,纱线完成时间,是否不送检,不送检理由,检测单号,检测预计完成,检测完成时间,检测结果,不合格信息,备注\n';
+    csv += '项目名称,项目单号,项目类型,阶段名称,状态,纱线事业部,方案说明,纱线名称,纱线配方,销售订单号,纱线预计完成,纱线完成时间,是否不送检,不送检理由,检测单号,检测预计完成,检测完成时间,检测结果,不合格信息,备注,附件\n';
     for(const s of allStages) {
         const proj = allProjects.find(p=>p.id===s.project_id);
         const ext = _parseJSON(s.solution);
+        var sAtts = ext.attachments||[];
+        var sFolder = '阶段附件/'+_safeName(proj?proj.project_no:'')+'/'+_safeName(ext.stage_type==='数据资料'?(s.name||'阶段'):(s.name||'阶段'));
         csv += [
             proj?proj.name:'', proj?proj.project_no:'', ext.stage_type||'研发验证',
-            // 研发验证模式: s.name 是纱线名称，无独立阶段名；数据资料模式: s.name 作阶段名
             (ext.stage_type==='数据资料'?(s.name||''):''), s.status||'',
             ext.yarn_department||'', ext.plan_desc||'',
             (ext.stage_type!=='数据资料'?(s.name||''):''),
@@ -3392,19 +3404,22 @@ function exportAllData() {
             ext.test_skip?'是':'否', ext.test_skip_reason||'',
             ext.test_no||'', ext.test_est_time||'', ext.test_done_time||'',
             ext.test_result||'', ext.unqual_info||'',
-            s.anomaly_feedback||''
+            s.anomaly_feedback||'',
+            _attList(sAtts,sFolder)
         ].map(_csvCell).join(',') + '\n';
     }
 
-    // Sheet 3: 节点（解析 solution JSON）
+    // Sheet 3: 节点
     csv += '\n\n节点数据\n';
-    csv += '项目名称,阶段名称,节点名称,节点状态,销售订单号,成品名称,成品配方,织造事业部,织造预计完成,织造完成时间,是否不送检,不送检理由,检测单号,检测预计完成,检测完成时间,检测结果,不合格信息,备注\n';
+    csv += '项目名称,阶段名称,节点名称,节点状态,销售订单号,成品名称,成品配方,织造事业部,织造预计完成,织造完成时间,是否不送检,不送检理由,检测单号,检测预计完成,检测完成时间,检测结果,不合格信息,备注,附件\n';
     for(const key of Object.keys(milestonesMap)) {
         const ms = milestonesMap[key];
         for(const m of ms) {
             const proj = allProjects.find(p=>p.id===m.project_id);
             const stage = allStages.find(s=>s.id===m.stage_id);
             const ext = _parseJSON(m.solution);
+            var mAtts = []; try{mAtts=JSON.parse(m.attachments||'[]');}catch(e){}
+            var mFolder = '节点附件/'+_safeName(proj?proj.project_no:'')+'/'+_safeName(stage?stage.name:'')+'/'+_safeName(m.name||'节点');
             csv += [
                 proj?proj.name:'', stage?stage.name:'', m.name||'',
                 ext.ms_status||(m.is_completed?'已完成':'进行中'),
@@ -3415,19 +3430,104 @@ function exportAllData() {
                 ext.test_skip?'是':'否', ext.test_skip_reason||'',
                 ext.test_no||'', ext.test_est_time||'', ext.test_done_time||'',
                 ext.test_result||'', ext.ms_unqual_info||'',
-                m.anomaly||''
+                m.anomaly||'',
+                _attList(mAtts,mFolder)
             ].map(_csvCell).join(',') + '\n';
         }
     }
-
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '材料研发项目看板_'+new Date().toISOString().split('T')[0]+'.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    return csv;
+}
+function _downloadBlob(blob, filename){
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download=filename;
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);a.remove();},100);
+}
+function _addAttsToZip(zip, atts, folderName){
+    if(!atts||!atts.length) return;
+    var folder = zip.folder(folderName);
+    var used = {};
+    atts.forEach(function(a, idx){
+        var name = a.name||('附件'+(idx+1));
+        // 防止重名
+        var finalName = name;
+        if(used[finalName]){
+            var dot = name.lastIndexOf('.');
+            var base = dot>0?name.slice(0,dot):name;
+            var ext = dot>0?name.slice(dot):'';
+            var n=1;
+            while(used[base+'_'+n+ext]) n++;
+            finalName=base+'_'+n+ext;
+        }
+        used[finalName]=1;
+        try{
+            if(a.data && a.data.indexOf('data:')===0){
+                var comma = a.data.indexOf(',');
+                var b64 = a.data.slice(comma+1);
+                folder.file(finalName, b64, {base64:true});
+            } else if(a.data){
+                folder.file(finalName, a.data);
+            }
+        }catch(e){console.warn('add att failed',name,e);}
+    });
+}
+function exportAllData() {
+    var csv = _buildCsv();
+    _downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8;'}),
+        '材料研发项目看板_'+new Date().toISOString().split('T')[0]+'.csv');
     toast('表格导出成功','success');
+}
+function exportZipWithAttachments(){
+    if(typeof JSZip==='undefined'){
+        // 动态加载 JSZip
+        var s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload=function(){ exportZipWithAttachments(); };
+        s.onerror=function(){ toast('附件打包组件加载失败，请检查网络后重试；可先用"导出表格"','error'); };
+        document.head.appendChild(s);
+        toast('正在准备附件包...','info');
+        return;
+    }
+    var zip = new JSZip();
+    zip.file('数据总表.csv', _buildCsv());
+    var count = 0;
+    // 项目附件
+    for(const p of allProjects){
+        var atts=[]; try{atts=JSON.parse(p.attachments||'[]');}catch(e){}
+        if(atts.length){ _addAttsToZip(zip, atts, '项目附件/'+_safeName(p.project_no||p.name)); count+=atts.length; }
+    }
+    // 阶段附件
+    for(const s of allStages){
+        var proj = allProjects.find(function(x){return x.id===s.project_id;});
+        var ext = _parseJSON(s.solution);
+        var atts = ext.attachments||[];
+        if(atts.length){
+            var folder = '阶段附件/'+_safeName(proj?proj.project_no:'')+'/'+_safeName(ext.stage_type==='数据资料'?(s.name||'阶段'):(s.name||'阶段'));
+            _addAttsToZip(zip, atts, folder); count+=atts.length;
+        }
+    }
+    // 节点附件
+    for(const key of Object.keys(milestonesMap)){
+        for(const m of milestonesMap[key]){
+            var proj = allProjects.find(function(x){return x.id===m.project_id;});
+            var stage = allStages.find(function(x){return x.id===m.stage_id;});
+            var atts=[]; try{atts=JSON.parse(m.attachments||'[]');}catch(e){}
+            if(atts.length){
+                var folder = '节点附件/'+_safeName(proj?proj.project_no:'')+'/'+_safeName(stage?stage.name:'')+'/'+_safeName(m.name||'节点');
+                _addAttsToZip(zip, atts, folder); count+=atts.length;
+            }
+        }
+    }
+    var readme = '材料研发看板数据包\n导出时间：'+new Date().toLocaleString('zh-CN')+
+                 '\n附件总数：'+count+
+                 '\n\n说明：\n1. "数据总表.csv" 含项目、阶段计划、节点三张表；最右侧"附件"列标注了对应附件在本压缩包中的相对路径。\n2. 附件按 项目附件/、阶段附件/{项目单号}/{阶段或纱线名称}/、节点附件/{项目单号}/{阶段}/{节点}/ 分目录存放。\n3. 用 Excel 打开 CSV 如出现乱码，请用"数据→从文本/CSV导入"并选 UTF-8 编码。';
+    zip.file('说明.txt', readme);
+    zip.generateAsync({type:'blob',compression:'DEFLATE'}).then(function(blob){
+        _downloadBlob(blob, '材料研发看板_含附件_'+new Date().toISOString().split('T')[0]+'.zip');
+        toast('已导出含 '+count+' 个附件的数据包','success');
+    }).catch(function(e){
+        console.error(e); toast('打包失败: '+(e.message||e),'error');
+    });
 }
 
 // ============ WEEKLY REPORT EXPORT (need8) ============
