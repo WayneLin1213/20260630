@@ -1002,6 +1002,44 @@ let tempStages = [];
 let originalStageIds = [];
 let milestonesMap = {};
 let tempProjectAttachments = [];
+// ============ TIME FIELD LOCK & DATE VALIDATION ============
+function _todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function _nowTS(){return new Date().toISOString();}
+function _isMgr(){return currentUser&&currentUser.role==='manager';}
+function _isTimeLocked(filledAt){
+    if(!filledAt) return false;
+    try{var t=new Date(filledAt).getTime();if(isNaN(t))return false;return (Date.now()-t)>24*60*60*1000;}catch(e){return false;}
+}
+/**
+ * Universal date change handler for stage/milestone time fields.
+ * obj: data object (tempStages[idx] or milestone _ext)
+ * field: date field name
+ * filledField: corresponding _filled_at metadata field
+ * isCompletion: true=completion(today only), false=expected(no past)
+ * cb: optional callback
+ */
+function handleTimeFieldChange(obj, field, filledField, value, isCompletion, cb){
+    if(!obj) return;
+    var today=_todayStr();
+    if(!_isMgr() && _isTimeLocked(obj[filledField])){
+        toast('该时间字段填写已超过24小时，仅管理员可修改','error');
+        renderStagesList();return;
+    }
+    if(value){
+        if(isCompletion && value!==today){
+            toast('完成时间只能填写当天日期（'+today+'）','error');
+            renderStagesList();return;
+        }
+        if(!isCompletion && value<today){
+            toast('预计完成时间不能早于今天（'+today+'）','error');
+            renderStagesList();return;
+        }
+    }
+    obj[field]=value;
+    if(value){if(!obj[filledField])obj[filledField]=_nowTS();}else{obj[filledField]='';}
+    if(typeof cb==='function')cb();else renderStagesList();
+}
+
 
 // ============ UTILS ============
 function $(id){return document.getElementById(id);}
@@ -1575,9 +1613,14 @@ function openProjectModal(id) {
         $('pClosure').value = p.closure_report||'';
         $('pDataReport').value = p.product_data_report||'';
 
-        // need9: 执行人也可编辑交期（作为负责人/协作方）
-        $('pDeadline').readOnly = false;
-        $('pDeadline').style.background = '';
+        // 需求: 项目开始时间/交期 执行人不可修改，仅管理员可改
+        var _projDateLock = !_isMgr();
+        $('pPeriodStart').readOnly = _projDateLock;
+        $('pPeriodStart').style.background = _projDateLock ? '#f5f5f5' : '';
+        $('pPeriodStart').disabled = _projDateLock;
+        $('pDeadline').readOnly = _projDateLock;
+        $('pDeadline').style.background = _projDateLock ? '#f5f5f5' : '';
+        $('pDeadline').disabled = _projDateLock;
 
         // Load attachments (need5)
         try {
@@ -1598,9 +1641,14 @@ function openProjectModal(id) {
                 yarn_department: stageExt.yarn_department||'',
                 yarn_time: stageExt.yarn_time||'',
                 yarn_complete_time: stageExt.yarn_complete_time||'',
+                _yarn_time_filled: stageExt._yarn_time_filled||'',
+                _yarn_complete_time_filled: stageExt._yarn_complete_time_filled||'',
                 test_no: stageExt.test_no||'',
                 test_est_time: stageExt.test_est_time||'',
-                test_done_time: stageExt.test_done_time||'',test_skip: !!stageExt.test_skip,test_skip_reason: stageExt.test_skip_reason||'',
+                test_done_time: stageExt.test_done_time||'',
+                _test_est_time_filled: stageExt._test_est_time_filled||'',
+                _test_done_time_filled: stageExt._test_done_time_filled||'',
+                test_skip: !!stageExt.test_skip,test_skip_reason: stageExt.test_skip_reason||'',
                 test_result: stageExt.test_result||'',
                 sales_no: stageExt.sales_no||'',
                 unqual_info: stageExt.unqual_info||'',
@@ -1612,7 +1660,7 @@ function openProjectModal(id) {
                     anomaly: m.anomaly||'', solution: m.solution||'',
                     is_completed: m.is_completed||false,
                     attachments: (function(){try{return JSON.parse(m.attachments||'[]');}catch(e){return [];}})(),
-                    _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'进行中',sales_no:o.sales_no||'',ms_sales_no:o.ms_sales_no||'',test_no:o.test_no||'',test_est_time:o.test_est_time||'',test_done_time:o.test_done_time||'',test_result:o.test_result||'',ms_unqual_info:o.ms_unqual_info||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||'',test_skip:!!o.test_skip,test_skip_reason:o.test_skip_reason||''};}catch(e){return {department:'',ms_status:'',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:'',test_skip:false,test_skip_reason:''};}})(),
+                    _ext: (function(){try{var o=JSON.parse(m.solution||'{}');return {department:o.department||'',ms_status:o.ms_status||'进行中',sales_no:o.sales_no||'',ms_sales_no:o.ms_sales_no||'',test_no:o.test_no||'',test_est_time:o.test_est_time||'',test_done_time:o.test_done_time||'',test_result:o.test_result||'',ms_unqual_info:o.ms_unqual_info||'',complete_time:o.complete_time||'',weave_name:o.weave_name||'',weave_formula:o.weave_formula||'',weave_department:o.weave_department||'',weave_time:o.weave_time||'',weave_complete_time:o.weave_complete_time||'',_weave_time_filled:o._weave_time_filled||'',_weave_complete_time_filled:o._weave_complete_time_filled||'',_test_est_time_filled:o._test_est_time_filled||'',_test_done_time_filled:o._test_done_time_filled||'',test_skip:!!o.test_skip,test_skip_reason:o.test_skip_reason||''};}catch(e){return {department:'',ms_status:'',sales_no:'',ms_sales_no:'',test_no:'',test_est_time:'',test_done_time:'',test_result:'',ms_unqual_info:'',complete_time:'',weave_name:'',weave_formula:'',weave_department:'',weave_time:'',weave_complete_time:'',_weave_time_filled:'',_weave_complete_time_filled:'',_test_est_time_filled:'',_test_done_time_filled:'',test_skip:false,test_skip_reason:''};}})(),
                     id: m.id
                 })) : []
             };
@@ -1623,8 +1671,13 @@ function openProjectModal(id) {
         toggleBrandName();$('pBrandName').value='';$('pLevel').value='B';$('pStatus').value='未开始';
         $('pOwner').value='';$('pFollower').value='';
         $('pPeriodStart').value='';$('pDeadline').value='';$('pProgress').value=0;
+        // 新建项目时执行人可设日期，保存后即锁定
+        $('pPeriodStart').readOnly = false;
+        $('pPeriodStart').style.background = '';
+        $('pPeriodStart').disabled = false;
         $('pDeadline').readOnly = false;
         $('pDeadline').style.background = '';
+        $('pDeadline').disabled = false;
         tempStages = [];
         tempProjectAttachments = [];
         renderProjectAttachments();
@@ -1791,6 +1844,19 @@ function renderStagesList() {
         const stageLocked = s.status === '已完成' && !previewMode;
         const bgStyle = previewMode ? 'background:#f5f5f5;color:#666;' : '';
         const lockAttr = previewMode;
+        // Time field 24h lock (non-manager, after 24h of first fill)
+        const _yarnTimeLocked = lockAttr || (!isManager && _isTimeLocked(s._yarn_time_filled));
+        const _yarnCompLocked = lockAttr || (!isManager && _isTimeLocked(s._yarn_complete_time_filled));
+        const _testEstLocked = lockAttr || (!isManager && _isTimeLocked(s._test_est_time_filled));
+        const _testDoneLocked = lockAttr || (!isManager && _isTimeLocked(s._test_done_time_filled));
+        const _ytDis = _yarnTimeLocked ? ' disabled' : '';
+        const _ycDis = _yarnCompLocked ? ' disabled' : '';
+        const _teDis = _testEstLocked ? ' disabled' : '';
+        const _tdDis = _testDoneLocked ? ' disabled' : '';
+        const _ytBg = _yarnTimeLocked ? 'background:#f5f5f5;color:#666;' : bgStyle;
+        const _ycBg = _yarnCompLocked ? 'background:#f5f5f5;color:#666;' : bgStyle;
+        const _teBg = _testEstLocked ? 'background:#f5f5f5;color:#666;' : bgStyle;
+        const _tdBg = _testDoneLocked ? 'background:#f5f5f5;color:#666;' : bgStyle;
         html += '<div class="timeline-item">';
         
         // === 项目类型 selector (outside grid, full width row) ===
@@ -1816,14 +1882,14 @@ function renderStagesList() {
             html += '<div style="grid-column:span 2;"><span class="field-label" style="font-size:11px;color:#888;">纱线配方</span><input type="text" value="'+(s.yarn_formula||'')+'" onchange="tempStages['+idx+'].yarn_formula=this.value" placeholder="纱线配方" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
             // Row 3: 销售订单号 | 纱线预计完成时间 | 纱线完成时间
             html += '<div><span class="field-label" style="font-size:11px;color:#888;">销售订单号</span><input type="text" value="'+(s.sales_no||'')+'" onchange="tempStages['+idx+'].sales_no=this.value" placeholder="销售订单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-            html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-            html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+            html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="handleTimeFieldChange(tempStages['+idx+'],\'yarn_time\',\'_yarn_time_filled\',this.value,false)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+_ytBg+'"'+_ytDis+'></div>';
+            html += '<div><span class="field-label" style="font-size:11px;color:#888;">纱线完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="handleTimeFieldChange(tempStages['+idx+'],\'yarn_complete_time\',\'_yarn_complete_time_filled\',this.value,true)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+_ycBg+'"'+_ycDis+'></div>';
             var _stageTestSkip = !!s.test_skip;
             html += '<div style="display:flex;align-items:center;gap:4px;"><label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap;"><input type="checkbox" '+(s.test_skip?'checked':'')+' onchange="toggleStageTestSkip('+idx+',this.checked,this);" style="cursor:pointer;"'+(lockAttr?' disabled':'')+'>不送检</label>'+(s.test_skip?'<input type="text" value="'+(s.test_skip_reason||'')+'" onchange="tempStages['+idx+'].test_skip_reason=this.value" id="stskip_r_'+idx+'" placeholder="不送检理由" style="font-size:10px;padding:2px 4px;border:1px solid #f99;border-radius:3px;flex:1;min-width:80px;background:#fff5f5;'+bgStyle+'"'+(lockAttr?' readonly':'')+'>':'')+'</div>';
             // Row 4: 检测单号 | 检测预计完成时间 | 检测完成时间
             html += '<div'+(_stageTestSkip?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#888;">检测单号</span><input type="text" value="'+(s.test_no||'')+'" onchange="tempStages['+idx+'].test_no=this.value" placeholder="检测单号" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-            html += '<div'+(_stageTestSkip?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#888;">检测预计完成时间</span><input type="date" value="'+(s.test_est_time||'')+'" onchange="tempStages['+idx+'].test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-            html += '<div'+(_stageTestSkip?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#888;">检测完成时间</span><input type="date" value="'+(s.test_done_time||'')+'" onchange="tempStages['+idx+'].test_done_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+            html += '<div'+(_stageTestSkip?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#888;">检测预计完成时间</span><input type="date" value="'+(s.test_est_time||'')+'" onchange="handleTimeFieldChange(tempStages['+idx+'],\'test_est_time\',\'_test_est_time_filled\',this.value,false)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+_teBg+'"'+_teDis+'></div>';
+            html += '<div'+(_stageTestSkip?' style="display:none;"':'')+'><span class="field-label" style="font-size:11px;color:#888;">检测完成时间</span><input type="date" value="'+(s.test_done_time||'')+'" onchange="handleTimeFieldChange(tempStages['+idx+'],\'test_done_time\',\'_test_done_time_filled\',this.value,true)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+_tdBg+'"'+_tdDis+'></div>';
             html += '<div></div>';
             // Row 4b: 检测结果(span2) | 不合格信息(span2)
             html += '<div style="grid-column:span 2;'+(_stageTestSkip?' display:none;':'')+'"><span class="field-label" style="font-size:11px;color:#888;">检测结果</span><select onchange="tempStages['+idx+'].test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' disabled':'')+'"><option value="">请选择</option><option value="合格" '+((s.test_result==='合格')?'selected':'')+'>合格</option><option value="不合格" '+((s.test_result==='不合格')?'selected':'')+'>不合格</option><option value="待检测" '+((s.test_result==='待检测')?'selected':'')+'>待检测</option></select></div>';
@@ -1836,8 +1902,8 @@ function renderStagesList() {
             html += '<div style="text-align:right;"><span class="field-label" style="font-size:11px;color:#888;">状态</span> <span style="font-size:12px;padding:4px 8px;display:inline-block;min-width:60px;text-align:center;border-radius:4px;'+(s.status==='已完成'?'background:#e8f5e9;color:#4caf50;':'background:#fff3e0;color:#e67e22;')+'">'+s.status+'</span>'+(lockAttr?'':' <button class="btn-del" onclick="removeStage('+idx+')" style="font-size:11px;padding:2px 8px;margin-left:8px;">删除</button>')+'</div>';
             html += '<div></div>';
             // Row 2: 预计完成时间 | 完成时间
-            html += '<div><span class="field-label" style="font-size:11px;color:#888;">预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="tempStages['+idx+'].yarn_time=this.value;tempStages['+idx+']._autoStatus=true;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
-            html += '<div><span class="field-label" style="font-size:11px;color:#888;">完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="tempStages['+idx+'].yarn_complete_time=this.value;tempStages['+idx+']._autoStatus=true;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+bgStyle+'"'+(lockAttr?' readonly':'')+'></div>';
+            html += '<div><span class="field-label" style="font-size:11px;color:#888;">预计完成时间</span><input type="date" value="'+(s.yarn_time||'')+'" onchange="handleTimeFieldChange(tempStages['+idx+'],\'yarn_time\',\'_yarn_time_filled\',this.value,false,function(){tempStages['+idx+']._autoStatus=true;})" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+_ytBg+'"'+_ytDis+'></div>';
+            html += '<div><span class="field-label" style="font-size:11px;color:#888;">完成时间</span><input type="date" value="'+(s.yarn_complete_time||'')+'" onchange="handleTimeFieldChange(tempStages['+idx+'],\'yarn_complete_time\',\'_yarn_complete_time_filled\',this.value,true,function(){tempStages['+idx+']._autoStatus=true;})" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+_ycBg+'"'+_ycDis+'></div>';
             html += '<div style="grid-column:span 2;"></div>';
             html += '</div>';
         }
@@ -1890,6 +1956,19 @@ function renderMilestones(stageIdx) {
         const msBg = msRo ? 'background:#f5f5f5;color:#666;' : '';
         const msReadonly = msRo ? ' readonly' : '';
         var ext = m._ext || {};
+        // Time field 24h lock per milestone field
+        var _msWT_Locked = msRo || (!isManager && _isTimeLocked(ext._weave_time_filled));
+        var _msWC_Locked = msRo || (!isManager && _isTimeLocked(ext._weave_complete_time_filled));
+        var _msTE_Locked = msRo || (!isManager && _isTimeLocked(ext._test_est_time_filled));
+        var _msTD_Locked = msRo || (!isManager && _isTimeLocked(ext._test_done_time_filled));
+        var _msWT_Bg = _msWT_Locked ? 'background:#f5f5f5;color:#666;' : msBg;
+        var _msWC_Bg = _msWC_Locked ? 'background:#f5f5f5;color:#666;' : msBg;
+        var _msTE_Bg = _msTE_Locked ? 'background:#f5f5f5;color:#666;' : msBg;
+        var _msTD_Bg = _msTD_Locked ? 'background:#f5f5f5;color:#666;' : msBg;
+        var _msWT_Ro = _msWT_Locked ? ' disabled' : msReadonly;
+        var _msWC_Ro = _msWC_Locked ? ' disabled' : msReadonly;
+        var _msTE_Ro = _msTE_Locked ? ' disabled' : msReadonly;
+        var _msTD_Ro = _msTD_Locked ? ' disabled' : msReadonly;
         var nodeType = m.name || '';
         html += '<div class="ms-item">';
         // Single grid container for all node fields (2 columns)
@@ -1907,15 +1986,15 @@ function renderMilestones(stageIdx) {
         html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造事业部:\u003c/span\u003e \u003cselect onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_department=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"\u003e\u003coption value=""\u003e请选择\u003c/option\u003e';
         ['飞织','经编','梭织','纬编','速织','成鞋'].forEach(function(d){html += '\u003coption value="'+d+'" '+(ext.weave_department===d?'selected':'')+'\u003e'+d+'\u003c/option\u003e';});
         html += '\u003c/select\u003e\u003c/div\u003e';
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
+        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_time||'')+'" onchange="(function(ev){var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});handleTimeFieldChange(e,\'weave_time\',\'_weave_time_filled\',ev.target.value,false);})(event)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+_msWT_Bg+'"'+_msWT_Ro+'"\u003e\u003c/div\u003e';
         // 织造完成时间 | 检测单号
-        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_complete_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.weave_complete_time=this.value;autoCalcMilestoneStatus('+stageIdx+','+mIdx+');" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
+        html += '\u003cdiv\u003e\u003cspan style="color:#888;"\u003e织造完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.weave_complete_time||'')+'" onchange="(function(ev){var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});handleTimeFieldChange(e,\'weave_complete_time\',\'_weave_complete_time_filled\',ev.target.value,true,function(){autoCalcMilestoneStatus('+stageIdx+','+mIdx+');});})(event)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+_msWC_Bg+'"'+_msWC_Ro+'"\u003e\u003c/div\u003e';
         var _msTestSkip = !!ext.test_skip;
         html += '<div style="display:flex;align-items:center;gap:4px;"><label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap;"><input type="checkbox" '+(ext.test_skip?'checked':'')+' onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_skip=this.checked;autoCalcMilestoneStatus('+stageIdx+','+mIdx+');" style="cursor:pointer;"'+(msRo?' disabled':'')+'>不送检</label>'+(ext.test_skip?'<input type="text" value="'+(ext.test_skip_reason||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_skip_reason=this.value" placeholder="不送检理由" style="font-size:10px;padding:2px 4px;border:1px solid #f99;border-radius:3px;flex:1;min-width:60px;background:#fff5f5;'+msBg+'"'+msReadonly+'>':'')+'</div>';
         html += '<div'+(_msTestSkip?' style="display:none;"':'')+'><span style="color:#888;">检测单号:</span> <input type="text" value="'+(ext.test_no||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_no=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"></div>';
         // 检测预计完成时间 | 检测完成时间
-        html += '\u003cdiv'+(_msTestSkip?' style="display:none;"':'')+'\u003e\u003cspan style="color:#888;"\u003e检测预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_est_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_est_time=this.value" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
-        html += '\u003cdiv'+(_msTestSkip?' style="display:none;"':'')+'\u003e\u003cspan style="color:#888;"\u003e检测完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_done_time||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_done_time=this.value;autoCalcMilestoneStatus('+stageIdx+','+mIdx+');" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
+        html += '\u003cdiv'+(_msTestSkip?' style="display:none;"':'')+'\u003e\u003cspan style="color:#888;"\u003e检测预计完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_est_time||'')+'" onchange="(function(ev){var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});handleTimeFieldChange(e,\'test_est_time\',\'_test_est_time_filled\',ev.target.value,false);})(event)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+_msTE_Bg+'"'+_msTE_Ro+'"\u003e\u003c/div\u003e';
+        html += '\u003cdiv'+(_msTestSkip?' style="display:none;"':'')+'\u003e\u003cspan style="color:#888;"\u003e检测完成时间:\u003c/span\u003e \u003cinput type="date" value="'+(ext.test_done_time||'')+'" onchange="(function(ev){var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});handleTimeFieldChange(e,\'test_done_time\',\'_test_done_time_filled\',ev.target.value,true,function(){autoCalcMilestoneStatus('+stageIdx+','+mIdx+');});})(event)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+_msTD_Bg+'"'+_msTD_Ro+'"\u003e\u003c/div\u003e';
         // 检测结果 | 不合格信息
         html += '\u003cdiv'+(_msTestSkip?' style="display:none;"':'')+'\u003e\u003cspan style="color:#888;"\u003e检测结果:\u003c/span\u003e \u003cselect onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.test_result=this.value;renderStagesList();" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;width:100%;'+msBg+'"'+(msRo?' disabled':'')+'"\u003e\u003coption value=""\u003e请选择\u003c/option\u003e\u003coption value="合格" '+(ext.test_result==='合格'?'selected':'')+'\u003e合格\u003c/option\u003e\u003coption value="不合格" '+(ext.test_result==='不合格'?'selected':'')+'\u003e不合格\u003c/option\u003e\u003coption value="待检测" '+(ext.test_result==='待检测'?'selected':'')+'\u003e待检测\u003c/option\u003e\u003c/select\u003e\u003c/div\u003e';
         html += '\u003cdiv style="'+(_msTestSkip||ext.test_result!=='不合格'?' display:none;':'')+'"\u003e\u003cspan style="color:#c00;"\u003e不合格信息 \u003cspan style="color:#f00;"\u003e*\u003c/span\u003e:\u003c/span\u003e \u003cinput type="text" value="'+(ext.ms_unqual_info||'')+'" onchange="var e=tempStages['+stageIdx+'].milestones['+mIdx+']._ext||(tempStages['+stageIdx+'].milestones['+mIdx+']._ext={});e.ms_unqual_info=this.value" placeholder="不合格项目必须填写" style="font-size:11px;padding:3px 6px;border:1px solid #f99;border-radius:3px;width:100%;background:#fff5f5;'+msBg+'"'+msReadonly+'"\u003e\u003c/div\u003e';
@@ -2052,7 +2131,7 @@ async function saveProject() {
     const data = {
         project_no: $('pProjectNo').value.trim(),
         name: $('pName').value.trim(),
-        project_type: (function(){var arr=[];document.querySelectorAll('input[name="pType"]:checked').forEach(function(cb){arr.push(cb.value);});return arr.join(',');})(),
+        project_type: (function(){var arr=[];document.querySelectorAll('input[name="pType"]:checked').forEach(function(cb){arr.push(cb.value);});return arr.join(',');})(event),
         level: $('pLevel').value,
         creator_id: $('pOwner').value,
         follower_id: $('pFollower').value || null,
@@ -2094,7 +2173,7 @@ async function saveProject() {
                     status: s.status, output: s.output, product: s.product,
                     output_product_data: s.output_product_data||'',
                     anomaly_feedback: s.anomaly_feedback||'',
-                    solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',sales_no:s.sales_no||'',test_no:s.test_no||'',test_est_time:s.test_est_time||'',test_done_time:s.test_done_time||'',test_result:s.test_result||'',unqual_info:s.unqual_info||'',test_skip:!!s.test_skip,test_skip_reason:s.test_skip_reason||'',attachments:s.attachments||[],stage_type:s.stage_type||'研发验证'}),
+                    solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',_yarn_time_filled:s._yarn_time_filled||'',_yarn_complete_time_filled:s._yarn_complete_time_filled||'',sales_no:s.sales_no||'',test_no:s.test_no||'',test_est_time:s.test_est_time||'',test_done_time:s.test_done_time||'',_test_est_time_filled:s._test_est_time_filled||'',_test_done_time_filled:s._test_done_time_filled||'',test_result:s.test_result||'',unqual_info:s.unqual_info||'',test_skip:!!s.test_skip,test_skip_reason:s.test_skip_reason||'',attachments:s.attachments||[],stage_type:s.stage_type||'研发验证'}),
                     is_deleted: false
                 };
                 if(s.id) {
@@ -2123,7 +2202,7 @@ async function saveProject() {
                         status: s.status, output: s.output, product: s.product,
                         output_product_data: s.output_product_data||'',
                         anomaly_feedback: s.anomaly_feedback||'',
-                        solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',sales_no:s.sales_no||'',test_no:s.test_no||'',test_est_time:s.test_est_time||'',test_done_time:s.test_done_time||'',test_result:s.test_result||'',unqual_info:s.unqual_info||'',test_skip:!!s.test_skip,test_skip_reason:s.test_skip_reason||'',attachments:s.attachments||[],stage_type:s.stage_type||'研发验证'}),
+                        solution: JSON.stringify({plan_desc:s.plan_desc||'',yarn_formula:s.yarn_formula||'',yarn_department:s.yarn_department||'',yarn_time:s.yarn_time||'',yarn_complete_time:s.yarn_complete_time||'',_yarn_time_filled:s._yarn_time_filled||'',_yarn_complete_time_filled:s._yarn_complete_time_filled||'',sales_no:s.sales_no||'',test_no:s.test_no||'',test_est_time:s.test_est_time||'',test_done_time:s.test_done_time||'',_test_est_time_filled:s._test_est_time_filled||'',_test_done_time_filled:s._test_done_time_filled||'',test_result:s.test_result||'',unqual_info:s.unqual_info||'',test_skip:!!s.test_skip,test_skip_reason:s.test_skip_reason||'',attachments:s.attachments||[],stage_type:s.stage_type||'研发验证'}),
                         is_deleted: false
                     });
                     if(newStage && newStage[0] && s.milestones) {
@@ -2179,7 +2258,7 @@ async function syncMilestones(projectId, stageId, milestones) {
             product_info: m.product_info || '',
             product_data: m.product_data || '',
             anomaly: m.anomaly || '',
-            solution: (function(){var e=m._ext||{};return JSON.stringify({department:e.department||'',ms_status:e.ms_status||'',sales_no:e.sales_no||'',ms_sales_no:e.ms_sales_no||'',test_no:e.test_no||'',test_est_time:e.test_est_time||'',test_done_time:e.test_done_time||'',test_result:e.test_result||'',ms_unqual_info:e.ms_unqual_info||'',complete_time:e.complete_time||'',weave_name:e.weave_name||'',weave_formula:e.weave_formula||'',weave_department:e.weave_department||'',weave_time:e.weave_time||'',weave_complete_time:e.weave_complete_time||'',test_skip:!!e.test_skip,test_skip_reason:e.test_skip_reason||''});})(),
+            solution: (function(){var e=m._ext||{};return JSON.stringify({department:e.department||'',ms_status:e.ms_status||'',sales_no:e.sales_no||'',ms_sales_no:e.ms_sales_no||'',test_no:e.test_no||'',test_est_time:e.test_est_time||'',test_done_time:e.test_done_time||'',test_result:e.test_result||'',ms_unqual_info:e.ms_unqual_info||'',complete_time:e.complete_time||'',weave_name:e.weave_name||'',weave_formula:e.weave_formula||'',weave_department:e.weave_department||'',weave_time:e.weave_time||'',weave_complete_time:e.weave_complete_time||'',_weave_time_filled:e._weave_time_filled||'',_weave_complete_time_filled:e._weave_complete_time_filled||'',_test_est_time_filled:e._test_est_time_filled||'',_test_done_time_filled:e._test_done_time_filled||'',test_skip:!!e.test_skip,test_skip_reason:e.test_skip_reason||''});})(event),
             is_completed: m.is_completed || false,
             attachments: JSON.stringify(m.attachments || []),
             is_deleted: false
