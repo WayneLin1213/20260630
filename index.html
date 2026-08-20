@@ -361,6 +361,9 @@
                             <option value="已完成">已完成</option>
                             <option value="已逾期">已逾期</option>
                         </select>
+                        <select id="filterPerson" onchange="renderProjectList()">
+                            <option value="">全部负责人/跟进人</option>
+                        </select>
                         <button class="btn btn-outline" onclick="exportAllData()">📥 导出表格</button>
                         <button class="btn btn-outline" onclick="exportZipWithAttachments()">📦 导出含附件</button>
                         <button class="btn btn-warning" onclick="openWeeklyReportModal()">📋 导出周报</button>
@@ -1418,12 +1421,40 @@ function renderProjectList() {
     const fLevel = $('filterLevel').value;
     const fType = $('filterType').value;
     const fStatus = $('filterStatus').value;
+    const fPerson = $('filterPerson').value;
+
+    // Populate person filter options from users (only build once / when user count changes)
+    (function(){
+        var sel = $('filterPerson');
+        if(!sel) return;
+        if(sel.dataset.count !== String(allUsers.length)){
+            var cur = sel.value;
+            var opts = '<option value="">全部负责人/跟进人</option>';
+            // 只列出在项目中实际担任负责人或跟进人的用户
+            var usedIds = {};
+            allProjects.forEach(function(p){
+                if(p.creator_id||p.owner_id) usedIds[p.creator_id||p.owner_id]=1;
+                if(p.follower_id) usedIds[p.follower_id]=1;
+            });
+            allUsers.forEach(function(u){
+                if(usedIds[u.id]) opts += '<option value="'+u.id+'">'+(u.name||u.id)+'</option>';
+            });
+            sel.innerHTML = opts;
+            sel.value = cur;
+            sel.dataset.count = String(allUsers.length);
+        }
+    })();
 
     let filtered = allProjects.filter(p => {
         if(search && !p.name.toLowerCase().includes(search) && !(p.project_no||'').toLowerCase().includes(search)) return false;
         if(fLevel && p.level !== fLevel) return false;
         if(fType && !(p.project_type||'').split(',').includes(fType)) return false;
         if(fStatus && p.status !== fStatus) return false;
+        if(fPerson){
+            var ownerId = p.creator_id||p.owner_id||'';
+            var followerId = p.follower_id||'';
+            if(ownerId!==fPerson && followerId!==fPerson) return false;
+        }
         return true;
     });
 
