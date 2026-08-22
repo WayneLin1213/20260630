@@ -1280,8 +1280,8 @@ function calcProjectStatus(projectId) {
         }
     }
 
-    if(isOverdue && allMilestonesCompleted) return '已完成';
-    if(isOverdue && !allMilestonesCompleted) return '已逾期';
+    if(allMilestonesCompleted) return '已完成';
+    if(isOverdue) return '已逾期';
     return '进行中';
 }
 
@@ -1367,12 +1367,34 @@ function renderAnomalyBoard() {
             const projStages = allStages.filter(s=>s.project_id===p.id);
             let hasRecentUpdate = false;
             for(const s of projStages) {
+                // 旧字段兼容
                 if(s.start_date && s.start_date >= sevenDaysAgo) { hasRecentUpdate = true; break; }
                 if(s.end_date && s.end_date >= sevenDaysAgo) { hasRecentUpdate = true; break; }
+                if(s.created_at && s.created_at.split('T')[0] >= sevenDaysAgo) { hasRecentUpdate = true; break; }
+                // solution JSON中的时间字段
+                try {
+                    var ssol = typeof s.solution === 'string' ? JSON.parse(s.solution||'{}') : (s.solution||{});
+                    var stimes = ['_yarn_time_filled','_yarn_complete_time_filled','_test_est_time_filled','_test_done_time_filled','yarn_time','yarn_complete_time','test_est_time','test_done_time'];
+                    for(var si=0;si<stimes.length;si++){
+                        var sv=ssol[stimes[si]];
+                        if(sv && String(sv).substring(0,10) >= sevenDaysAgo){ hasRecentUpdate=true; break; }
+                    }
+                    if(hasRecentUpdate) break;
+                } catch(e){}
+                // 节点
                 const ms = milestonesMap[p.id+'_'+s.id] || [];
                 for(const m of ms) {
                     if(m.node_time && m.node_time >= sevenDaysAgo) { hasRecentUpdate = true; break; }
                     if(m.created_at && m.created_at.split('T')[0] >= sevenDaysAgo) { hasRecentUpdate = true; break; }
+                    try {
+                        var mext = m._ext || {};
+                        var mtimes = ['_weave_time_filled','_weave_complete_time_filled','_test_est_time_filled','_test_done_time_filled','weave_time','weave_complete_time','test_est_time','test_done_time'];
+                        for(var mi=0;mi<mtimes.length;mi++){
+                            var mv=mext[mtimes[mi]];
+                            if(mv && String(mv).substring(0,10) >= sevenDaysAgo){ hasRecentUpdate=true; break; }
+                        }
+                    } catch(e){}
+                    if(hasRecentUpdate) break;
                 }
                 if(hasRecentUpdate) break;
             }
