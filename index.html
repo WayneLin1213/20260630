@@ -2366,6 +2366,7 @@ async function saveProject() {
 
     try {
         if(editingProjectId) {
+            var _oldProj = allProjects.find(function(x){return x.id===editingProjectId;});
             await sbUpdate('projects', editingProjectId, data);
             // Soft-delete stages that were removed in the editor
             const keptStageIds = tempStages.filter(s=>s.id).map(s=>s.id);
@@ -2396,6 +2397,13 @@ async function saveProject() {
                 }
             }
             toast('项目更新成功','success');
+            // 结案通知：本次保存后状态为"结案"且之前不是结案，推送钉钉群
+            var wasClosed = !!(_oldProj && ((_oldProj.closure_report&&_oldProj.closure_report.trim())||(_oldProj.product_data_report&&_oldProj.product_data_report.trim())));
+            var nowClosed = !!(data.closure_report||data.product_data_report);
+            if(nowClosed && !wasClosed){
+                var closureContent = data.closure_report || data.product_data_report;
+                notifyProjectClosed(data, closureContent).catch(function(e){ console.warn('结案通知发送失败:', e); });
+            }
         } else {
             data.creator_id = data.creator_id || currentUser.id;
             data.create_time = new Date().toISOString().split('T')[0];
@@ -4178,6 +4186,29 @@ async function notifyProjectCreated(data) {
     const ok = await sendDingTalkMessage(msg, atMobiles);
     if(ok) addNotifLog('success', '新项目「'+(data.name||'未命名')+'」创建通知已发送');
     else addNotifLog('error', '新项目创建通知发送失败');
+}
+
+// 结案通知：项目填写结案书后推送到钉钉群
+async function notifyProjectClosed(proj, closureText) {
+    const s = getNotifSettings();
+    if (!s.webhook) return;
+    const typeMap = { '品牌需求':'品牌研发','自主研发':'自主研发','外部引进':'外部引进','迭代升级':'迭代升级' };
+    const types = (proj.project_type||'').split(',').map(function(t){return typeMap[t]||t;}).filter(Boolean).join('、');
+    const levelMap = { 'S':'S级(重点)','A':'A级','B':'B级','C':'C级' };
+    const owner = allUsers.find(function(u){return u.id === (proj.creator_id||proj.owner_id);});
+    const ownerName = owner ? owner.name : (proj.creator_id||'未指定');
+    let msg = '🎉 项目已结案（交期通知）\n\n';
+    msg += '📌 项目名称：' + (proj.name||'未命名') + '\n';
+    msg += '🔢 项目编号：' + (proj.project_no||'-') + '\n';
+    if(types) msg += '📂 项目类型：' + types + '\n';
+    if(proj.level) msg += '⭐ 项目评级：' + (levelMap[proj.level]||proj.level) + '\n';
+    msg += '👤 执行人：' + ownerName + '\n';
+    if(proj.period_start || proj.deadline) msg += '📅 研发周期：' + (proj.period_start||'-') + ' ~ ' + (proj.deadline||'-') + '\n';
+    msg += '\n📝 结案书：\n' + closureText + '\n';
+    msg += '\n查看看板: https://waynelin1213.github.io/20260630/';
+    const ok = await sendDingTalkMessage(msg, []);
+    if(ok) addNotifLog('success', '项目「'+(proj.name||'未命名')+'」结案通知已发送');
+    else addNotifLog('error', '项目结案通知发送失败');
 }
 
 // 手机号映射（用于@具体执行人）
