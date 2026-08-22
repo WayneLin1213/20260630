@@ -1001,6 +1001,7 @@ let currentUser = null;
 let allProjects = [];
 let allUsers = [];
 let allStages = [];
+let allMilestones = [];
 let editingProjectId = null;
 let tempStages = [];
 let originalStageIds = [];
@@ -1188,7 +1189,7 @@ async function loadData() {
         allProjects = projects || [];
         allUsers = users || [];
         allStages = stages || [];
-        const allMilestones = milestones || [];
+        allMilestones = milestones || [];
 
         milestonesMap = {};
         allMilestones.forEach(m => {
@@ -1346,18 +1347,98 @@ function renderAnomalyBoard() {
         }
     }
 
-    // 阶段交期异常：只检查当前有效项目（已删除项目的阶段不显示）
+    // 阶段交期异常：解析solution JSON中的时间字段
     for(const s of allStages) {
-        if(s.end_date && s.end_date < todayStr && s.status !== '已完成') {
-            const proj = allProjects.find(p=>p.id===s.project_id);
-            if(!proj) continue; // 跳过已删除项目的阶段
+        const proj = allProjects.find(p=>p.id===s.project_id);
+        if(!proj) continue;
+        if(s.status === '已完成') continue;
+        var ssol = {};
+        try { ssol = typeof s.solution === 'string' ? JSON.parse(s.solution||'{}') : (s.solution||{}); } catch(e){}
+        const sname = (s.name||ssol.yarn_name||'未命名阶段').substring(0,25);
+        // 兼容旧字段 end_date
+        if(s.end_date && s.end_date < todayStr) {
             anomalies.push({
-                type: 'warning',
-                icon: '⚠️',
-                typeName: '阶段交期异常',
-                title: proj.name + ' / ' + (s.name||'未命名阶段'),
+                type: 'warning', icon: '⚠️', typeName: '阶段交期异常',
+                title: proj.name + ' / ' + sname,
                 desc: '阶段截止 '+s.end_date+' 已过，状态: '+s.status
             });
+        }
+        // 纱线预计完成时间
+        if(ssol.yarn_time && !ssol.yarn_complete_time) {
+            if(ssol.yarn_time < todayStr) {
+                anomalies.push({
+                    type: 'warning', icon: '🚨', typeName: '阶段纱线逾期',
+                    title: proj.name + ' / ' + sname,
+                    desc: '纱线预计完成 '+ssol.yarn_time+' 已过'
+                });
+            } else if(ssol.yarn_time <= new Date(today.getTime()+3*864e5).toISOString().split('T')[0]) {
+                const d = Math.ceil((new Date(ssol.yarn_time)-today)/864e5);
+                anomalies.push({
+                    type: 'info', icon: '⏰', typeName: '阶段纱线即将到期',
+                    title: proj.name + ' / ' + sname,
+                    desc: '纱线预计完成 '+ssol.yarn_time+'（还剩'+d+'天）'
+                });
+            }
+        }
+        // 检测预计完成时间（排除不送检）
+        if(!ssol.test_skip && ssol.test_est_time && !ssol.test_done_time) {
+            if(ssol.test_est_time < todayStr) {
+                anomalies.push({
+                    type: 'warning', icon: '🚨', typeName: '阶段检测逾期',
+                    title: proj.name + ' / ' + sname,
+                    desc: '检测预计完成 '+ssol.test_est_time+' 已过'
+                });
+            } else if(ssol.test_est_time <= new Date(today.getTime()+3*864e5).toISOString().split('T')[0]) {
+                const d = Math.ceil((new Date(ssol.test_est_time)-today)/864e5);
+                anomalies.push({
+                    type: 'info', icon: '⏰', typeName: '阶段检测即将到期',
+                    title: proj.name + ' / ' + sname,
+                    desc: '检测预计完成 '+ssol.test_est_time+'（还剩'+d+'天）'
+                });
+            }
+        }
+    }
+
+    // 节点交期异常：解析solution JSON
+    for(const m of allMilestones) {
+        const proj = allProjects.find(p=>p.id===m.project_id);
+        if(!proj) continue;
+        var mext = m._ext || {};
+        if(mext.ms_status === '完成' || m.is_completed) continue;
+        const label = (mext.weave_name||mext.weave_formula||m.name||'未命名节点').substring(0,25);
+        // 织造预计完成时间
+        if(mext.weave_time && !mext.weave_complete_time) {
+            if(mext.weave_time < todayStr) {
+                anomalies.push({
+                    type: 'warning', icon: '🚨', typeName: '节点织造逾期',
+                    title: proj.name + ' / ' + label,
+                    desc: '织造预计完成 '+mext.weave_time+' 已过'
+                });
+            } else if(mext.weave_time <= new Date(today.getTime()+3*864e5).toISOString().split('T')[0]) {
+                const d = Math.ceil((new Date(mext.weave_time)-today)/864e5);
+                anomalies.push({
+                    type: 'info', icon: '⏰', typeName: '节点织造即将到期',
+                    title: proj.name + ' / ' + label,
+                    desc: '织造预计完成 '+mext.weave_time+'（还剩'+d+'天）'
+                });
+            }
+        }
+        // 检测预计完成时间
+        if(!mext.test_skip && mext.test_est_time && !mext.test_done_time) {
+            if(mext.test_est_time < todayStr) {
+                anomalies.push({
+                    type: 'warning', icon: '🚨', typeName: '节点检测逾期',
+                    title: proj.name + ' / ' + label,
+                    desc: '检测预计完成 '+mext.test_est_time+' 已过'
+                });
+            } else if(mext.test_est_time <= new Date(today.getTime()+3*864e5).toISOString().split('T')[0]) {
+                const d = Math.ceil((new Date(mext.test_est_time)-today)/864e5);
+                anomalies.push({
+                    type: 'info', icon: '⏰', typeName: '节点检测即将到期',
+                    title: proj.name + ' / ' + label,
+                    desc: '检测预计完成 '+mext.test_est_time+'（还剩'+d+'天）'
+                });
+            }
         }
     }
 
