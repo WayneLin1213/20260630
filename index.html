@@ -1009,7 +1009,6 @@ let allUsers = [];
 let allStages = [];
 let allMilestones = [];
 let editingProjectId = null;
-let _closureEditMode = false; // 结案数据编辑模式（管理员解锁后为true）
 let tempStages = [];
 let originalStageIds = [];
 let milestonesMap = {};
@@ -1019,27 +1018,40 @@ function _todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMon
 function _nowTS(){return new Date().toISOString();}
 function _isMgr(){return currentUser&&currentUser.role==='manager';}
 
-// 结案数据锁定/解锁UI
+// 结案数据锁定/解锁UI — 解锁状态持久化到 projects.data_no 字段（"__closure_unlocked__"）
+function _isClosureUnlocked(proj){
+    return proj && proj.data_no === '__closure_unlocked__';
+}
 function _applyClosureLockUI(){
-    var locked = !_closureEditMode;
-    $('pClosure').readOnly = locked;
-    $('pDataReport').readOnly = locked;
-    $('pClosure').style.background = locked ? '#f5f5f5' : '';
-    $('pDataReport').style.background = locked ? '#f5f5f5' : '';
+    var proj = allProjects.find(function(x){return x.id===editingProjectId;});
+    var hasData = proj && ((proj.closure_report&&proj.closure_report.trim())||(proj.product_data_report&&proj.product_data_report.trim()));
+    var unlocked = _isClosureUnlocked(proj);
     var tip = $('closureLockTip');
     var btn = $('closureUnlockBtn');
     var msg = $('closureLockMsg');
-    // 判断是否有已填写的结案数据（决定是否显示提示条）
-    var proj = allProjects.find(function(x){return x.id===editingProjectId;});
-    var hasData = proj && ((proj.closure_report&&proj.closure_report.trim())||(proj.product_data_report&&proj.product_data_report.trim()));
-    if(!hasData){ tip.style.display='none'; return; }
+    if(!hasData){
+        tip.style.display='none';
+        $('pClosure').readOnly = false;
+        $('pDataReport').readOnly = false;
+        $('pClosure').style.background = '';
+        $('pDataReport').style.background = '';
+        return;
+    }
     tip.style.display='flex';
-    if(_closureEditMode){
+    if(unlocked){
+        $('pClosure').readOnly = false;
+        $('pDataReport').readOnly = false;
+        $('pClosure').style.background = '';
+        $('pDataReport').style.background = '';
         msg.textContent = '✏️ 管理员已解锁，可编辑结案数据，保存后将自动锁定。';
         btn.style.display = 'none';
     } else {
+        $('pClosure').readOnly = true;
+        $('pDataReport').readOnly = true;
+        $('pClosure').style.background = '#f5f5f5';
+        $('pDataReport').style.background = '#f5f5f5';
         if(_isMgr()){
-            msg.textContent = '🔒 结案数据已提交并锁定。';
+            msg.textContent = '🔒 结案数据已提交并锁定，点击右侧按钮可解锁编辑。';
             btn.style.display = 'inline-block';
         } else {
             msg.textContent = '🔒 结案数据已提交并锁定，执行人不可修改。如需变更，请联系管理员解锁。';
@@ -1047,11 +1059,18 @@ function _applyClosureLockUI(){
         }
     }
 }
-function unlockClosure(){
+async function unlockClosure(){
     if(!_isMgr()){ toast('仅管理员可解锁','error'); return; }
-    _closureEditMode = true;
-    _applyClosureLockUI();
-    toast('已解锁，可编辑结案数据','success');
+    if(!editingProjectId) return;
+    try {
+        await sbUpdate('projects', editingProjectId, {data_no: '__closure_unlocked__'});
+        var proj = allProjects.find(function(x){return x.id===editingProjectId;});
+        if(proj) proj.data_no = '__closure_unlocked__';
+        _applyClosureLockUI();
+        toast('已解锁，执行人刷新后也可编辑','success');
+    } catch(e){
+        toast('解锁失败: '+e.message,'error');
+    }
 }
 function _isTimeLocked(filledAt){
     if(!filledAt) return false;
@@ -1770,7 +1789,6 @@ document.addEventListener('change', function(e) {
 
 function openProjectModal(id) {
     editingProjectId = id || null;
-    _closureEditMode = !id; // 新建时可直接编辑
     $('projectModalTitle').textContent = id ? '编辑项目' : '新建项目';
     tempProjectAttachments = [];
 
@@ -1797,9 +1815,7 @@ function openProjectModal(id) {
         $('pClosure').value = p.closure_report||'';
         $('pDataReport').value = p.product_data_report||'';
 
-        // 结案数据权限：已提交则锁定，管理员可点"解锁编辑"临时解锁
-        var _closureFilled = !!(p.closure_report && p.closure_report.trim()) || !!(p.product_data_report && p.product_data_report.trim());
-        _closureEditMode = !_closureFilled; // 未填写时直接可编辑；已填写时默认锁定
+        // 结案数据权限控制
         _applyClosureLockUI();
 
         // 需求: 项目开始时间/交期 执行人不可修改，仅管理员可改
@@ -2333,6 +2349,7 @@ async function saveProject() {
         plan: $('pBrandName') ? $('pBrandName').value.trim() : '',
         closure_report: $('pClosure').value.trim(),
         product_data_report: $('pDataReport').value.trim(),
+        data_no: '', // 保存后自动清除解锁标记，重新锁定
         attachments: JSON.stringify(tempProjectAttachments),
         is_deleted: false
     };
