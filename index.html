@@ -554,8 +554,9 @@
                 <div id="stagesList"></div>
             </div>
             <div class="tab-content" id="tab-detail">
-                <div id="closureLockTip" style="display:none;background:#f3e5f5;border:1px solid #ce93d8;color:#4527a0;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:13px;">
-                    🔒 结案数据已提交并锁定，执行人不可修改。如需变更，请联系管理员解锁。
+                <div id="closureLockTip" style="display:none;background:#f3e5f5;border:1px solid #ce93d8;color:#4527a0;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                    <span id="closureLockMsg">🔒 结案数据已提交并锁定，执行人不可修改。如需变更，请联系管理员解锁。</span>
+                    <button type="button" id="closureUnlockBtn" onclick="unlockClosure()" style="display:none;background:#4527a0;color:#fff;border:none;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap;">🔓 解锁编辑</button>
                 </div>
                 <div class="form-row full">
                     <div class="form-group">
@@ -1008,6 +1009,7 @@ let allUsers = [];
 let allStages = [];
 let allMilestones = [];
 let editingProjectId = null;
+let _closureEditMode = false; // 结案数据编辑模式（管理员解锁后为true）
 let tempStages = [];
 let originalStageIds = [];
 let milestonesMap = {};
@@ -1016,6 +1018,41 @@ let tempProjectAttachments = [];
 function _todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function _nowTS(){return new Date().toISOString();}
 function _isMgr(){return currentUser&&currentUser.role==='manager';}
+
+// 结案数据锁定/解锁UI
+function _applyClosureLockUI(){
+    var locked = !_closureEditMode;
+    $('pClosure').readOnly = locked;
+    $('pDataReport').readOnly = locked;
+    $('pClosure').style.background = locked ? '#f5f5f5' : '';
+    $('pDataReport').style.background = locked ? '#f5f5f5' : '';
+    var tip = $('closureLockTip');
+    var btn = $('closureUnlockBtn');
+    var msg = $('closureLockMsg');
+    // 判断是否有已填写的结案数据（决定是否显示提示条）
+    var proj = allProjects.find(function(x){return x.id===editingProjectId;});
+    var hasData = proj && ((proj.closure_report&&proj.closure_report.trim())||(proj.product_data_report&&proj.product_data_report.trim()));
+    if(!hasData){ tip.style.display='none'; return; }
+    tip.style.display='flex';
+    if(_closureEditMode){
+        msg.textContent = '✏️ 管理员已解锁，可编辑结案数据，保存后将自动锁定。';
+        btn.style.display = 'none';
+    } else {
+        if(_isMgr()){
+            msg.textContent = '🔒 结案数据已提交并锁定。';
+            btn.style.display = 'inline-block';
+        } else {
+            msg.textContent = '🔒 结案数据已提交并锁定，执行人不可修改。如需变更，请联系管理员解锁。';
+            btn.style.display = 'none';
+        }
+    }
+}
+function unlockClosure(){
+    if(!_isMgr()){ toast('仅管理员可解锁','error'); return; }
+    _closureEditMode = true;
+    _applyClosureLockUI();
+    toast('已解锁，可编辑结案数据','success');
+}
 function _isTimeLocked(filledAt){
     if(!filledAt) return false;
     try{var t=new Date(filledAt).getTime();if(isNaN(t))return false;return (Date.now()-t)>24*60*60*1000;}catch(e){return false;}
@@ -1733,6 +1770,7 @@ document.addEventListener('change', function(e) {
 
 function openProjectModal(id) {
     editingProjectId = id || null;
+    _closureEditMode = !id; // 新建时可直接编辑
     $('projectModalTitle').textContent = id ? '编辑项目' : '新建项目';
     tempProjectAttachments = [];
 
@@ -1759,14 +1797,10 @@ function openProjectModal(id) {
         $('pClosure').value = p.closure_report||'';
         $('pDataReport').value = p.product_data_report||'';
 
-        // 结案数据权限：执行人提交后锁定，仅管理员可改
+        // 结案数据权限：已提交则锁定，管理员可点"解锁编辑"临时解锁
         var _closureFilled = !!(p.closure_report && p.closure_report.trim()) || !!(p.product_data_report && p.product_data_report.trim());
-        var _closureLocked = _closureFilled && !_isMgr();
-        $('pClosure').readOnly = _closureLocked;
-        $('pDataReport').readOnly = _closureLocked;
-        $('pClosure').style.background = _closureLocked ? '#f5f5f5' : '';
-        $('pDataReport').style.background = _closureLocked ? '#f5f5f5' : '';
-        $('closureLockTip').style.display = _closureLocked ? 'block' : 'none';
+        _closureEditMode = !_closureFilled; // 未填写时直接可编辑；已填写时默认锁定
+        _applyClosureLockUI();
 
         // 需求: 项目开始时间/交期 执行人不可修改，仅管理员可改
         var _projDateLock = !_isMgr();
