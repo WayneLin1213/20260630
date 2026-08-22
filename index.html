@@ -114,6 +114,7 @@
         .badge-pending{background:#fff8e1;color:#f57f17;}
         .badge-done{background:#e3f2fd;color:#1565c0;}
         .badge-overdue{background:#fce4ec;color:#c62828;}
+        .badge-closed{background:#ede7f6;color:#4527a0;}
         /* Progress Bar */
         .progress-bar{width:120px;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px;}
         .progress-bar .fill{height:100%;border-radius:4px;transition:width .3s;}
@@ -360,6 +361,7 @@
                             <option value="进行中">进行中</option>
                             <option value="已完成">已完成</option>
                             <option value="已逾期">已逾期</option>
+                            <option value="结案">结案</option>
                         </select>
                         <select id="filterPerson" onchange="renderProjectList()">
                             <option value="">全部负责人/跟进人</option>
@@ -463,7 +465,7 @@
             <div class="tabs">
                 <div class="tab active" onclick="switchTab(this,'tab-basic')">基本信息</div>
                 <div class="tab" onclick="switchTab(this,'tab-stages')">阶段计划</div>
-                <div class="tab" onclick="switchTab(this,'tab-detail')">详细数据</div>
+                <div class="tab" onclick="switchTab(this,'tab-detail')">结案数据</div>
             </div>
             <div class="tab-content active" id="tab-basic">
                 <div class="form-row">
@@ -552,16 +554,19 @@
                 <div id="stagesList"></div>
             </div>
             <div class="tab-content" id="tab-detail">
+                <div id="closureLockTip" style="display:none;background:#f3e5f5;border:1px solid #ce93d8;color:#4527a0;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:13px;">
+                    🔒 结案数据已提交并锁定，执行人不可修改。如需变更，请联系管理员解锁。
+                </div>
                 <div class="form-row full">
                     <div class="form-group">
                         <label>项目结案书</label>
-                        <textarea id="pClosure" rows="3" placeholder="项目结案说明"></textarea>
+                        <textarea id="pClosure" rows="3" placeholder="项目结案说明（填写保存后将自动标记为结案状态，执行人提交后需管理员授权方可修改）"></textarea>
                     </div>
                 </div>
                 <div class="form-row full">
                     <div class="form-group">
                         <label>产品数据报告</label>
-                        <textarea id="pDataReport" rows="3" placeholder="产品数据报告摘要"></textarea>
+                        <textarea id="pDataReport" rows="3" placeholder="产品数据报告摘要（填写保存后将自动标记为结案状态，执行人提交后需管理员授权方可修改）"></textarea>
                     </div>
                 </div>
                 <div class="form-row full">
@@ -1281,6 +1286,10 @@ function calcProjectStatus(projectId) {
         }
     }
 
+    // 结案数据已填写 → 结案状态（最高优先级）
+    var closureFilled = !!(proj && ((proj.closure_report && proj.closure_report.trim()) || (proj.product_data_report && proj.product_data_report.trim())));
+    if(closureFilled) return '结案';
+
     if(allMilestonesCompleted) return '已完成';
     if(isOverdue) return '已逾期';
     return '进行中';
@@ -1313,6 +1322,7 @@ function renderStats() {
             active: lvProjects.filter(p=>p.status==='进行中').length,
             done: lvProjects.filter(p=>p.status==='已完成').length,
             overdue: lvProjects.filter(p=>p.status==='已逾期').length,
+            closed: lvProjects.filter(p=>p.status==='结案').length,
         };
         html += '<div class="stat-card '+levelClass[lv]+'">';
         html += '<div class="sc-header"><span class="sc-label">'+levelIcons[lv]+' '+levelNames[lv]+'</span>';
@@ -1322,6 +1332,7 @@ function renderStats() {
         html += '<span class="sc-item"><span class="dot" style="background:#ffa726"></span>进行中 '+counts.active+'</span>';
         html += '<span class="sc-item"><span class="dot" style="background:#4caf50"></span>已完成 '+counts.done+'</span>';
         html += '<span class="sc-item"><span class="dot" style="background:#ef5350"></span>已逾期 '+counts.overdue+'</span>';
+        html += '<span class="sc-item"><span class="dot" style="background:#7e57c2"></span>结案 '+counts.closed+'</span>';
         html += '</div></div>';
     }
     $('statsRow').innerHTML = html;
@@ -1336,7 +1347,7 @@ function renderAnomalyBoard() {
 
     for(const p of allProjects) {
         // 1. Deadline overdue
-        if(p.deadline && p.deadline < todayStr && p.status !== '已完成') {
+        if(p.deadline && p.deadline < todayStr && p.status !== '已完成' && p.status !== '结案') {
             anomalies.push({
                 type: 'critical',
                 icon: '🚨',
@@ -1444,7 +1455,7 @@ function renderAnomalyBoard() {
 
     // 3. Progress not updated in 7 days
     for(const p of allProjects) {
-        if((p.progress||0) > 0 && p.status !== '已完成') {
+        if((p.progress||0) > 0 && p.status !== '已完成' && p.status !== '结案') {
             const projStages = allStages.filter(s=>s.project_id===p.id);
             let hasRecentUpdate = false;
             for(const s of projStages) {
@@ -1578,7 +1589,7 @@ function renderProjectList() {
         const owner = allUsers.find(u=>u.id===(p.creator_id||p.owner_id));
         const follower = allUsers.find(u=>u.id===p.follower_id);
         const badgeClass = {S:'badge-s',A:'badge-a',B:'badge-b',C:'badge-c'}[p.level]||'badge-c';
-        const statusClass = {'未开始':'badge-pending','进行中':'badge-active','已完成':'badge-done','已逾期':'badge-overdue'}[p.status]||'badge-pending';
+        const statusClass = {'未开始':'badge-pending','进行中':'badge-active','已完成':'badge-done','已逾期':'badge-overdue','结案':'badge-closed'}[p.status]||'badge-pending';
         const prog = p.progress || 0;
         const progColor = getProgressColor(prog);
         const periodStr = p.period_start && p.deadline ? p.period_start+' — '+p.deadline : (p.period_start || p.deadline || '-');
@@ -1623,12 +1634,12 @@ function renderCharts() {
     const typeColors = ['#667eea','#f59e0b','#4caf50','#8b5cf6'];
     let tHtml = '';
     const maxCount = Math.max(...types.map(t=>allProjects.filter(p=>(p.project_type||'').split(',').includes(t)).length), 1);
-    let totalDone = allProjects.filter(p=>p.status==='已完成').length;
+    let totalDone = allProjects.filter(p=>p.status==='已完成'||p.status==='结案').length;
     $('typeChartTitle').innerHTML = '📋 项目类型分布 <span class="total-done">总完成: '+totalDone+'个</span>';
 
     for(let i=0;i<types.length;i++) {
         const count = allProjects.filter(p=>p.project_type===types[i]).length;
-        const doneCount = allProjects.filter(p=>(p.project_type||'').split(',').includes(types[i])&&p.status==='已完成').length;
+        const doneCount = allProjects.filter(p=>(p.project_type||'').split(',').includes(types[i])&&(p.status==='已完成'||p.status==='结案')).length;
         const pct = (count/maxCount*100);
         tHtml += '<div class="bar-row">';
         tHtml += '<div class="bar-label">'+types[i]+'</div>';
@@ -1748,6 +1759,15 @@ function openProjectModal(id) {
         $('pClosure').value = p.closure_report||'';
         $('pDataReport').value = p.product_data_report||'';
 
+        // 结案数据权限：执行人提交后锁定，仅管理员可改
+        var _closureFilled = !!(p.closure_report && p.closure_report.trim()) || !!(p.product_data_report && p.product_data_report.trim());
+        var _closureLocked = _closureFilled && !_isMgr();
+        $('pClosure').readOnly = _closureLocked;
+        $('pDataReport').readOnly = _closureLocked;
+        $('pClosure').style.background = _closureLocked ? '#f5f5f5' : '';
+        $('pDataReport').style.background = _closureLocked ? '#f5f5f5' : '';
+        $('closureLockTip').style.display = _closureLocked ? 'block' : 'none';
+
         // 需求: 项目开始时间/交期 执行人不可修改，仅管理员可改
         var _projDateLock = !_isMgr();
         $('pPeriodStart').readOnly = _projDateLock;
@@ -1801,7 +1821,8 @@ function openProjectModal(id) {
             };
         });
     } else {
-        ['pProjectNo','pName','pObjective','pClosure','pDataReport'].forEach(fid=>{$(fid).value='';});
+        ['pProjectNo','pName','pObjective','pClosure','pDataReport'].forEach(fid=>{$(fid).value='';$(fid).readOnly=false;$(fid).style.background='';});
+        $('closureLockTip').style.display='none';
         document.querySelectorAll('input[name="pType"]').forEach(function(cb){cb.checked=false;});
         toggleBrandName();$('pBrandName').value='';$('pLevel').value='B';$('pStatus').value='未开始';
         $('pOwner').value='';$('pFollower').value='';
@@ -4132,13 +4153,13 @@ function getAnomalies() {
 
     // Overdue projects
     for (const p of allProjects) {
-        if (p.deadline && p.deadline < todayStr && p.status !== '已完成') {
+        if (p.deadline && p.deadline < todayStr && p.status !== '已完成' && p.status !== '结案') {
             anomalies.push({ type: 'overdue', title: p.name || '未命名项目', desc: '交期 ' + p.deadline + ' 已过，当前状态: ' + p.status, userId: p.owner_id });
         }
     }
     // Upcoming deadlines
     for (const p of allProjects) {
-        if (p.deadline && p.deadline >= todayStr && p.deadline <= futureDate && p.status !== '已完成') {
+        if (p.deadline && p.deadline >= todayStr && p.deadline <= futureDate && p.status !== '已完成' && p.status !== '结案') {
             const daysLeft = Math.ceil((new Date(p.deadline) - today) / (1000 * 60 * 60 * 24));
             anomalies.push({ type: 'upcoming', title: p.name || '未命名项目', desc: '交期 ' + p.deadline + ' 还剩 ' + daysLeft + ' 天', userId: p.owner_id });
         }
@@ -4153,7 +4174,7 @@ function getAnomalies() {
     }
     // Progress stale
     for (const p of allProjects) {
-        if ((p.progress || 0) > 0 && p.status !== '已完成') {
+        if ((p.progress || 0) > 0 && p.status !== '已完成' && p.status !== '结案') {
             const projStages = allStages.filter(s => s.project_id === p.id);
             let hasRecent = false;
             for (const s of projStages) {
