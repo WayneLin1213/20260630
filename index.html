@@ -1628,8 +1628,15 @@ function renderProjectList() {
         return true;
     });
 
-    const levelOrder = {S:0,A:1,B:2,C:3};
-    filtered.sort((a,b) => (levelOrder[a.level]||9) - (levelOrder[b.level]||9));
+    // 按项目建立时间升序排列（早建的在上面）；无 create_time 的项目按 id 兜底
+    filtered.sort((a,b) => {
+        var ta = a.create_time ? new Date(a.create_time).getTime() : NaN;
+        var tb = b.create_time ? new Date(b.create_time).getTime() : NaN;
+        if(isNaN(ta) && isNaN(tb)) return String(a.id||'').localeCompare(String(b.id||''));
+        if(isNaN(ta)) return 1;
+        if(isNaN(tb)) return -1;
+        return ta - tb;
+    });
 
     if(filtered.length === 0) {
         $('projectTableWrap').innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>暂无项目数据</p></div>';
